@@ -41,12 +41,18 @@ SemaphoreHandle_t lvgl_mutex = NULL;  // Protects all LVGL API calls across thre
 bool init_ntp = 0;
 bool buzzer_timeout_task_running = 0;
 bool timeout_alarm_light_running = 0;
+bool ai_wait_light_running = 0;
+bool ai_request_pending = 0;
+TickType_t ai_request_deadline = 0;
+TaskHandle_t ai_wait_light_task_handle = NULL;
+#define AI_ANALYSIS_TIMEOUT_MS 120000
 // timeout alarm task, including buzzer alarm and flow light alarm
 static void timeout_alarm_light_task(void *param)
 {
     while(timeout_alarm_light_running){
         set_flow_light(30, 52, 83);
     }
+    
     vTaskDelete(NULL);
 }
 //buzzer timeout alarm task, including buzzer alarm and flow light alarm
@@ -60,6 +66,45 @@ static void buzzer_timeout_task(void *param)
     vTaskDelete(NULL);
 
     
+}
+
+static void ai_wait_light_task(void *param)
+{
+    while(ai_wait_light_running){
+        /* AI 分析等待中：持续蓝色流水灯 */
+        set_flow_light(30, 52, 83);
+    }
+    ai_wait_light_task_handle = NULL;
+    vTaskDelete(NULL);
+}
+
+static void ai_wait_light_start(void)
+{
+    if (ai_wait_light_running || ai_wait_light_task_handle != NULL) return;
+    ai_wait_light_running = 1;
+    xTaskCreatePinnedToCore(ai_wait_light_task, "ai_wait_light_task", 2048, NULL, 7, &ai_wait_light_task_handle, 0);
+}
+
+static void ai_wait_light_stop(void)
+{
+    ai_wait_light_running = 0;
+    for (int i = 0; i < 100 && ai_wait_light_task_handle != NULL; i++) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+static void ai_result_light_show(bool success,uint8_t retry_count)
+{
+    if (success) {
+        for(int i = 0; i < retry_count; i++) {
+            set_flow_light(34, 80, 32);  // green
+        }
+    } else {
+        for(int i = 0; i < retry_count; i++) {
+            set_flow_light(80, 32, 33);  // red
+        }
+    }
+    set_flow_light(0, 0, 0);         // off
 }
 //------------lvgl timer to battery show----------//
 void my_battery_update_cb(lv_timer_t * timer) {
@@ -276,6 +321,9 @@ void app_main(void)
     // 加载上次 AI 分析结果（掉电保存），供 UI 显示
     ai_daily_result_load();
     ai_weekly_result_load();
+    // 同步到 UI 缓存（custom 层不依赖 ai_demo_task.h）
+    memcpy(&g_ui_daily_result,  &g_ai_daily_result,  sizeof(ui_ai_result_t));
+    memcpy(&g_ui_weekly_result, &g_ai_weekly_result, sizeof(ui_ai_result_t));
     //----------init spiffs for word card-----------//
     init_spiffs();
     //----------wifi cfg init-----------------//
@@ -283,7 +331,7 @@ void app_main(void)
     init_wifi();
     init_ntp = 0;
     while(!is_wifi_connected()){
-         wifi_connect_to_new_network("Lin404", "Lyr66668888");
+         wifi_connect_to_new_network("wphone", "seanhhhh");
          vTaskDelay(3000);
          wifi_success = is_wifi_connected();
     }
@@ -305,17 +353,75 @@ void app_main(void)
     xTaskCreatePinnedToCore(nvs_thread,"nvs_thread",4096,NULL,10,NULL,0);
     xTaskCreatePinnedToCore(wifi_time_thread,"time_thread",4096,NULL,10,NULL,1);
 
-    //-------------- AI terminal demo task --------------------------//
-    // start_ai_summary(AI_SUMMARY_WEEKLY, &init_ntp, AI_CHAT_API_KEY);
-
     //--------------main loop task-----------------//
     while (1) 
     {
+        //------------buzzer timeout alarm trigger----------------//
         if(countdown_timeout_pending && !buzzer_timeout_task_running){
             countdown_timeout_pending = 0;
             buzzer_timeout_task_running = 1;
             xTaskCreatePinnedToCore(buzzer_timeout_task, "buzzer_timeout_task", 2048, NULL, 8, NULL, 0);
         }
+
+        // -------------- AI 请求触发 --------------//
+        if (ai_day_start) {
+            ai_day_start = 0;
+            if (!is_wifi_connected()) {
+                ai_result_light_show(false, 3);
+            } else {
+            ai_request_pending = 1;
+            ai_request_deadline = xTaskGetTickCount() + pdMS_TO_TICKS(AI_ANALYSIS_TIMEOUT_MS);
+            ai_wait_light_start();
+            start_ai_summary(AI_SUMMARY_DAILY, &init_ntp, AI_CHAT_API_KEY);
+            }
+        }
+        if (ai_week_start) {
+            ai_week_start = 0;
+            if (!is_wifi_connected()) {
+                ai_result_light_show(false, 3);
+            } else {
+            ai_request_pending = 1;
+            ai_request_deadline = xTaskGetTickCount() + pdMS_TO_TICKS(AI_ANALYSIS_TIMEOUT_MS);
+            ai_wait_light_start();
+            start_ai_summary(AI_SUMMARY_WEEKLY, &init_ntp, AI_CHAT_API_KEY);
+            }
+        }
+        // ------------ AI 结果就绪，刷新 UI ----------//
+        if (g_ai_daily_result_ready || g_ai_weekly_result_ready) {
+            bool is_daily = (bool)g_ai_daily_result_ready;
+            if (is_daily) g_ai_daily_result_ready  = false;
+            else          g_ai_weekly_result_ready = false;
+            ai_result_t    *src = is_daily ? &g_ai_daily_result  : &g_ai_weekly_result;
+            ui_ai_result_t *dst = is_daily ? &g_ui_daily_result  : &g_ui_weekly_result;
+            memcpy(dst, src, sizeof(ui_ai_result_t));
+            ai_result_t *r = src;
+            if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                lv_label_set_text(guider_ui.screen_ai_label_cat1, r->cat1_name);
+                lv_label_set_text(guider_ui.screen_ai_label_cat2, r->cat2_name);
+                lv_label_set_text(guider_ui.screen_ai_label_cat3, r->cat3_name);
+                lv_label_set_text_fmt(guider_ui.screen_ai_label_cat1_num, "%d%%", r->cat1_percent);
+                lv_label_set_text_fmt(guider_ui.screen_ai_label_cat2_num, "%d%%", r->cat2_percent);
+                lv_label_set_text_fmt(guider_ui.screen_ai_label_cat3_num, "%d%%", r->cat3_percent);
+                lv_arc_set_value(guider_ui.screen_ai_arc_1, r->cat1_percent);
+                lv_arc_set_value(guider_ui.screen_ai_arc_2, r->cat2_percent);
+                lv_arc_set_value(guider_ui.screen_ai_arc_3, r->cat3_percent);
+                lv_label_set_text(guider_ui.screen_ai_label_sum, r->summary);
+                lv_label_set_text(guider_ui.screen_ai_label_quote, r->quote);
+                xSemaphoreGive(lvgl_mutex);
+            }
+            if (ai_request_pending) {
+                ai_wait_light_stop();
+                ai_result_light_show(true, 3);
+                ai_request_pending = 0;
+            }
+        }
+        /* 无法直接获知 ai_demo 内部失败状态，这里用超时作为失败判定 */
+        if (ai_request_pending && xTaskGetTickCount() > ai_request_deadline) {
+            ai_wait_light_stop();
+            ai_result_light_show(false, 3);
+            ai_request_pending = 0;
+        }
+        
         // -----------------LVGL task managing-----------------//
         if(xSemaphoreTake(lvgl_mutex, portMAX_DELAY) == pdTRUE){
             lv_task_handler();  // LVGL task managing

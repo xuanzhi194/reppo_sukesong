@@ -27,34 +27,22 @@ void setup_scr_screen_timing(lv_ui *ui)
     lv_obj_set_style_bg_opa(ui->screen_timing, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui->screen_timing, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_timing, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_timing_img_moon
-    ui->screen_timing_img_moon = lv_img_create(ui->screen_timing);
-    lv_obj_add_flag(ui->screen_timing_img_moon, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_timing_img_moon, &_moon_alpha_160x160);
-    lv_img_set_pivot(ui->screen_timing_img_moon, 50,50);
-    lv_img_set_angle(ui->screen_timing_img_moon, 0);
-    lv_obj_set_pos(ui->screen_timing_img_moon, 8, 3);
-    lv_obj_set_size(ui->screen_timing_img_moon, 160, 160);
-
-    //Write style for screen_timing_img_moon, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_img_recolor_opa(ui->screen_timing_img_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_img_opa(ui->screen_timing_img_moon, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_timing_img_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_clip_corner(ui->screen_timing_img_moon, true, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_src(ui->screen_timing, &_Reppo_Overview_bg_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_opa(ui->screen_timing, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_recolor_opa(ui->screen_timing, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_timing_label_realtime
     ui->screen_timing_label_realtime = lv_label_create(ui->screen_timing);
     lv_label_set_text(ui->screen_timing_label_realtime, "10 : 32");
     lv_label_set_long_mode(ui->screen_timing_label_realtime, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_timing_label_realtime, 165, 15);
-    lv_obj_set_size(ui->screen_timing_label_realtime, 132, 43);
+    lv_obj_set_pos(ui->screen_timing_label_realtime, 66, 40);
+    lv_obj_set_size(ui->screen_timing_label_realtime, 193, 53);
 
     //Write style for screen_timing_label_realtime, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_timing_label_realtime, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_timing_label_realtime, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_timing_label_realtime, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_timing_label_realtime, &lv_font_Alatsi_Regular_48, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_timing_label_realtime, &lv_font_Abel_regular_58, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_timing_label_realtime, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_timing_label_realtime, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_timing_label_realtime, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -70,14 +58,14 @@ void setup_scr_screen_timing(lv_ui *ui)
     ui->screen_timing_label_day = lv_label_create(ui->screen_timing);
     lv_label_set_text(ui->screen_timing_label_day, "Saturday");
     lv_label_set_long_mode(ui->screen_timing_label_day, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_timing_label_day, 177, 66);
+    lv_obj_set_pos(ui->screen_timing_label_day, 49, 97);
     lv_obj_set_size(ui->screen_timing_label_day, 114, 21);
 
     //Write style for screen_timing_label_day, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_timing_label_day, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_timing_label_day, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_timing_label_day, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_timing_label_day, &lv_font_Alatsi_Regular_20, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_timing_label_day, &lv_font_Abel_regular_20, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_timing_label_day, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_timing_label_day, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_timing_label_day, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -89,67 +77,18 @@ void setup_scr_screen_timing(lv_ui *ui)
     lv_obj_set_style_pad_left(ui->screen_timing_label_day, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_timing_label_day, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-    //Write codes screen_timing_line_1
-    ui->screen_timing_line_1 = lv_line_create(ui->screen_timing);
-    static lv_point_t screen_timing_line_1[] = {{0, 0},{200, 0},};
-    lv_line_set_points(ui->screen_timing_line_1, screen_timing_line_1, 2);
-    lv_obj_set_pos(ui->screen_timing_line_1, 171, 92);
-    lv_obj_set_size(ui->screen_timing_line_1, 147, 6);
-
-    //Write style for screen_timing_line_1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_line_width(ui->screen_timing_line_1, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(ui->screen_timing_line_1, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(ui->screen_timing_line_1, 174, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_line_rounded(ui->screen_timing_line_1, true, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_timing_line_2
-    ui->screen_timing_line_2 = lv_line_create(ui->screen_timing);
-    static lv_point_t screen_timing_line_2[] = {{0, 0},{200, 0},};
-    lv_line_set_points(ui->screen_timing_line_2, screen_timing_line_2, 2);
-    lv_obj_set_pos(ui->screen_timing_line_2, 161, 119);
-    lv_obj_set_size(ui->screen_timing_line_2, 162, 1);
-
-    //Write style for screen_timing_line_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_line_width(ui->screen_timing_line_2, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(ui->screen_timing_line_2, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(ui->screen_timing_line_2, 163, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_line_rounded(ui->screen_timing_line_2, true, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_timing_label_moon
-    ui->screen_timing_label_moon = lv_label_create(ui->screen_timing);
-    lv_label_set_text(ui->screen_timing_label_moon, "Humans to Moon");
-    lv_label_set_long_mode(ui->screen_timing_label_moon, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_timing_label_moon, 168, 95);
-    lv_obj_set_size(ui->screen_timing_label_moon, 146, 18);
-
-    //Write style for screen_timing_label_moon, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_timing_label_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_timing_label_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_timing_label_moon, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_timing_label_moon, &lv_font_Alatsi_Regular_18, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_timing_label_moon, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_timing_label_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_timing_label_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_timing_label_moon, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_timing_label_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_timing_label_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_timing_label_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_timing_label_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_timing_label_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_timing_label_moon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
     //Write codes screen_timing_label_date
     ui->screen_timing_label_date = lv_label_create(ui->screen_timing);
     lv_label_set_text(ui->screen_timing_label_date, "2025/12/25");
     lv_label_set_long_mode(ui->screen_timing_label_date, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_timing_label_date, 181, 125);
+    lv_obj_set_pos(ui->screen_timing_label_date, 145, 97);
     lv_obj_set_size(ui->screen_timing_label_date, 124, 20);
 
     //Write style for screen_timing_label_date, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_timing_label_date, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_timing_label_date, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_timing_label_date, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_timing_label_date, &lv_font_Acme_Regular_20, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_timing_label_date, &lv_font_Abel_regular_20, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_timing_label_date, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_timing_label_date, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_timing_label_date, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -243,7 +182,7 @@ void setup_scr_screen_timing(lv_ui *ui)
     lv_img_set_src(ui->screen_timing_img_night, &_night_alpha_25x25);
     lv_img_set_pivot(ui->screen_timing_img_night, 50,50);
     lv_img_set_angle(ui->screen_timing_img_night, 0);
-    lv_obj_set_pos(ui->screen_timing_img_night, 291, 61);
+    lv_obj_set_pos(ui->screen_timing_img_night, 286, 127);
     lv_obj_set_size(ui->screen_timing_img_night, 25, 25);
     lv_obj_add_flag(ui->screen_timing_img_night, LV_OBJ_FLAG_HIDDEN);
 
@@ -259,9 +198,8 @@ void setup_scr_screen_timing(lv_ui *ui)
     lv_img_set_src(ui->screen_timing_img_morning, &_morning_alpha_33x31);
     lv_img_set_pivot(ui->screen_timing_img_morning, 50,50);
     lv_img_set_angle(ui->screen_timing_img_morning, 0);
-    lv_obj_set_pos(ui->screen_timing_img_morning, 286, 57);
+    lv_obj_set_pos(ui->screen_timing_img_morning, 282, 127);
     lv_obj_set_size(ui->screen_timing_img_morning, 33, 31);
-    lv_obj_add_flag(ui->screen_timing_img_morning, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_timing_img_morning, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_timing_img_morning, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

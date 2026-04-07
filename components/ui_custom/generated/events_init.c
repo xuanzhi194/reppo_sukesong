@@ -16,11 +16,10 @@
 #endif
 
 #include "custom.h"
-// int val = 1;
-// int val_cur = 1;
 int8_t wordbook_totalnum = 3;
 int review_solve_num = 0;
 lv_obj_t* menu_cont;
+bool is_week = 0;
 
 static void screen_reppo_event_handler (lv_event_t *e)
 {
@@ -231,44 +230,6 @@ static void screen_todolist_btn_back_event_handler (lv_event_t *e)
         todo_back_label = 1;
         lv_obj_t * act_scr = lv_scr_act();
         lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_todolist_btn_delpage_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        /* 1. 读出当前文本 */
-        const char * txt = lv_label_get_text(guider_ui.screen_todolist_label_indexall);
-        val = atoi(txt);          // 转成整数
-        /* 2. 加 1 并写回 */
-        if(val >= 2 && val > val_cur) {
-            for(int i = 0; i < 4; i++) {
-                done_array[val -1][i] = 0;
-            }
-            val = val - 1;
-            lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexall, "%d", val);
-        }
-        //refresh done and todo num
-        uint8_t total_todo_num = val * 4;
-        done_sum = 0;
-        todo_sum = 0;
-        //calculate done tasks num
-        for(int i = 0 ; i < val ; i++) {
-            for(int j = 0; j < 4 ; j++) {
-                done_sum += done_array[i][j];
-            }
-        }
-        //calculate todo tasks num
-        todo_sum = total_todo_num - done_sum;
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
         break;
     }
     default:
@@ -487,34 +448,13 @@ static void screen_todolist_btn_todo4_event_handler (lv_event_t *e)
     }
 }
 
-static void screen_todolist_btn_addpage_event_handler (lv_event_t *e)
+static void screen_todolist_btn_lastpage_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        /* 1. 读出当前文本 */
-        const char * txt = lv_label_get_text(guider_ui.screen_todolist_label_indexall);
-        val = atoi(txt);
-        /* 2. 加 1 并写回 */
-        if(val >= 1 && val <= 8) {
-            val = val + 1;
-            lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexall, "%d", val);
-        }
-        //refresh done and todo num
-        uint8_t total_todo_num = val * 4;
-        done_sum = 0;
-        todo_sum = 0;
-        //calculate done tasks num
-        for(int i = 0 ; i < val ; i++) {
-            for(int j = 0; j < 4 ; j++) {
-                done_sum += done_array[i][j];
-            }
-        }
-        //calculate todo tasks num
-        todo_sum = total_todo_num - done_sum;
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
+
         break;
     }
     default:
@@ -522,125 +462,13 @@ static void screen_todolist_btn_addpage_event_handler (lv_event_t *e)
     }
 }
 
-static void screen_todolist_btn_pageminus_event_handler (lv_event_t *e)
+static void screen_todolist_btn_nxtpage_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        /* 1. 读出当前文本 */
-        const char * txt = lv_label_get_text(guider_ui.screen_todolist_label_indexcur);
-        val_cur = atoi(txt);
-        if(val_cur >= 2) {
-            val_cur = val_cur - 1;
-            lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexcur, "%d", val_cur);
 
-            //change textarea for different page
-            char buf1[64];
-            char buf2[64];
-            char buf3[64];
-            char buf4[64];
-            snprintf(buf1,sizeof(buf1),"TO DO %d : xxxx", (val_cur-1)*4 + 1);
-            snprintf(buf2,sizeof(buf2),"TO DO %d : xxxx", (val_cur-1)*4 + 2);
-            snprintf(buf3,sizeof(buf3),"TO DO %d : xxxx", (val_cur-1)*4 + 3);
-            snprintf(buf4,sizeof(buf4),"TO DO %d : xxxx", (val_cur-1)*4 + 4);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo1,buf1);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo2,buf2);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo3,buf3);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo4,buf4);
-        }
-
-        if(done_array[val_cur-1][0] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][0] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][0] = 0;
-        }
-        if(done_array[val_cur-1][1] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][1] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][1] = 0;
-        }
-        if(done_array[val_cur-1][2] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][2] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][2] = 0;
-        }
-        if(done_array[val_cur-1][3] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][3] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][3] = 0;
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_todolist_btn_pageplus_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        /* 1. 读出当前文本 */
-        const char * txt = lv_label_get_text(guider_ui.screen_todolist_label_indexcur);
-        val_cur = atoi(txt);
-        if(val_cur >= 1 && val_cur < val) {
-            val_cur = val_cur + 1;
-            lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexcur, "%d", val_cur);
-
-            //change label_todox for different page
-            char buf1[64];
-            char buf2[64];
-            char buf3[64];
-            char buf4[64];
-            snprintf(buf1,sizeof(buf1),"TO DO %d : xxxx", (val_cur-1)*4 + 1);
-            snprintf(buf2,sizeof(buf2),"TO DO %d : xxxx", (val_cur-1)*4 + 2);
-            snprintf(buf3,sizeof(buf3),"TO DO %d : xxxx", (val_cur-1)*4 + 3);
-            snprintf(buf4,sizeof(buf4),"TO DO %d : xxxx", (val_cur-1)*4 + 4);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo1,buf1);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo2,buf2);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo3,buf3);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo4,buf4);
-        }
-
-        if(done_array[val_cur-1][0] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][0] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][0] = 0;
-        }
-        if(done_array[val_cur-1][1] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][1] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][1] = 0;
-        }
-        if(done_array[val_cur-1][2] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][2] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][2] = 0;
-        }
-        if(done_array[val_cur-1][3] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][3] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][3] = 0;
-        }
         break;
     }
     default:
@@ -652,14 +480,12 @@ void events_init_screen_todolist (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_todolist, screen_todolist_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_todolist_btn_back, screen_todolist_btn_back_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_todolist_btn_delpage, screen_todolist_btn_delpage_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_todolist_btn_todo1, screen_todolist_btn_todo1_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_todolist_btn_todo2, screen_todolist_btn_todo2_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_todolist_btn_todo3, screen_todolist_btn_todo3_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_todolist_btn_todo4, screen_todolist_btn_todo4_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_todolist_btn_addpage, screen_todolist_btn_addpage_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_todolist_btn_pageminus, screen_todolist_btn_pageminus_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_todolist_btn_pageplus, screen_todolist_btn_pageplus_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_todolist_btn_lastpage, screen_todolist_btn_lastpage_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_todolist_btn_nxtpage, screen_todolist_btn_nxtpage_event_handler, LV_EVENT_ALL, ui);
 }
 
 static void screen_timing_event_handler (lv_event_t *e)
@@ -2186,6 +2012,40 @@ static void screen_ai_event_handler (lv_event_t *e)
     case LV_EVENT_SCREEN_LOAD_START:
     {
         screen_ai_buttion_add();
+        is_week = 0;
+        screen_ai_load_nvs_data(is_week);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_ai_btn_day_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ai_day_start = 1;
+        is_week = 0;
+        screen_ai_load_nvs_data(is_week);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_ai_btn_week_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ai_week_start = 1;
+        is_week = 1;
+        screen_ai_load_nvs_data(is_week);
         break;
     }
     default:
@@ -2210,6 +2070,8 @@ static void screen_ai_btn_back_event_handler (lv_event_t *e)
 void events_init_screen_ai (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_ai, screen_ai_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_ai_btn_day, screen_ai_btn_day_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_ai_btn_week, screen_ai_btn_week_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_ai_btn_back, screen_ai_btn_back_event_handler, LV_EVENT_ALL, ui);
 }
 

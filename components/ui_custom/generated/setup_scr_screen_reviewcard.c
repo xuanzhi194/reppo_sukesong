@@ -27,7 +27,7 @@ void setup_scr_screen_reviewcard(lv_ui *ui)
     lv_obj_set_style_bg_opa(ui->screen_reviewcard, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui->screen_reviewcard, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_reviewcard, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_src(ui->screen_reviewcard, &_screen_reviewcard_bg_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_src(ui->screen_reviewcard, &_word_BG2_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_opa(ui->screen_reviewcard, 137, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_recolor_opa(ui->screen_reviewcard, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 

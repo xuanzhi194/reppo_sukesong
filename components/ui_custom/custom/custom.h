@@ -15,6 +15,22 @@ extern "C" {
 
 #include "gui_guider.h"
 
+/* AI 结果 UI 缓存结构体（与 ai_result_t 字段一致，无需引用 ai_demo_task.h） */
+typedef struct {
+    char cat1_name[32];
+    int  cat1_percent;
+    char cat2_name[32];
+    int  cat2_percent;
+    char cat3_name[32];
+    int  cat3_percent;
+    char summary[256];
+    char quote[128];
+    char summary_date[40];
+    bool valid;
+} ui_ai_result_t;
+
+extern ui_ai_result_t g_ui_daily_result;
+extern ui_ai_result_t g_ui_weekly_result;
 //struct indicate
 typedef struct {
     int word_index;
@@ -66,6 +82,8 @@ extern char *wifi_ssid;
 extern char  current_task_name[128];
 extern bool  focus_en;
 extern bool countdown_timeout_pending;
+extern bool ai_day_start;
+extern bool ai_week_start;
 // func indicate
 void custom_init(lv_ui *ui);
 void screen_reppo_custom_init();
@@ -73,6 +91,7 @@ void countdown_start(int16_t minutes);
 void stopwatch_start();
 extern void wifi_connect_show();
 extern void wifi_disconnect_show();
+extern void screen_ai_load_nvs_data(bool day_or_week);//0 -> day 1->week
 //screens buttion add
 extern lv_group_t *g;
 void screen_todolist_buttion_add();

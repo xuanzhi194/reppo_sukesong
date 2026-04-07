@@ -25,6 +25,10 @@
 ai_result_t g_ai_daily_result  = {0};
 ai_result_t g_ai_weekly_result = {0};
 
+/* AI 结果就绪标志，解析成功后置 1，UI 读取后由主循环清 0 */
+volatile bool g_ai_daily_result_ready  = false;
+volatile bool g_ai_weekly_result_ready = false;
+
 /* 从 response 字符串解析 AI 结果 */
 static void ai_result_parse(const char *response, ai_result_t *result)
 {
@@ -43,18 +47,15 @@ static void ai_result_parse(const char *response, ai_result_t *result)
         if (strncmp(line, "CAT1|", 5) == 0) {
             char *tok = strtok(line + 5, "|");
             if (tok) { strncpy(result->cat1_name, tok, sizeof(result->cat1_name)-1); tok = strtok(NULL, "|"); }
-            if (tok) { result->cat1_percent  = atoi(tok); tok = strtok(NULL, "|"); }
-            if (tok) { result->cat1_duration = atoi(tok); }
+            if (tok) { result->cat1_percent  = atoi(tok); }
         } else if (strncmp(line, "CAT2|", 5) == 0) {
             char *tok = strtok(line + 5, "|");
             if (tok) { strncpy(result->cat2_name, tok, sizeof(result->cat2_name)-1); tok = strtok(NULL, "|"); }
-            if (tok) { result->cat2_percent  = atoi(tok); tok = strtok(NULL, "|"); }
-            if (tok) { result->cat2_duration = atoi(tok); }
+            if (tok) { result->cat2_percent  = atoi(tok); }
         } else if (strncmp(line, "CAT3|", 5) == 0) {
             char *tok = strtok(line + 5, "|");
             if (tok) { strncpy(result->cat3_name, tok, sizeof(result->cat3_name)-1); tok = strtok(NULL, "|"); }
-            if (tok) { result->cat3_percent  = atoi(tok); tok = strtok(NULL, "|"); }
-            if (tok) { result->cat3_duration = atoi(tok); }
+            if (tok) { result->cat3_percent  = atoi(tok); }
         } else if (strncmp(line, "SUMMARY|", 8) == 0) {
             strncpy(result->summary, line + 8, sizeof(result->summary)-1);
         } else if (strncmp(line, "QUOTE|", 6) == 0) {
@@ -91,10 +92,10 @@ static bool ai_result_load_by_key(const char *key, ai_result_t *out, const char 
     nvs_close(h);
     if (err == ESP_OK && out->valid) {
         printf("[AI Demo] %s已从 NVS 恢复 (日期:%s)\r\n", label, out->summary_date);
-        printf("  %s%d%%%dmin | %s%d%%%dmin | %s%d%%%dmin\r\n",
-               out->cat1_name, out->cat1_percent, out->cat1_duration,
-               out->cat2_name, out->cat2_percent, out->cat2_duration,
-               out->cat3_name, out->cat3_percent, out->cat3_duration);
+         printf("  %s%d%% | %s%d%% | %s%d%%\r\n",
+             out->cat1_name, out->cat1_percent,
+             out->cat2_name, out->cat2_percent,
+             out->cat3_name, out->cat3_percent);
         return true;
     }
     printf("[AI Demo] %sNVS 中无有效数据\r\n", label);
@@ -113,6 +114,7 @@ bool ai_weekly_result_load(void)
 
 /*
  * 按日期范围过滤 CSV 任务行。
+ * CSV 字段：任务名称,完成日期
  * date_from / date_to 格式 "YYYY-MM-DD"，可直接字典序比较。
  * 返回实际筛选到的任务条数（不含表头）。
  */
@@ -138,11 +140,10 @@ static int filter_csv_by_date(const char *csv_in, char *csv_out, size_t out_size
             if (n > 0) written += (size_t)n;
             header_done = true;
         } else if (line_len > 0) {
-            /* 提取第3列日期（格式 YYYY-MM-DD） */
+            /* 提取第2列日期（格式 YYYY-MM-DD） */
             const char *f1 = strchr(line, ',');
-            const char *f2 = f1 ? strchr(f1 + 1, ',') : NULL;
-            if (f2) {
-                const char *row_date = f2 + 1;
+            if (f1) {
+                const char *row_date = f1 + 1;
                 if (strncmp(row_date, date_from, 10) >= 0 &&
                     strncmp(row_date, date_to,   10) <= 0) {
                     int n = snprintf(csv_out + written, out_size - written, "%s\n", line);
@@ -197,17 +198,22 @@ static void ai_demo_task(void *param)
         return;
     }
 
-    printf("\r\n[AI Demo] 等待 WiFi 连接...\r\n");
-    while (!is_wifi_connected()) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+    printf("\r\n[AI Demo] 判断 WiFi 连接...\r\n");
+    if (!is_wifi_connected())
+    {
+        printf("[AI Demo] WiFi 未连接,退出ai功能...\r\n");
+        free(file_content);
+        free(prompt);
+        free(response);
+        free(args);
+        vTaskDelete(NULL);
+        return;
     }
-    vTaskDelay(pdMS_TO_TICKS(5000));
-    printf("[AI Demo] WiFi 已连接，等待 NTP 时间同步...\r\n");
-
+    printf("[AI Demo] WiFi 已连接,等待 NTP 时间同步...\r\n");
     if (ntp_initialized && !(*ntp_initialized)) {
         initialize_sntp();
         *ntp_initialized = true;
-        printf("[AI Demo] 已初始化 NTP，正在等待时间同步...\r\n");
+        printf("[AI Demo] 已初始化 NTP,正在等待时间同步...\r\n");
     }
 
     bool time_synced = false;
@@ -240,9 +246,9 @@ static void ai_demo_task(void *param)
     }
     printf("[AI Demo] 开始请求 AI...\r\n");
 
-    FILE *file = fopen("/spiffs/todolist.csv", "r");
+    FILE *file = fopen("/spiffs/task_done.csv", "r");
     if (file == NULL) {
-        printf("[AI Demo] 无法打开 /spiffs/todolist.csv\r\n");
+        printf("[AI Demo] 无法打开 /spiffs/task_done.csv\r\n");
         free(file_content);
         free(prompt);
         free(response);
@@ -302,23 +308,23 @@ static void ai_demo_task(void *param)
     const char *period_str = (stype == AI_SUMMARY_DAILY) ? "今日" : "近一周";
     snprintf(prompt, prompt_size,
              "以下是用户%s完成的 %d 条 todolist 任务"
-             "（CSV 格式，字段：任务名称、专注时间 min、完成日期）：\n\n"
+             "（CSV 格式，字段：任务名称、完成日期):\n\n"
              "%s\n\n"
-             "请将任务分成3类，严格只输出下面6行（不输出任何额外文字/解释/Markdown）：\n"
-             "CAT1|<分类名称>|<占比整数%%>|<该类任务总时长>\n"
-             "CAT2|<分类名称>|<占比整数%%>|<该类任务总时长>\n"
-             "CAT3|<分类名称>|<占比整数%%>|<该类任务总时长>\n"
-             "SUMMARY|<一句话%s总结，哲学激励风格，附下一步建议，不超过50字>\n"
-             "QUOTE|<英文励志名言，不超过10个单词>\n"
+             "请将任务分成3类,严格只输出下面6行(不输出任何额外文字/解释/Markdown):\n"
+             "CAT1|<分类名称>|<占比整数%%>\n"
+             "CAT2|<分类名称>|<占比整数%%>\n"
+             "CAT3|<分类名称>|<占比整数%%>\n"
+             "SUMMARY|<一句话%s总结,哲学激励风格,附下一步建议,40中文字左右,严格要求summary里面的标点符号只能出现半角逗号或句号>\n"
+             "QUOTE|<英文励志名言,富有哲理,与众不同,不超过10个英文单词>\n"
              "END\n"
-             "规则：占比按任务数量计算，三个整数之和必须等于100；分类名称不超过4个汉字；只返回这6行。",
+             "规则：占比按任务数量计算,三个整数之和必须等于100;分类名称不超过4个汉字;只返回这6行;严格要求summary里面的标点符号只能出现半角逗号或句号;输出summary的字数在45中文字左右",
              period_str, task_count, filtered, period_str);
 
     free(filtered);
     filtered = NULL;
     file_content = NULL;
 
-    printf("[AI Demo] 正在发送请求给 AI，请稍候...\r\n");
+    printf("[AI Demo] 正在发送请求给 AI,请稍候...\r\n");
     int64_t t_start = esp_timer_get_time();
     esp_err_t ret = ai_chat_send(prompt, response, AI_RESPONSE_BUF_SIZE);
     int64_t t_end = esp_timer_get_time();
@@ -333,6 +339,9 @@ static void ai_demo_task(void *param)
         ai_result_parse(response, dest);
         strncpy(dest->summary_date, date_from_s, sizeof(dest->summary_date) - 1);
         ai_result_save(stype, dest);
+        /* 通知主循环 UI 可以刷新 */
+        if (stype == AI_SUMMARY_DAILY)  g_ai_daily_result_ready  = true;
+        else                            g_ai_weekly_result_ready = true;
     } else {
         printf("[AI Demo] 请求失败 (%d ms): %s\r\n", elapsed_ms, response);
     }

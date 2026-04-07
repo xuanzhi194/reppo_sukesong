@@ -24,17 +24,12 @@ typedef struct
 	lv_obj_t *screen_main;
 	bool screen_main_del;
 	lv_obj_t *screen_main_img_wifi;
-	lv_obj_t *screen_main_img_reppo;
-	lv_obj_t *screen_main_label_reppo;
 	lv_obj_t *screen_main_img_battery;
 	lv_obj_t *screen_main_img_ble;
 	lv_obj_t *screen_main_img_todolist;
 	lv_obj_t *screen_main_img_word;
 	lv_obj_t *screen_main_img_timer;
 	lv_obj_t *screen_main_img_setting;
-	lv_obj_t *screen_main_label_word;
-	lv_obj_t *screen_main_label_timer;
-	lv_obj_t *screen_main_label_setting;
 	lv_obj_t *screen_main_btn_word;
 	lv_obj_t *screen_main_btn_word_label;
 	lv_obj_t *screen_main_btn_timer;
@@ -53,18 +48,14 @@ typedef struct
 	lv_obj_t *screen_main_label_nodone;
 	lv_obj_t *screen_main_img_probg2;
 	lv_obj_t *screen_main_label_todonum;
-	lv_obj_t *screen_main_label_todolist;
 	lv_obj_t *screen_main_btn_todolist;
 	lv_obj_t *screen_main_btn_todolist_label;
 	lv_obj_t *screen_main_label_battery;
+	lv_obj_t *screen_main_img_gp1;
 	lv_obj_t *screen_todolist;
 	bool screen_todolist_del;
 	lv_obj_t *screen_todolist_btn_back;
 	lv_obj_t *screen_todolist_btn_back_label;
-	lv_obj_t *screen_todolist_img_addpage;
-	lv_obj_t *screen_todolist_label_addpage;
-	lv_obj_t *screen_todolist_btn_delpage;
-	lv_obj_t *screen_todolist_btn_delpage_label;
 	lv_obj_t *screen_todolist_btn_todo1;
 	lv_obj_t *screen_todolist_btn_todo1_label;
 	lv_obj_t *screen_todolist_btn_todo2;
@@ -73,15 +64,7 @@ typedef struct
 	lv_obj_t *screen_todolist_btn_todo3_label;
 	lv_obj_t *screen_todolist_btn_todo4;
 	lv_obj_t *screen_todolist_btn_todo4_label;
-	lv_obj_t *screen_todolist_img_delpage;
-	lv_obj_t *screen_todolist_label_delpage;
-	lv_obj_t *screen_todolist_btn_addpage;
-	lv_obj_t *screen_todolist_btn_addpage_label;
 	lv_obj_t *screen_todolist_label_indexcut;
-	lv_obj_t *screen_todolist_btn_pageminus;
-	lv_obj_t *screen_todolist_btn_pageminus_label;
-	lv_obj_t *screen_todolist_btn_pageplus;
-	lv_obj_t *screen_todolist_btn_pageplus_label;
 	lv_obj_t *screen_todolist_label_indexcur;
 	lv_obj_t *screen_todolist_label_indexall;
 	lv_obj_t *screen_todolist_label_done;
@@ -92,14 +75,14 @@ typedef struct
 	lv_obj_t *screen_todolist_label_todo2;
 	lv_obj_t *screen_todolist_label_todo3;
 	lv_obj_t *screen_todolist_label_todo4;
+	lv_obj_t *screen_todolist_btn_lastpage;
+	lv_obj_t *screen_todolist_btn_lastpage_label;
+	lv_obj_t *screen_todolist_btn_nxtpage;
+	lv_obj_t *screen_todolist_btn_nxtpage_label;
 	lv_obj_t *screen_timing;
 	bool screen_timing_del;
-	lv_obj_t *screen_timing_img_moon;
 	lv_obj_t *screen_timing_label_realtime;
 	lv_obj_t *screen_timing_label_day;
-	lv_obj_t *screen_timing_line_1;
-	lv_obj_t *screen_timing_line_2;
-	lv_obj_t *screen_timing_label_moon;
 	lv_obj_t *screen_timing_label_date;
 	lv_obj_t *screen_timing_btn_pomodoro;
 	lv_obj_t *screen_timing_btn_pomodoro_label;
@@ -296,9 +279,9 @@ typedef struct
 	lv_obj_t *screen_ai_arc_3;
 	lv_obj_t *screen_ai_label_cat2;
 	lv_obj_t *screen_ai_label_cat1;
-	lv_obj_t *screen_ai_label_3;
-	lv_obj_t *screen_ai_label_2;
-	lv_obj_t *screen_ai_label_1;
+	lv_obj_t *screen_ai_label_cat3_num;
+	lv_obj_t *screen_ai_label_cat2_num;
+	lv_obj_t *screen_ai_label_cat1_num;
 	lv_obj_t *screen_ai_label_cat3;
 	lv_obj_t *screen_ai_line_1;
 	lv_obj_t *screen_ai_line_2;
@@ -351,58 +334,48 @@ void setup_scr_screen_wificfg(lv_ui *ui);
 void setup_scr_screen_todosel(lv_ui *ui);
 void setup_scr_screen_ai(lv_ui *ui);
 #include "extra/widgets/animimg/lv_animimg.h"
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_00);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_04);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_08);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_12);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_15);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_17);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_20);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_21);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_22);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_23);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_24);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_25);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_27);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_33);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_34);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_35);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_36);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_37);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_38);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_39);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_40);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_41);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_42);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_44);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_49);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_50);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_51);
-LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_52);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_00);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_05);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_06);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_10);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_11);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_17);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_19);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_20);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_21);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_22);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_24);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_25);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_31);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_32);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_48);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_49);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_50);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_51);
+LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_52);
 
-LV_IMG_DECLARE(_screen_main_bg_320x170);
+LV_IMG_DECLARE(_Reppo_bg1_320x170);
 LV_IMG_DECLARE(_wifi_log_2_alpha_24x24);
-LV_IMG_DECLARE(_Reppo_LOGO_V4_1_alpha_25x25);
 LV_IMG_DECLARE(_battery_label_v3_alpha_18x18);
 LV_IMG_DECLARE(_ble_label_v3_alpha_14x14);
-LV_IMG_DECLARE(_todolist_label_v4_alpha_60x80);
-LV_IMG_DECLARE(_word_label_v4_alpha_60x80);
-LV_IMG_DECLARE(_timing_label_v4_alpha_60x80);
-LV_IMG_DECLARE(_setting_label_v4_alpha_60x80);
-LV_IMG_DECLARE(_probg4_alpha_165x21);
+LV_IMG_DECLARE(_A_todolist_BG1_alpha_60x80);
+LV_IMG_DECLARE(_A_word_BG1_alpha_60x80);
+LV_IMG_DECLARE(_A_time_BG1_alpha_60x80);
+LV_IMG_DECLARE(_A_setting_BG1_alpha_60x80);
+LV_IMG_DECLARE(_probg4_alpha_160x15);
 LV_IMG_DECLARE(_plane_alpha_35x28);
 LV_IMG_DECLARE(_progress_bg2_alpha_76x18);
 LV_IMG_DECLARE(_progress_bg3_alpha_206x20);
 LV_IMG_DECLARE(_progress_bg2_alpha_76x18);
+LV_IMG_DECLARE(_reppo_main_gp1_alpha_75x16);
 
 LV_IMG_DECLARE(_screen_todolist_bg_320x170);
 
 LV_IMG_DECLARE(_home_20x20);
 
 LV_IMG_DECLARE(_home_20x20);
-LV_IMG_DECLARE(_group_add5_alpha_98x20);
-LV_IMG_DECLARE(_group_add5_alpha_98x20);
-LV_IMG_DECLARE(_moon_alpha_160x160);
+
+LV_IMG_DECLARE(_Reppo_Overview_bg_320x170);
 
 LV_IMG_DECLARE(_home_20x20);
 
@@ -417,13 +390,13 @@ LV_IMG_DECLARE(_pomodoro2_20x20);
 
 LV_IMG_DECLARE(_pomodoro2_20x20);
 
-LV_IMG_DECLARE(_screen_wordmenu_bg_320x170);
+LV_IMG_DECLARE(_word_BG_320x170);
 LV_IMG_DECLARE(_word_rectangle_alpha_129x21);
 LV_IMG_DECLARE(_word_rectangle_alpha_264x94);
 LV_IMG_DECLARE(_book_alpha_39x46);
 LV_IMG_DECLARE(_word_rectangle_alpha_129x21);
 
-LV_IMG_DECLARE(_screen_wordcard_bg_320x170);
+LV_IMG_DECLARE(_word_BG1_320x170);
 LV_IMG_DECLARE(_word_rectangle_alpha_264x136);
 
 LV_IMG_DECLARE(_leftarrow_20x20);
@@ -440,7 +413,7 @@ LV_IMG_DECLARE(_home_15x15);
 
 LV_IMG_DECLARE(_home_15x15);
 
-LV_IMG_DECLARE(_screen_reviewcard_bg_320x170);
+LV_IMG_DECLARE(_word_BG2_320x170);
 LV_IMG_DECLARE(_word_rectangle_alpha_264x136);
 
 LV_IMG_DECLARE(_leftarrow_20x20);
@@ -525,27 +498,24 @@ LV_IMG_DECLARE(_gemini_alpha_15x15);
 LV_IMG_DECLARE(_ai_sum_bg_alpha_305x172);
 LV_IMG_DECLARE(_gemini_alpha_15x15);
 
-LV_FONT_DECLARE(lv_font_ArchitectsDaughter_10)
-LV_FONT_DECLARE(lv_font_Alatsi_Regular_12)
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
-LV_FONT_DECLARE(lv_font_Alatsi_Regular_14)
+LV_FONT_DECLARE(lv_font_AlexBrush_Regular_16)
+LV_FONT_DECLARE(lv_font_Alatsi_Regular_12)
 LV_FONT_DECLARE(lv_font_Acme_Regular_16)
-LV_FONT_DECLARE(lv_font_Alatsi_Regular_11)
 LV_FONT_DECLARE(lv_font_arial_11)
 LV_FONT_DECLARE(lv_font_montserratMedium_20)
-LV_FONT_DECLARE(lv_font_arial_12)
 LV_FONT_DECLARE(lv_font_Acme_Regular_12)
 LV_FONT_DECLARE(lv_font_Acme_Regular_14)
 LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_16)
-LV_FONT_DECLARE(lv_font_Alatsi_Regular_48)
-LV_FONT_DECLARE(lv_font_Alatsi_Regular_20)
-LV_FONT_DECLARE(lv_font_Alatsi_Regular_18)
-LV_FONT_DECLARE(lv_font_Acme_Regular_20)
+LV_FONT_DECLARE(lv_font_Abel_regular_58)
+LV_FONT_DECLARE(lv_font_Abel_regular_20)
 LV_FONT_DECLARE(lv_font_Abel_regular_30)
 LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_14)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_13)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_25)
+LV_FONT_DECLARE(lv_font_Alatsi_Regular_18)
+LV_FONT_DECLARE(lv_font_Alatsi_Regular_14)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_17)
 LV_FONT_DECLARE(lv_font_Acme_Regular_22)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)

@@ -12,6 +12,7 @@
  *      INCLUDES
  *********************/
 #include <stdio.h>
+#include <string.h>
 #include "lvgl.h"
 #include "custom.h"
 #include "widgets_init.h"
@@ -92,6 +93,12 @@ bool led_green_en = 0;
 bool led_red_en = 0;
 int8_t wordbook_index = 0;
 int review_index = 0;
+//screen_ai variables
+bool ai_day_start = 0;
+bool ai_week_start = 0;
+/* AI 结果 UI 缓存，由 main.c 负责从 g_ai_* 同步进来 */
+ui_ai_result_t g_ui_daily_result  = {0};
+ui_ai_result_t g_ui_weekly_result = {0};
 /* ========== 用户可改参数 ========== */
 #define DELAY_MS         1500          // 延时多久后切屏
 /* ================================= */
@@ -251,10 +258,8 @@ void screen_todolist_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_todolist_btn_todo2);
     lv_group_add_obj(g, guider_ui.screen_todolist_btn_todo3);
     lv_group_add_obj(g, guider_ui.screen_todolist_btn_todo4);
-    lv_group_add_obj(g, guider_ui.screen_todolist_btn_delpage);
-    lv_group_add_obj(g, guider_ui.screen_todolist_btn_pageminus);
-    lv_group_add_obj(g, guider_ui.screen_todolist_btn_pageplus);
-    lv_group_add_obj(g, guider_ui.screen_todolist_btn_addpage);
+    lv_group_add_obj(g, guider_ui.screen_todolist_btn_lastpage);
+    lv_group_add_obj(g, guider_ui.screen_todolist_btn_nxtpage);
     lv_group_add_obj(g, guider_ui.screen_todolist_btn_back);
     
 }
@@ -499,6 +504,31 @@ void screen_ai_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_ai_btn_back);  
 
 }
+/* 进入 screen_ai 时显示 NVS 已存储的 AI 结果
+ * 优先显示每日结果，若无有效数据则尝试每周结果 */
+void screen_ai_load_nvs_data(bool day_or_week)
+{
+    ui_ai_result_t *r = NULL;
+    if (day_or_week == 0)
+        r = &g_ui_daily_result;
+    else if (day_or_week == 1)
+        r = &g_ui_weekly_result;
+    else
+        return;  /* NVS 中尚无数据，保持默认占位内容 */
+
+    lv_label_set_text(guider_ui.screen_ai_label_cat1, r->cat1_name);
+    lv_label_set_text(guider_ui.screen_ai_label_cat2, r->cat2_name);
+    lv_label_set_text(guider_ui.screen_ai_label_cat3, r->cat3_name);
+    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat1_num, "%d%%", r->cat1_percent);
+    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat2_num, "%d%%", r->cat2_percent);
+    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat3_num, "%d%%", r->cat3_percent);
+    lv_arc_set_value(guider_ui.screen_ai_arc_1, r->cat1_percent);
+    lv_arc_set_value(guider_ui.screen_ai_arc_2, r->cat2_percent);
+    lv_arc_set_value(guider_ui.screen_ai_arc_3, r->cat3_percent);
+    lv_label_set_text(guider_ui.screen_ai_label_sum,   r->summary);
+    lv_label_set_text(guider_ui.screen_ai_label_quote, r->quote);
+}
+
 void custom_init(lv_ui *ui)
 {
 

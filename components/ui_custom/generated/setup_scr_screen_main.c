@@ -27,7 +27,7 @@ void setup_scr_screen_main(lv_ui *ui)
     lv_obj_set_style_bg_opa(ui->screen_main, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui->screen_main, lv_color_hex(0x0e1b28), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_main, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_src(ui->screen_main, &_screen_main_bg_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_src(ui->screen_main, &_Reppo_bg1_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_opa(ui->screen_main, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_recolor_opa(ui->screen_main, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -45,45 +45,6 @@ void setup_scr_screen_main(lv_ui *ui)
     lv_obj_set_style_img_opa(ui->screen_main_img_wifi, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_main_img_wifi, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_clip_corner(ui->screen_main_img_wifi, true, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_main_img_reppo
-    ui->screen_main_img_reppo = lv_img_create(ui->screen_main);
-    lv_obj_add_flag(ui->screen_main_img_reppo, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_main_img_reppo, &_Reppo_LOGO_V4_1_alpha_25x25);
-    lv_img_set_pivot(ui->screen_main_img_reppo, 50,50);
-    lv_img_set_angle(ui->screen_main_img_reppo, 0);
-    lv_obj_set_pos(ui->screen_main_img_reppo, 3, 5);
-    lv_obj_set_size(ui->screen_main_img_reppo, 25, 25);
-
-    //Write style for screen_main_img_reppo, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_img_recolor_opa(ui->screen_main_img_reppo, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_img_recolor(ui->screen_main_img_reppo, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_img_opa(ui->screen_main_img_reppo, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_main_img_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_clip_corner(ui->screen_main_img_reppo, true, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_main_label_reppo
-    ui->screen_main_label_reppo = lv_label_create(ui->screen_main);
-    lv_label_set_text(ui->screen_main_label_reppo, "Reppo");
-    lv_label_set_long_mode(ui->screen_main_label_reppo, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_main_label_reppo, 32, 13);
-    lv_obj_set_size(ui->screen_main_label_reppo, 38, 10);
-
-    //Write style for screen_main_label_reppo, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_main_label_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_main_label_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_main_label_reppo, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_main_label_reppo, &lv_font_ArchitectsDaughter_10, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_main_label_reppo, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_main_label_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_main_label_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_main_label_reppo, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_main_label_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_main_label_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_main_label_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_main_label_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_main_label_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_main_label_reppo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_main_img_battery
     ui->screen_main_img_battery = lv_img_create(ui->screen_main);
@@ -119,10 +80,10 @@ void setup_scr_screen_main(lv_ui *ui)
     //Write codes screen_main_img_todolist
     ui->screen_main_img_todolist = lv_img_create(ui->screen_main);
     lv_obj_add_flag(ui->screen_main_img_todolist, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_main_img_todolist, &_todolist_label_v4_alpha_60x80);
+    lv_img_set_src(ui->screen_main_img_todolist, &_A_todolist_BG1_alpha_60x80);
     lv_img_set_pivot(ui->screen_main_img_todolist, 50,50);
     lv_img_set_angle(ui->screen_main_img_todolist, 0);
-    lv_obj_set_pos(ui->screen_main_img_todolist, 20, 45);
+    lv_obj_set_pos(ui->screen_main_img_todolist, 18, 45);
     lv_obj_set_size(ui->screen_main_img_todolist, 60, 80);
 
     //Write style for screen_main_img_todolist, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -134,10 +95,10 @@ void setup_scr_screen_main(lv_ui *ui)
     //Write codes screen_main_img_word
     ui->screen_main_img_word = lv_img_create(ui->screen_main);
     lv_obj_add_flag(ui->screen_main_img_word, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_main_img_word, &_word_label_v4_alpha_60x80);
+    lv_img_set_src(ui->screen_main_img_word, &_A_word_BG1_alpha_60x80);
     lv_img_set_pivot(ui->screen_main_img_word, 50,50);
     lv_img_set_angle(ui->screen_main_img_word, 0);
-    lv_obj_set_pos(ui->screen_main_img_word, 95, 45);
+    lv_obj_set_pos(ui->screen_main_img_word, 93, 45);
     lv_obj_set_size(ui->screen_main_img_word, 60, 80);
 
     //Write style for screen_main_img_word, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -149,10 +110,10 @@ void setup_scr_screen_main(lv_ui *ui)
     //Write codes screen_main_img_timer
     ui->screen_main_img_timer = lv_img_create(ui->screen_main);
     lv_obj_add_flag(ui->screen_main_img_timer, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_main_img_timer, &_timing_label_v4_alpha_60x80);
+    lv_img_set_src(ui->screen_main_img_timer, &_A_time_BG1_alpha_60x80);
     lv_img_set_pivot(ui->screen_main_img_timer, 50,50);
     lv_img_set_angle(ui->screen_main_img_timer, 0);
-    lv_obj_set_pos(ui->screen_main_img_timer, 172, 45);
+    lv_obj_set_pos(ui->screen_main_img_timer, 170, 45);
     lv_obj_set_size(ui->screen_main_img_timer, 60, 80);
 
     //Write style for screen_main_img_timer, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -164,10 +125,10 @@ void setup_scr_screen_main(lv_ui *ui)
     //Write codes screen_main_img_setting
     ui->screen_main_img_setting = lv_img_create(ui->screen_main);
     lv_obj_add_flag(ui->screen_main_img_setting, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_main_img_setting, &_setting_label_v4_alpha_60x80);
+    lv_img_set_src(ui->screen_main_img_setting, &_A_setting_BG1_alpha_60x80);
     lv_img_set_pivot(ui->screen_main_img_setting, 50,50);
     lv_img_set_angle(ui->screen_main_img_setting, 0);
-    lv_obj_set_pos(ui->screen_main_img_setting, 248, 45);
+    lv_obj_set_pos(ui->screen_main_img_setting, 246, 45);
     lv_obj_set_size(ui->screen_main_img_setting, 60, 80);
 
     //Write style for screen_main_img_setting, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -175,75 +136,6 @@ void setup_scr_screen_main(lv_ui *ui)
     lv_obj_set_style_img_opa(ui->screen_main_img_setting, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_main_img_setting, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_clip_corner(ui->screen_main_img_setting, true, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_main_label_word
-    ui->screen_main_label_word = lv_label_create(ui->screen_main);
-    lv_label_set_text(ui->screen_main_label_word, "VOCAB");
-    lv_label_set_long_mode(ui->screen_main_label_word, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_main_label_word, 97, 88);
-    lv_obj_set_size(ui->screen_main_label_word, 57, 11);
-
-    //Write style for screen_main_label_word, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_main_label_word, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_main_label_word, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_main_label_word, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_main_label_word, &lv_font_Alatsi_Regular_12, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_main_label_word, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_main_label_word, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_main_label_word, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_main_label_word, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_main_label_word, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_main_label_word, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_main_label_word, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_main_label_word, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_main_label_word, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_main_label_word, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_main_label_timer
-    ui->screen_main_label_timer = lv_label_create(ui->screen_main);
-    lv_label_set_text(ui->screen_main_label_timer, "TIMER");
-    lv_label_set_long_mode(ui->screen_main_label_timer, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_main_label_timer, 186, 88);
-    lv_obj_set_size(ui->screen_main_label_timer, 32, 12);
-
-    //Write style for screen_main_label_timer, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_main_label_timer, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_main_label_timer, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_main_label_timer, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_main_label_timer, &lv_font_Alatsi_Regular_12, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_main_label_timer, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_main_label_timer, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_main_label_timer, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_main_label_timer, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_main_label_timer, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_main_label_timer, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_main_label_timer, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_main_label_timer, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_main_label_timer, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_main_label_timer, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_main_label_setting
-    ui->screen_main_label_setting = lv_label_create(ui->screen_main);
-    lv_label_set_text(ui->screen_main_label_setting, "SETTING");
-    lv_label_set_long_mode(ui->screen_main_label_setting, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_main_label_setting, 253, 88);
-    lv_obj_set_size(ui->screen_main_label_setting, 51, 12);
-
-    //Write style for screen_main_label_setting, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_main_label_setting, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_main_label_setting, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_main_label_setting, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_main_label_setting, &lv_font_Alatsi_Regular_12, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_main_label_setting, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_main_label_setting, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_main_label_setting, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_main_label_setting, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_main_label_setting, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_main_label_setting, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_main_label_setting, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_main_label_setting, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_main_label_setting, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_main_label_setting, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_main_btn_word
     ui->screen_main_btn_word = lv_btn_create(ui->screen_main);
@@ -353,31 +245,31 @@ void setup_scr_screen_main(lv_ui *ui)
     //Write codes screen_main_img_uptext
     ui->screen_main_img_uptext = lv_img_create(ui->screen_main);
     lv_obj_add_flag(ui->screen_main_img_uptext, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_main_img_uptext, &_probg4_alpha_165x21);
+    lv_img_set_src(ui->screen_main_img_uptext, &_probg4_alpha_160x15);
     lv_img_set_pivot(ui->screen_main_img_uptext, 50,50);
     lv_img_set_angle(ui->screen_main_img_uptext, 0);
-    lv_obj_set_pos(ui->screen_main_img_uptext, 74, 8);
-    lv_obj_set_size(ui->screen_main_img_uptext, 165, 21);
+    lv_obj_set_pos(ui->screen_main_img_uptext, 74, 10);
+    lv_obj_set_size(ui->screen_main_img_uptext, 160, 15);
 
     //Write style for screen_main_img_uptext, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_main_img_uptext, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_img_opa(ui->screen_main_img_uptext, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_main_img_uptext, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_main_img_uptext, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_clip_corner(ui->screen_main_img_uptext, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_main_label_uptext
     ui->screen_main_label_uptext = lv_label_create(ui->screen_main);
-    lv_label_set_text_static(ui->screen_main_label_uptext, "Focus on the now");
+    lv_label_set_text_static(ui->screen_main_label_uptext, "Find your tempo in repose");
     lv_label_set_long_mode(ui->screen_main_label_uptext, LV_LABEL_LONG_SCROLL);
-    lv_obj_set_pos(ui->screen_main_label_uptext, 77, 10);
-    lv_obj_set_size(ui->screen_main_label_uptext, 159, 16);
+    lv_obj_set_pos(ui->screen_main_label_uptext, 77, 9);
+    lv_obj_set_size(ui->screen_main_label_uptext, 155, 20);
 
     //Write style for screen_main_label_uptext, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_main_label_uptext, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_main_label_uptext, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_main_label_uptext, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_main_label_uptext, &lv_font_Alatsi_Regular_14, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_main_label_uptext, 143, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_main_label_uptext, &lv_font_AlexBrush_Regular_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_main_label_uptext, 215, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_main_label_uptext, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_main_label_uptext, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(ui->screen_main_label_uptext, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -513,7 +405,7 @@ void setup_scr_screen_main(lv_ui *ui)
     lv_obj_set_style_img_recolor_opa(ui->screen_main_img_runpace, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_img_recolor(ui->screen_main_img_runpace, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_img_opa(ui->screen_main_img_runpace, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_main_img_runpace, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_main_img_runpace, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_clip_corner(ui->screen_main_img_runpace, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_main_label_nodone
@@ -577,29 +469,6 @@ void setup_scr_screen_main(lv_ui *ui)
     lv_obj_set_style_pad_left(ui->screen_main_label_todonum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_main_label_todonum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-    //Write codes screen_main_label_todolist
-    ui->screen_main_label_todolist = lv_label_create(ui->screen_main);
-    lv_label_set_text(ui->screen_main_label_todolist, "TO DO LIST");
-    lv_label_set_long_mode(ui->screen_main_label_todolist, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_main_label_todolist, 24, 88);
-    lv_obj_set_size(ui->screen_main_label_todolist, 53, 11);
-
-    //Write style for screen_main_label_todolist, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_main_label_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_main_label_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_main_label_todolist, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_main_label_todolist, &lv_font_Alatsi_Regular_11, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_main_label_todolist, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_main_label_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_main_label_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_main_label_todolist, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_main_label_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_main_label_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_main_label_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_main_label_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_main_label_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_main_label_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
     //Write codes screen_main_btn_todolist
     ui->screen_main_btn_todolist = lv_btn_create(ui->screen_main);
     ui->screen_main_btn_todolist_label = lv_label_create(ui->screen_main_btn_todolist);
@@ -657,6 +526,21 @@ void setup_scr_screen_main(lv_ui *ui)
     lv_obj_set_style_pad_bottom(ui->screen_main_label_battery, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(ui->screen_main_label_battery, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_main_label_battery, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_main_img_gp1
+    ui->screen_main_img_gp1 = lv_img_create(ui->screen_main);
+    lv_obj_add_flag(ui->screen_main_img_gp1, LV_OBJ_FLAG_CLICKABLE);
+    lv_img_set_src(ui->screen_main_img_gp1, &_reppo_main_gp1_alpha_75x16);
+    lv_img_set_pivot(ui->screen_main_img_gp1, 50,50);
+    lv_img_set_angle(ui->screen_main_img_gp1, 0);
+    lv_obj_set_pos(ui->screen_main_img_gp1, 5, 9);
+    lv_obj_set_size(ui->screen_main_img_gp1, 75, 16);
+
+    //Write style for screen_main_img_gp1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_img_recolor_opa(ui->screen_main_img_gp1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_img_opa(ui->screen_main_img_gp1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_main_img_gp1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(ui->screen_main_img_gp1, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //The custom code of screen_main.
 
