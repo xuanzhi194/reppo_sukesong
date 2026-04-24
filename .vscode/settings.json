@@ -5,7 +5,7 @@
   "idf.openOcdConfigs": [
     "board/esp32s3-builtin.cfg"
   ],
-  "idf.portWin": "COM3",
+  "idf.portWin": "COM10",
   "idf.toolsPathWin": "E:\\esp32idf\\Espressif",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32s3"
@@ -29,6 +29,6 @@
     "new": "c",
     "functional": "c"
   },
-  "idf.currentSetup": "/Users/sean/.espressif/v5.3.5/esp-idf",
-  "idf.port": "/dev/tty.usbserial-130"
+  "idf.espIdfPath": "E:/esp32idf/Espressif/frameworks/esp-idf-v5.3.1",
+  "idf.currentSetup": "E:/esp32idf/Espressif/frameworks/esp-idf-v5.3.1/"
 }

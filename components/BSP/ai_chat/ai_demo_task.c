@@ -114,7 +114,7 @@ bool ai_weekly_result_load(void)
 
 /*
  * 按日期范围过滤 CSV 任务行。
- * CSV 字段：任务名称,完成日期
+ * CSV 字段：任务名称,完成日期,用时分钟
  * date_from / date_to 格式 "YYYY-MM-DD"，可直接字典序比较。
  * 返回实际筛选到的任务条数（不含表头）。
  */
@@ -124,7 +124,6 @@ static int filter_csv_by_date(const char *csv_in, char *csv_out, size_t out_size
     const char *p = csv_in;
     size_t written = 0;
     int task_count = 0;
-    bool header_done = false;
 
     while (p && *p && task_count < max_tasks && written + 2 < out_size) {
         const char *line_end = strchr(p, '\n');
@@ -135,11 +134,7 @@ static int filter_csv_by_date(const char *csv_in, char *csv_out, size_t out_size
         while (line_len > 0 && (line[line_len-1] == '\r' || line[line_len-1] == '\n')) line_len--;
         line[line_len] = '\0';
 
-        if (!header_done) {
-            int n = snprintf(csv_out + written, out_size - written, "%s\n", line);
-            if (n > 0) written += (size_t)n;
-            header_done = true;
-        } else if (line_len > 0) {
+        if (line_len > 0) {
             /* 提取第2列日期（格式 YYYY-MM-DD） */
             const char *f1 = strchr(line, ',');
             if (f1) {
@@ -177,7 +172,7 @@ static void ai_demo_task(void *param)
     char *response = NULL;
 
     if (!api_key || api_key[0] == '\0') {
-        printf("[AI Demo] 未配置 API Key，请检查 ai_chat_secrets.h\r\n");
+        printf("[AI Demo] 未配置 API Key,请检查 ai_chat_secrets.h\r\n");
         free(args);
         vTaskDelete(NULL);
         return;
@@ -280,7 +275,7 @@ static void ai_demo_task(void *param)
         snprintf(date_from_s, sizeof(date_from_s), "%04d-%02d-%02d",
                  week_tm.tm_year + 1900, week_tm.tm_mon + 1, week_tm.tm_mday);
     }
-    printf("[AI Demo] %s模式，日期范围 %s ~ %s，上限 %d 条\r\n",
+    printf("[AI Demo] %s模式,日期范围 %s ~ %s,上限 %d 条\r\n",
            stype == AI_SUMMARY_DAILY ? "每日" : "每周", date_from_s, date_to_s, max_tasks);
 
     char *filtered = (char *)heap_caps_malloc(file_content_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -308,13 +303,13 @@ static void ai_demo_task(void *param)
     const char *period_str = (stype == AI_SUMMARY_DAILY) ? "今日" : "近一周";
     snprintf(prompt, prompt_size,
              "以下是用户%s完成的 %d 条 todolist 任务"
-             "（CSV 格式，字段：任务名称、完成日期):\n\n"
+             "(CSV 格式，字段：任务名称、完成日期、用时分钟):\n\n"
              "%s\n\n"
              "请将任务分成3类,严格只输出下面6行(不输出任何额外文字/解释/Markdown):\n"
              "CAT1|<分类名称>|<占比整数%%>\n"
              "CAT2|<分类名称>|<占比整数%%>\n"
              "CAT3|<分类名称>|<占比整数%%>\n"
-             "SUMMARY|<一句话%s总结,哲学激励风格,附下一步建议,40中文字左右,严格要求summary里面的标点符号只能出现半角逗号或句号>\n"
+             "SUMMARY|<一句话%s总结,哲学激励风格,可结合用时数据给出建议,40中文字左右,严格要求summary里面的标点符号只能出现半角逗号或句号>\n"
              "QUOTE|<英文励志名言,富有哲理,与众不同,不超过10个英文单词>\n"
              "END\n"
              "规则：占比按任务数量计算,三个整数之和必须等于100;分类名称不超过4个汉字;只返回这6行;严格要求summary里面的标点符号只能出现半角逗号或句号;输出summary的字数在45中文字左右",
@@ -364,5 +359,13 @@ void start_ai_summary(ai_summary_type_t type, bool *ntp_initialized, const char 
     args->api_key         = api_key;
     args->summary_type    = type;
     const char *task_name = (type == AI_SUMMARY_DAILY) ? "ai_daily" : "ai_weekly";
-    xTaskCreatePinnedToCore(ai_demo_task, task_name, 12288, args, 5, NULL, 1);
+    printf("[AI Demo] 创建任务前 内部堆剩余: %d B\r\n", (int)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+    /* 注意：ai_demo_task 会调用 nvs_set_blob（flash 操作），
+     * 执行 flash 写入时 cache 会被禁用，此时任务栈必须在内部 RAM。
+     * 大块 buffer 已在任务内用 heap_caps_malloc(SPIRAM) 分配，
+     * 栈本身只需 5120 字节即可。 */
+    if (xTaskCreatePinnedToCore(ai_demo_task, task_name, 5120, args, 5, NULL, 1) != pdPASS) {
+        printf("[AI Demo] 任务创建失败：内部堆不足\r\n");
+        free(args);
+    }
 }

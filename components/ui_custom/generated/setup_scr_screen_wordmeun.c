@@ -28,7 +28,7 @@ void setup_scr_screen_wordmeun(lv_ui *ui)
     lv_obj_set_style_bg_color(ui->screen_wordmeun, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_wordmeun, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_src(ui->screen_wordmeun, &_word_BG_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_opa(ui->screen_wordmeun, 128, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_opa(ui->screen_wordmeun, 213, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_recolor_opa(ui->screen_wordmeun, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_wordmeun_img_learn

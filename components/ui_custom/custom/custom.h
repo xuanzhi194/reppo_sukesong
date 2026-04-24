@@ -15,6 +15,22 @@ extern "C" {
 
 #include "gui_guider.h"
 
+/* todolist 类型定义（内联，防止与 todo_storage.h 重复定义）*/
+#ifndef TODO_MAX_ITEMS
+#define TODO_MAX_ITEMS  100
+#define TODO_NAME_LEN   128
+typedef struct {
+    char     name[TODO_NAME_LEN];
+    uint16_t duration_min;
+    uint8_t  done;
+    char     finish_date[16];
+} todo_item_t;
+typedef struct {
+    uint8_t     count;
+    todo_item_t items[TODO_MAX_ITEMS];
+} todo_list_t;
+#endif
+
 /* AI 结果 UI 缓存结构体（与 ai_result_t 字段一致，无需引用 ai_demo_task.h） */
 typedef struct {
     char cat1_name[32];
@@ -43,13 +59,19 @@ typedef struct {
 } wordbook_info_t;
 
 // variables indicate
-extern int8_t val;
-extern int8_t val_cur;
-extern int8_t done_array[9][4];
+//todolist
+extern todo_list_t ui_todo_list;  // 在 main 中由 g_todo_list 赋值
+extern bool   todosel_back;
+extern int8_t todo_index;
+extern int8_t page_num;
+extern int8_t page_cur;
+extern bool   done_array[25][4];
 extern bool todo_back_label;
+extern bool todo_archive_label;
 extern bool main_load_label;
 extern int8_t done_sum;
 extern int8_t todo_sum;
+//timer
 extern int16_t timer_all_num ;
 extern uint32_t timer_all_seconds;
 extern lv_timer_t *pomodoro_timer;
@@ -84,7 +106,25 @@ extern bool  focus_en;
 extern bool countdown_timeout_pending;
 extern bool ai_day_start;
 extern bool ai_week_start;
+/* done_list 结构体，用于 screen_donelist 展示 task_done.csv */
+#define DONE_MAX_ITEMS  100
+typedef struct {
+    char name[128];
+    char date[16];
+    uint16_t duration_min;
+} done_item_t;
+typedef struct {
+    int         count;
+    done_item_t items[DONE_MAX_ITEMS];
+} done_list_t;
+extern done_list_t ui_done_list;
+extern bool donelist_load_label;
+extern uint8_t donelist_page_cur;
+extern uint8_t donelist_page_num;
+extern int     done_total_tasks;
 // func indicate
+int  donelist_load_from_csv(void);
+void donelist_render_page(int page_cur);
 void custom_init(lv_ui *ui);
 void screen_reppo_custom_init();
 void countdown_start(int16_t minutes);
@@ -106,6 +146,7 @@ void screen_setting_buttion_add();
 void screen_wificfg_buttion_add();
 void screen_todosel_buttion_add();
 void screen_ai_buttion_add();
+void screen_donelist_buttion_add();
 void my_kb_event_cb(lv_event_t * e);
 #ifdef __cplusplus
 }

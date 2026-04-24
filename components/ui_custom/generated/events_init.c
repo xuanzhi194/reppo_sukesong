@@ -48,18 +48,7 @@ static void screen_main_event_handler (lv_event_t *e)
     {
         //buttion add
         screen_main_buttion_add();
-        //refresh done and todo num
-        uint8_t total_todo_num = val * 4;
-        done_sum = 0;
-        todo_sum = 0;
-        //calculate done tasks num
-        for(int i = 0 ; i < val ; i++) {
-            for(int j = 0; j < 4 ; j++) {
-                done_sum += done_array[i][j];
-            }
-        }
-        //calculate todo tasks num
-        todo_sum = total_todo_num - done_sum;
+        //show done sum and todo sum
         lv_label_set_text_fmt(guider_ui.screen_main_label_donenum, "%d", done_sum);
         lv_label_set_text_fmt(guider_ui.screen_main_label_todonum, "%d", todo_sum);
 
@@ -118,22 +107,6 @@ static void screen_main_btn_setting_event_handler (lv_event_t *e)
     }
 }
 
-static void screen_main_btn_plane_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_animation(guider_ui.screen_main_img_plane, 1000, 0, lv_obj_get_x(guider_ui.screen_main_img_plane), 100, &lv_anim_path_linear, 1, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
-        ui_animation(guider_ui.screen_main_img_plane, 1000, 0, lv_obj_get_y(guider_ui.screen_main_img_plane), 125, &lv_anim_path_linear, 1, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        ui_animation(guider_ui.screen_main_img_plane, 1000, 0, lv_img_get_zoom(guider_ui.screen_main_img_plane), 400, &lv_anim_path_linear, 1, 0, 100, 0, (lv_anim_exec_xcb_t)lv_img_set_zoom, NULL, NULL, NULL);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
 static void screen_main_btn_todolist_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -150,14 +123,28 @@ static void screen_main_btn_todolist_event_handler (lv_event_t *e)
     }
 }
 
+static void screen_main_btn_realtime_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_timing, guider_ui.screen_timing_del, &guider_ui.screen_main_del, setup_scr_screen_timing, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void events_init_screen_main (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_main, screen_main_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_word, screen_main_btn_word_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_timer, screen_main_btn_timer_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_setting, screen_main_btn_setting_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_main_btn_plane, screen_main_btn_plane_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_todolist, screen_main_btn_todolist_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_main_btn_realtime, screen_main_btn_realtime_event_handler, LV_EVENT_ALL, ui);
 }
 
 static void screen_todolist_event_handler (lv_event_t *e)
@@ -169,49 +156,96 @@ static void screen_todolist_event_handler (lv_event_t *e)
         //screen_buttion add
         screen_todolist_buttion_add();
         //refresh done and todo num
-        uint8_t total_todo_num = val * 4;
-        done_sum = 0;
-        todo_sum = 0;
-        //calculate done tasks num
-        for(int i = 0 ; i < val ; i++) {
-            for(int j = 0; j < 4 ; j++) {
-                done_sum += done_array[i][j];
-            }
+        int total = done_sum + todo_sum;
+        page_num = total / 4;
+        if ((total % 4 != 0) || (total == 0)) {
+            page_num++;
         }
-        //calculate todo tasks num
-        todo_sum = total_todo_num - done_sum;
+
+        //if this page task < 4 , the empty one btn can not be clicked
+        if(total < page_cur * 4) {
+            int remain_num = 4 - (total % 4);
+            if(remain_num == 1) {
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+            } else if(remain_num == 2) {
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+            } else if(remain_num == 3) {
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                lv_obj_add_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+            } else {
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+            }
+        } else {
+            lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+            lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+            lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+            lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+        }
+        //focus state
+        if(todosel_back) {
+            todosel_back = 0;
+            if(todo_index == 0) {
+                lv_group_focus_obj(guider_ui.screen_todolist_btn_todo1);
+            } else if(todo_index == 1) {
+                lv_group_focus_obj(guider_ui.screen_todolist_btn_todo2);
+            } else if(todo_index == 2) {
+                lv_group_focus_obj(guider_ui.screen_todolist_btn_todo3);
+            } else if(todo_index == 3) {
+                lv_group_focus_obj(guider_ui.screen_todolist_btn_todo4);
+            }
+        } else {
+            page_cur = 1;
+        }
+        //show for the first time when loading todolist ui
         lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
         lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexall, "%d", val);
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexcur, "%d", val_cur);
+        lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexall, "%d", page_num);
+        lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexcur, "%d", page_cur);
 
-        if(done_array[val_cur-1][0] == 1) {
+        //here code to load 1-4 task info into label_todo1 - label_todo4
+        lv_label_set_text(guider_ui.screen_todolist_label_todo1,ui_todo_list.items[page_cur*4-4].name);
+        lv_label_set_text(guider_ui.screen_todolist_label_todo2,ui_todo_list.items[page_cur*4-3].name);
+        lv_label_set_text(guider_ui.screen_todolist_label_todo3,ui_todo_list.items[page_cur*4-2].name);
+        lv_label_set_text(guider_ui.screen_todolist_label_todo4,ui_todo_list.items[page_cur*4-1].name);
+        //show tasks for their init state color
+        if(ui_todo_list.items[(page_cur-1)*4 + 0].done == 1) {
             lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][0] = 1;
+            ui_todo_list.items[(page_cur-1)*4 + 0].done = 1;
         } else {
             lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][0] = 0;
+            ui_todo_list.items[(page_cur-1)*4 + 0].done = 0;
         }
-        if(done_array[val_cur-1][1] == 1) {
+        if(ui_todo_list.items[(page_cur-1)*4 + 1].done == 1) {
             lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][1] = 1;
+            ui_todo_list.items[(page_cur-1)*4 + 1].done = 1;
         } else {
             lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][1] = 0;
+            ui_todo_list.items[(page_cur-1)*4 + 1].done = 0;
         }
-        if(done_array[val_cur-1][2] == 1) {
+        if(ui_todo_list.items[(page_cur-1)*4 + 2].done == 1) {
             lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][2] = 1;
+            ui_todo_list.items[(page_cur-1)*4 + 2].done = 1;
         } else {
             lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][2] = 0;
+            ui_todo_list.items[(page_cur-1)*4 + 2].done = 0;
         }
-        if(done_array[val_cur-1][3] == 1) {
+        if(ui_todo_list.items[(page_cur-1)*4 + 3].done == 1) {
             lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][3] = 1;
+            ui_todo_list.items[(page_cur-1)*4 + 3].done = 1;
         } else {
             lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][3] = 0;
+            ui_todo_list.items[(page_cur-1)*4 + 3].done = 0;
         }
         break;
     }
@@ -243,31 +277,7 @@ static void screen_todolist_btn_todo1_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        uint8_t total_todo_num = val * 4;
-        done_sum = 0;
-        todo_sum = 0;
-        if(done_array[val_cur-1][0] == 0) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][0] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][0] = 0;
-        }
-        //calculate done tasks num
-        for(int i = 0 ; i < val ; i++) {
-            for(int j = 0; j < 4 ; j++) {
-                done_sum += done_array[i][j];
-            }
-        }
-        //calculate todo tasks num
-        todo_sum = total_todo_num - done_sum;
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
-        //copy label to todosel menu
-        const char * text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo1);
-        // 3. 安全地拷贝到你的变量中 (防止溢出)
-        strncpy(current_task_name, text_ptr, sizeof(current_task_name) - 1);
-        current_task_name[sizeof(current_task_name) - 1] = '\0'; // 确保字符串以 \0 结尾
+        todo_index = 0;
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         break;
     }
@@ -296,31 +306,7 @@ static void screen_todolist_btn_todo2_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        uint8_t total_todo_num = val * 4;
-        if(done_array[val_cur-1][1] == 0) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][1] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][1] = 0;
-        }
-        done_sum = 0;
-        todo_sum = 0;
-        //calculate done tasks num
-        for(int i = 0 ; i < val ; i++) {
-            for(int j = 0; j < 4 ; j++) {
-                done_sum += done_array[i][j];
-            }
-        }
-        //calculate todo tasks num
-        todo_sum = total_todo_num - done_sum;
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
-        //copy label to todosel menu
-        const char * text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo2);
-        // 3. 安全地拷贝到你的变量中 (防止溢出)
-        strncpy(current_task_name, text_ptr, sizeof(current_task_name) - 1);
-        current_task_name[sizeof(current_task_name) - 1] = '\0'; // 确保字符串以 \0 结尾
+        todo_index = 1;
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         break;
     }
@@ -349,31 +335,7 @@ static void screen_todolist_btn_todo3_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        uint8_t total_todo_num = val * 4;
-        if(done_array[val_cur-1][2] == 0) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][2] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][2] = 0;
-        }
-        done_sum = 0;
-        todo_sum = 0;
-        //calculate done tasks num
-        for(int i = 0 ; i < val ; i++) {
-            for(int j = 0; j < 4 ; j++) {
-                done_sum += done_array[i][j];
-            }
-        }
-        //calculate todo tasks num
-        todo_sum = total_todo_num - done_sum;
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
-        //copy label to todosel menu
-        const char * text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo3);
-        // 3. 安全地拷贝到你的变量中 (防止溢出)
-        strncpy(current_task_name, text_ptr, sizeof(current_task_name) - 1);
-        current_task_name[sizeof(current_task_name) - 1] = '\0'; // 确保字符串以 \0 结尾
+        todo_index = 2;
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         break;
     }
@@ -402,31 +364,7 @@ static void screen_todolist_btn_todo4_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        uint8_t total_todo_num = val * 4;
-        if(done_array[val_cur-1][3] == 0) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][3] = 1;
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
-            done_array[val_cur-1][3] = 0;
-        }
-        done_sum = 0;
-        todo_sum = 0;
-        //calculate done tasks num
-        for(int i = 0 ; i < val ; i++) {
-            for(int j = 0; j < 4 ; j++) {
-                done_sum += done_array[i][j];
-            }
-        }
-        //calculate todo tasks num
-        todo_sum = total_todo_num - done_sum;
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
-        //copy label to todosel menu
-        const char * text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo4);
-        // 3. 安全地拷贝到你的变量中 (防止溢出)
-        strncpy(current_task_name, text_ptr, sizeof(current_task_name) - 1);
-        current_task_name[sizeof(current_task_name) - 1] = '\0'; // 确保字符串以 \0 结尾
+        todo_index = 3;
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         break;
     }
@@ -454,7 +392,87 @@ static void screen_todolist_btn_lastpage_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
+        //refresh done and todo num
+        if(page_cur > 1) {
+            page_cur -= 1;
+            int total = done_sum + todo_sum;
+            page_num = total / 4;
+            if ((total % 4 != 0) || (total == 0)) {
+                page_num++;
+            }
 
+            //if this page task < 4 , the empty one btn can not be clicked
+            if(total < page_cur * 4) {
+                int remain_num = 4 - (total % 4);
+                if(remain_num == 1) {
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                } else if(remain_num == 2) {
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                } else if(remain_num == 3) {
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                } else {
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                }
+            } else {
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+            }
+            //show for the first time when loading todolist ui
+            lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
+            lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
+            lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexall, "%d", page_num);
+            lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexcur, "%d", page_cur);
+
+            //here code to load 1-4 task info into label_todo1 - label_todo4
+            lv_label_set_text(guider_ui.screen_todolist_label_todo1,ui_todo_list.items[page_cur*4-4].name);
+            lv_label_set_text(guider_ui.screen_todolist_label_todo2,ui_todo_list.items[page_cur*4-3].name);
+            lv_label_set_text(guider_ui.screen_todolist_label_todo3,ui_todo_list.items[page_cur*4-2].name);
+            lv_label_set_text(guider_ui.screen_todolist_label_todo4,ui_todo_list.items[page_cur*4-1].name);
+
+            //show tasks for their init state color
+            if(ui_todo_list.items[(page_cur-1)*4 + 0].done == 1) {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 0].done = 1;
+            } else {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 0].done = 0;
+            }
+            if(ui_todo_list.items[(page_cur-1)*4 + 1].done == 1) {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 1].done = 1;
+            } else {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 1].done = 0;
+            }
+            if(ui_todo_list.items[(page_cur-1)*4 + 2].done == 1) {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 2].done = 1;
+            } else {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 2].done = 0;
+            }
+            if(ui_todo_list.items[(page_cur-1)*4 + 3].done == 1) {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 3].done = 1;
+            } else {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 3].done = 0;
+            }
+        }
         break;
     }
     default:
@@ -468,7 +486,87 @@ static void screen_todolist_btn_nxtpage_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
+        //refresh done and todo num
+        if(page_cur <  page_num && page_cur < 25) {
+            page_cur += 1;
+            int total = done_sum + todo_sum;
+            page_num = total / 4;
+            if ((total % 4 != 0) || (total == 0)) {
+                page_num++;
+            }
 
+            //if this page task < 4 , the empty one btn can not be clicked
+            if(total < page_cur * 4) {
+                int remain_num = 4 - (total % 4);
+                if(remain_num == 1) {
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                } else if(remain_num == 2) {
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                } else if(remain_num == 3) {
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                } else {
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                }
+            } else {
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+            }
+            //show for the first time when loading todolist ui
+            lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
+            lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
+            lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexall, "%d", page_num);
+            lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexcur, "%d", page_cur);
+
+            //here code to load 1-4 task info into label_todo1 - label_todo4
+            lv_label_set_text(guider_ui.screen_todolist_label_todo1,ui_todo_list.items[page_cur*4-4].name);
+            lv_label_set_text(guider_ui.screen_todolist_label_todo2,ui_todo_list.items[page_cur*4-3].name);
+            lv_label_set_text(guider_ui.screen_todolist_label_todo3,ui_todo_list.items[page_cur*4-2].name);
+            lv_label_set_text(guider_ui.screen_todolist_label_todo4,ui_todo_list.items[page_cur*4-1].name);
+
+            //show tasks for their init state color
+            if(ui_todo_list.items[(page_cur-1)*4 + 0].done == 1) {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 0].done = 1;
+            } else {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 0].done = 0;
+            }
+            if(ui_todo_list.items[(page_cur-1)*4 + 1].done == 1) {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 1].done = 1;
+            } else {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 1].done = 0;
+            }
+            if(ui_todo_list.items[(page_cur-1)*4 + 2].done == 1) {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 2].done = 1;
+            } else {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 2].done = 0;
+            }
+            if(ui_todo_list.items[(page_cur-1)*4 + 3].done == 1) {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 3].done = 1;
+            } else {
+                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                ui_todo_list.items[(page_cur-1)*4 + 3].done = 0;
+            }
+        }
         break;
     }
     default:
@@ -506,7 +604,7 @@ static void screen_timing_event_handler (lv_event_t *e)
     }
 }
 
-static void screen_timing_btn_pomodoro_event_handler (lv_event_t *e)
+static void screen_timing_btn_main_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     switch (code) {
@@ -524,29 +622,10 @@ static void screen_timing_btn_pomodoro_event_handler (lv_event_t *e)
     }
 }
 
-static void screen_timing_btn_back_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_pomodoro, guider_ui.screen_pomodoro_del, &guider_ui.screen_timing_del, setup_scr_screen_pomodoro, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        task_real_time_en = 0;
-        timing_back_en = 1;
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
 void events_init_screen_timing (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_timing, screen_timing_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_timing_btn_pomodoro, screen_timing_btn_pomodoro_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_timing_btn_back, screen_timing_btn_back_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_timing_btn_main, screen_timing_btn_main_event_handler, LV_EVENT_ALL, ui);
 }
 
 static void screen_pomodoro_event_handler (lv_event_t *e)
@@ -573,6 +652,7 @@ static void screen_pomodoro_event_handler (lv_event_t *e)
             if(guider_ui.screen_pomodoro_label_pomodoro != NULL) {
                 lv_label_set_text(guider_ui.screen_pomodoro_label_pomodoro, current_task_name);
             }
+            focus_en = 0;
         }
         break;
     }
@@ -631,37 +711,6 @@ static void screen_pomodoro_btn_back_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_pomodoro_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        if(pomodoro_timer != NULL) {
-            lv_timer_del(pomodoro_timer);
-            pomodoro_timer = NULL;
-        }
-        pomodoro_countdown = 1;
-        pomodoro_stopwatch = 0;
-        timer_all_num = 25; //minutes
-        timer_all_seconds = 0;
-        pomodoro_timer = NULL;
-        pomodoro_stopwatch = 0;
-        countdown_start_label = 0;
-        countdown_process_label = 0;
-        stopwatch_start_label = 0;
-        stopwatch_process_label = 0;
-
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_pomodoro_btn_home_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_timing, guider_ui.screen_timing_del, &guider_ui.screen_pomodoro_del, setup_scr_screen_timing, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
         if(pomodoro_timer != NULL) {
             lv_timer_del(pomodoro_timer);
             pomodoro_timer = NULL;
@@ -842,7 +891,6 @@ void events_init_screen_pomodoro (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_stopwatch, screen_pomodoro_btn_stopwatch_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_countdown, screen_pomodoro_btn_countdown_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_back, screen_pomodoro_btn_back_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_pomodoro_btn_home, screen_pomodoro_btn_home_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_start, screen_pomodoro_btn_start_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_reset, screen_pomodoro_btn_reset_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_addnum, screen_pomodoro_btn_addnum_event_handler, LV_EVENT_ALL, ui);
@@ -1540,6 +1588,11 @@ static void screen_setting_btn_todo_event_handler (lv_event_t *e)
         lv_obj_set_y(guider_ui.screen_setting_label_settings, 8);
         break;
     }
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_donelist, guider_ui.screen_donelist_del, &guider_ui.screen_setting_del, setup_scr_screen_donelist, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
     default:
         break;
     }
@@ -1943,9 +1996,20 @@ static void screen_todosel_event_handler (lv_event_t *e)
     {
         //buttion add
         screen_todosel_buttion_add();
-        //set info to label_task
-        if(guider_ui.screen_todosel_label_task != NULL) {
-            lv_label_set_text(guider_ui.screen_todosel_label_task, current_task_name);
+
+        const char *text_ptr = NULL;
+        if(todo_index == 0) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo1);
+        } else if(todo_index == 1) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo2);
+        } else if(todo_index == 2) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo3);
+        } else if(todo_index == 3) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo4);
+        }
+
+        if(guider_ui.screen_todosel_label_task != NULL && text_ptr != NULL) {
+            lv_label_set_text(guider_ui.screen_todosel_label_task, text_ptr);
         }
         break;
     }
@@ -1961,6 +2025,23 @@ static void screen_todosel_btn_complete_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todosel_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, true, true);
+        //task done or not label change
+        if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
+            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+            ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 1;
+            done_sum += 1; //add 1
+            todo_sum -= 1;
+        } else {
+            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+            ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 0;
+            done_sum -= 1; //delete 1
+            todo_sum += 1;
+        }
+        //show done sum and todo sum
+        lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
+        lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
+        //todosel_back label
+        todosel_back = 1;
         break;
     }
     default:
@@ -1975,7 +2056,23 @@ static void screen_todosel_btn_focus_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_pomodoro, guider_ui.screen_pomodoro_del, &guider_ui.screen_todosel_del, setup_scr_screen_pomodoro, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, true, true);
+        //copy label to todosel menu
+        const char *text_ptr = NULL;
+        if(todo_index == 0) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo1);
+        } else if(todo_index == 1) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo2);
+        } else if(todo_index == 2) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo3);
+        } else if(todo_index == 3) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo4);
+        }
+        // copy into current_task_name
+        strncpy(current_task_name, text_ptr, sizeof(current_task_name) - 1);
+        current_task_name[sizeof(current_task_name) - 1] = '\0'; // make sure string \0 ending
+        todo_back_label = 1;
         focus_en = 1;
+        lv_obj_clear_flag(guider_ui.screen_todolist, LV_OBJ_FLAG_CLICKABLE);
         break;
     }
     default:
@@ -1990,6 +2087,7 @@ static void screen_todosel_btn_cancel_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todosel_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, true, true);
+        todosel_back = 1;
         break;
     }
     default:
@@ -2073,6 +2171,268 @@ void events_init_screen_ai (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_ai_btn_day, screen_ai_btn_day_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_ai_btn_week, screen_ai_btn_week_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_ai_btn_back, screen_ai_btn_back_event_handler, LV_EVENT_ALL, ui);
+}
+
+static void screen_donelist_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_SCREEN_LOAD_START:
+    {
+        //screen_buttion add
+        screen_donelist_buttion_add();
+
+        donelist_load_from_csv();
+        done_total_tasks = ui_done_list.count;
+        donelist_page_cur = 1;
+        donelist_page_num = done_total_tasks / 4;
+        if ((done_total_tasks % 4 != 0) || (done_total_tasks == 0)) {
+            donelist_page_num += 1;
+        }
+
+        //if this page task < 4 , the empty one btn can not be clicked
+        if(done_total_tasks < donelist_page_cur * 4) {
+            int remain_num = 4 - (done_total_tasks % 4);
+            if(remain_num == 1) {
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            } else if(remain_num == 2) {
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            } else if(remain_num == 3) {
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            } else if(done_total_tasks == 0) {
+                lv_obj_add_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            } else {
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            }
+        } else {
+            lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+        }
+        //show for the first time when loading todolist ui
+        lv_label_set_text_fmt(guider_ui.screen_donelist_label_donenum, "%d", done_total_tasks);
+        lv_label_set_text_fmt(guider_ui.screen_donelist_label_nosavenum, "%d", done_sum);
+        lv_label_set_text_fmt(guider_ui.screen_donelist_label_page, "%d/%d", donelist_page_cur,donelist_page_num);
+        donelist_render_page(donelist_page_cur);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_donelist_btn_save_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        todo_archive_label = 1;
+        donelist_load_label = 1;
+        //the task_done.csv will change
+        //reload screen_donelist ui info
+        //pagecur start to 1
+        donelist_page_cur = 1;
+        done_total_tasks += done_sum;
+        donelist_page_num = done_total_tasks / 4;
+        if ((done_total_tasks % 4 != 0) || (done_total_tasks == 0)) {
+            donelist_page_num += 1;
+        }
+
+        //if this page task < 4 , the empty one btn can not be clicked
+        if(done_total_tasks < donelist_page_cur * 4) {
+            int remain_num = 4 - (done_total_tasks % 4);
+            if(remain_num == 1) {
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            } else if(remain_num == 2) {
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            } else if(remain_num == 3) {
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            } else if(done_total_tasks == 0) {
+                lv_obj_add_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            } else {
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            }
+        } else {
+            lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+        }
+
+        //show for the first time when loading todolist ui
+        lv_label_set_text_fmt(guider_ui.screen_donelist_label_donenum, "%d", done_total_tasks);
+        lv_label_set_text_fmt(guider_ui.screen_donelist_label_nosavenum, "%d", done_sum);
+        lv_label_set_text_fmt(guider_ui.screen_donelist_label_page, "%d/%d", donelist_page_cur,donelist_page_num);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_donelist_btn_nxtpage_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        if(donelist_page_cur < donelist_page_num) {
+            donelist_page_cur += 1;
+
+            lv_label_set_text_fmt(guider_ui.screen_donelist_label_page,"%d/%d",donelist_page_cur,donelist_page_num);
+            //if this page task < 4 , the empty one btn can not be clicked
+            if(done_total_tasks < donelist_page_cur * 4) {
+                int remain_num = 4 - (done_total_tasks % 4);
+                if(remain_num == 1) {
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+                } else if(remain_num == 2) {
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+                } else if(remain_num == 3) {
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+                } else if(done_total_tasks == 0) {
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+                } else {
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+                }
+            } else {
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            }
+
+            donelist_render_page(donelist_page_cur);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_donelist_btn_lastpage_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        if(donelist_page_cur > 1) {
+            donelist_page_cur -= 1;
+            lv_label_set_text_fmt(guider_ui.screen_donelist_label_page,"%d/%d",donelist_page_cur,donelist_page_num);
+            //if this page task < 4 , the empty one btn can not be clicked
+            if(done_total_tasks < donelist_page_cur * 4) {
+                int remain_num = 4 - (done_total_tasks % 4);
+                if(remain_num == 1) {
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+                } else if(remain_num == 2) {
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+                } else if(remain_num == 3) {
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+                } else if(done_total_tasks == 0) {
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_add_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+                } else {
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+                }
+            } else {
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_1, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_2, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_3, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(guider_ui.screen_donelist_line_4, LV_OBJ_FLAG_HIDDEN);
+            }
+
+
+            donelist_render_page(donelist_page_cur);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_donelist_btn_back_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_setting, guider_ui.screen_setting_del, &guider_ui.screen_donelist_del, setup_scr_screen_setting, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void events_init_screen_donelist (lv_ui *ui)
+{
+    lv_obj_add_event_cb(ui->screen_donelist, screen_donelist_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_donelist_btn_save, screen_donelist_btn_save_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_donelist_btn_nxtpage, screen_donelist_btn_nxtpage_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_donelist_btn_lastpage, screen_donelist_btn_lastpage_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_donelist_btn_back, screen_donelist_btn_back_event_handler, LV_EVENT_ALL, ui);
 }
 
 

@@ -1,4 +1,5 @@
 build/
+.vscode/
 # sdkconfig
 # sdkconfig.old
 # components/BSP/ai_chat/ai_chat_secrets.h

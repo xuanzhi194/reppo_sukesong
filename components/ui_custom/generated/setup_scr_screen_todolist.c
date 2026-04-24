@@ -25,7 +25,7 @@ void setup_scr_screen_todolist(lv_ui *ui)
 
     //Write style for screen_todolist, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_bg_opa(ui->screen_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_src(ui->screen_todolist, &_screen_todolist_bg_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_src(ui->screen_todolist, &_A_todo_bg_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_opa(ui->screen_todolist, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_recolor_opa(ui->screen_todolist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -214,7 +214,7 @@ void setup_scr_screen_todolist(lv_ui *ui)
     ui->screen_todolist_label_indexcut = lv_label_create(ui->screen_todolist);
     lv_label_set_text(ui->screen_todolist_label_indexcut, "/");
     lv_label_set_long_mode(ui->screen_todolist_label_indexcut, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_todolist_label_indexcut, 152, 150);
+    lv_obj_set_pos(ui->screen_todolist_label_indexcut, 152, 146);
     lv_obj_set_size(ui->screen_todolist_label_indexcut, 17, 14);
 
     //Write style for screen_todolist_label_indexcut, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -237,7 +237,7 @@ void setup_scr_screen_todolist(lv_ui *ui)
     ui->screen_todolist_label_indexcur = lv_label_create(ui->screen_todolist);
     lv_label_set_text(ui->screen_todolist_label_indexcur, "1");
     lv_label_set_long_mode(ui->screen_todolist_label_indexcur, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_todolist_label_indexcur, 133, 150);
+    lv_obj_set_pos(ui->screen_todolist_label_indexcur, 138, 146);
     lv_obj_set_size(ui->screen_todolist_label_indexcur, 20, 15);
 
     //Write style for screen_todolist_label_indexcur, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -260,7 +260,7 @@ void setup_scr_screen_todolist(lv_ui *ui)
     ui->screen_todolist_label_indexall = lv_label_create(ui->screen_todolist);
     lv_label_set_text(ui->screen_todolist_label_indexall, "1");
     lv_label_set_long_mode(ui->screen_todolist_label_indexall, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_todolist_label_indexall, 166, 150);
+    lv_obj_set_pos(ui->screen_todolist_label_indexall, 163, 146);
     lv_obj_set_size(ui->screen_todolist_label_indexall, 20, 15);
 
     //Write style for screen_todolist_label_indexall, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -279,58 +279,12 @@ void setup_scr_screen_todolist(lv_ui *ui)
     lv_obj_set_style_pad_left(ui->screen_todolist_label_indexall, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_todolist_label_indexall, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-    //Write codes screen_todolist_label_done
-    ui->screen_todolist_label_done = lv_label_create(ui->screen_todolist);
-    lv_label_set_text(ui->screen_todolist_label_done, "Done");
-    lv_label_set_long_mode(ui->screen_todolist_label_done, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_todolist_label_done, 10, 5);
-    lv_obj_set_size(ui->screen_todolist_label_done, 40, 15);
-
-    //Write style for screen_todolist_label_done, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_todolist_label_done, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_todolist_label_done, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_todolist_label_done, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_todolist_label_done, &lv_font_Acme_Regular_12, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_todolist_label_done, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_todolist_label_done, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_todolist_label_done, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_todolist_label_done, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_todolist_label_done, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_todolist_label_done, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_todolist_label_done, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_todolist_label_done, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_todolist_label_done, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_todolist_label_done, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_todolist_label_todo
-    ui->screen_todolist_label_todo = lv_label_create(ui->screen_todolist);
-    lv_label_set_text(ui->screen_todolist_label_todo, "ToDo");
-    lv_label_set_long_mode(ui->screen_todolist_label_todo, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_todolist_label_todo, 10, 20);
-    lv_obj_set_size(ui->screen_todolist_label_todo, 40, 15);
-
-    //Write style for screen_todolist_label_todo, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_todolist_label_todo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_todolist_label_todo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_todolist_label_todo, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_todolist_label_todo, &lv_font_Acme_Regular_12, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_todolist_label_todo, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_todolist_label_todo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_todolist_label_todo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_todolist_label_todo, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_todolist_label_todo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_todolist_label_todo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_todolist_label_todo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_todolist_label_todo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_todolist_label_todo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_todolist_label_todo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
     //Write codes screen_todolist_label_donenum
     ui->screen_todolist_label_donenum = lv_label_create(ui->screen_todolist);
     lv_label_set_text(ui->screen_todolist_label_donenum, "0");
     lv_label_set_long_mode(ui->screen_todolist_label_donenum, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_todolist_label_donenum, 50, 5);
-    lv_obj_set_size(ui->screen_todolist_label_donenum, 15, 15);
+    lv_obj_set_pos(ui->screen_todolist_label_donenum, 43, 5);
+    lv_obj_set_size(ui->screen_todolist_label_donenum, 25, 15);
 
     //Write style for screen_todolist_label_donenum, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_todolist_label_donenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -352,8 +306,8 @@ void setup_scr_screen_todolist(lv_ui *ui)
     ui->screen_todolist_label_todonum = lv_label_create(ui->screen_todolist);
     lv_label_set_text(ui->screen_todolist_label_todonum, "0");
     lv_label_set_long_mode(ui->screen_todolist_label_todonum, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_todolist_label_todonum, 50, 20);
-    lv_obj_set_size(ui->screen_todolist_label_todonum, 15, 15);
+    lv_obj_set_pos(ui->screen_todolist_label_todonum, 43, 17);
+    lv_obj_set_size(ui->screen_todolist_label_todonum, 25, 15);
 
     //Write style for screen_todolist_label_todonum, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_todolist_label_todonum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -373,10 +327,10 @@ void setup_scr_screen_todolist(lv_ui *ui)
 
     //Write codes screen_todolist_label_todo1
     ui->screen_todolist_label_todo1 = lv_label_create(ui->screen_todolist);
-    lv_label_set_text(ui->screen_todolist_label_todo1, "TO DO 1: 英语学习一个小时");
+    lv_label_set_text(ui->screen_todolist_label_todo1, "晨跑5公里");
     lv_label_set_long_mode(ui->screen_todolist_label_todo1, LV_LABEL_LONG_CLIP);
     lv_obj_set_pos(ui->screen_todolist_label_todo1, 17, 50);
-    lv_obj_set_size(ui->screen_todolist_label_todo1, 135, 15);
+    lv_obj_set_size(ui->screen_todolist_label_todo1, 135, 18);
 
     //Write style for screen_todolist_label_todo1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_todolist_label_todo1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -396,10 +350,10 @@ void setup_scr_screen_todolist(lv_ui *ui)
 
     //Write codes screen_todolist_label_todo2
     ui->screen_todolist_label_todo2 = lv_label_create(ui->screen_todolist);
-    lv_label_set_text(ui->screen_todolist_label_todo2, "TO DO 2: 编程任务一个小时");
+    lv_label_set_text(ui->screen_todolist_label_todo2, "给家人打电话");
     lv_label_set_long_mode(ui->screen_todolist_label_todo2, LV_LABEL_LONG_CLIP);
     lv_obj_set_pos(ui->screen_todolist_label_todo2, 173, 50);
-    lv_obj_set_size(ui->screen_todolist_label_todo2, 135, 15);
+    lv_obj_set_size(ui->screen_todolist_label_todo2, 135, 18);
 
     //Write style for screen_todolist_label_todo2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_todolist_label_todo2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -419,10 +373,10 @@ void setup_scr_screen_todolist(lv_ui *ui)
 
     //Write codes screen_todolist_label_todo3
     ui->screen_todolist_label_todo3 = lv_label_create(ui->screen_todolist);
-    lv_label_set_text(ui->screen_todolist_label_todo3, "TO DO 3: 语文学习一个小时");
+    lv_label_set_text(ui->screen_todolist_label_todo3, "阅读专业书籍");
     lv_label_set_long_mode(ui->screen_todolist_label_todo3, LV_LABEL_LONG_CLIP);
     lv_obj_set_pos(ui->screen_todolist_label_todo3, 18, 107);
-    lv_obj_set_size(ui->screen_todolist_label_todo3, 135, 15);
+    lv_obj_set_size(ui->screen_todolist_label_todo3, 135, 18);
 
     //Write style for screen_todolist_label_todo3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_todolist_label_todo3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -442,10 +396,10 @@ void setup_scr_screen_todolist(lv_ui *ui)
 
     //Write codes screen_todolist_label_todo4
     ui->screen_todolist_label_todo4 = lv_label_create(ui->screen_todolist);
-    lv_label_set_text(ui->screen_todolist_label_todo4, "TO DO 4: 英语单词背诵20个");
+    lv_label_set_text(ui->screen_todolist_label_todo4, "复习英语单词");
     lv_label_set_long_mode(ui->screen_todolist_label_todo4, LV_LABEL_LONG_CLIP);
     lv_obj_set_pos(ui->screen_todolist_label_todo4, 173, 107);
-    lv_obj_set_size(ui->screen_todolist_label_todo4, 135, 15);
+    lv_obj_set_size(ui->screen_todolist_label_todo4, 135, 18);
 
     //Write style for screen_todolist_label_todo4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_todolist_label_todo4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -466,13 +420,13 @@ void setup_scr_screen_todolist(lv_ui *ui)
     //Write codes screen_todolist_btn_lastpage
     ui->screen_todolist_btn_lastpage = lv_btn_create(ui->screen_todolist);
     ui->screen_todolist_btn_lastpage_label = lv_label_create(ui->screen_todolist_btn_lastpage);
-    lv_label_set_text(ui->screen_todolist_btn_lastpage_label, "<<");
+    lv_label_set_text(ui->screen_todolist_btn_lastpage_label, "");
     lv_label_set_long_mode(ui->screen_todolist_btn_lastpage_label, LV_LABEL_LONG_WRAP);
     lv_obj_align(ui->screen_todolist_btn_lastpage_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_todolist_btn_lastpage, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_todolist_btn_lastpage_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_todolist_btn_lastpage, 111, 150);
-    lv_obj_set_size(ui->screen_todolist_btn_lastpage, 22, 15);
+    lv_obj_set_pos(ui->screen_todolist_btn_lastpage, 7, 143);
+    lv_obj_set_size(ui->screen_todolist_btn_lastpage, 110, 19);
 
     //Write style for screen_todolist_btn_lastpage, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_bg_opa(ui->screen_todolist_btn_lastpage, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -501,13 +455,13 @@ void setup_scr_screen_todolist(lv_ui *ui)
     //Write codes screen_todolist_btn_nxtpage
     ui->screen_todolist_btn_nxtpage = lv_btn_create(ui->screen_todolist);
     ui->screen_todolist_btn_nxtpage_label = lv_label_create(ui->screen_todolist_btn_nxtpage);
-    lv_label_set_text(ui->screen_todolist_btn_nxtpage_label, ">>");
+    lv_label_set_text(ui->screen_todolist_btn_nxtpage_label, "");
     lv_label_set_long_mode(ui->screen_todolist_btn_nxtpage_label, LV_LABEL_LONG_WRAP);
     lv_obj_align(ui->screen_todolist_btn_nxtpage_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_todolist_btn_nxtpage, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_todolist_btn_nxtpage_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_todolist_btn_nxtpage, 185, 150);
-    lv_obj_set_size(ui->screen_todolist_btn_nxtpage, 22, 15);
+    lv_obj_set_pos(ui->screen_todolist_btn_nxtpage, 192, 144);
+    lv_obj_set_size(ui->screen_todolist_btn_nxtpage, 119, 18);
 
     //Write style for screen_todolist_btn_nxtpage, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_bg_opa(ui->screen_todolist_btn_nxtpage, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

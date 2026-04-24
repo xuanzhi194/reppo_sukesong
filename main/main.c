@@ -18,6 +18,7 @@
 #include "nvs_flash.h"
 #include "buzzer.h"
 #include "word_storage.h"
+#include "todo_storage.h"
 #include "bat_percent.h"
 #include "ds3231.h"
 #include "ws2812b.h"
@@ -45,7 +46,7 @@ bool ai_wait_light_running = 0;
 bool ai_request_pending = 0;
 TickType_t ai_request_deadline = 0;
 TaskHandle_t ai_wait_light_task_handle = NULL;
-#define AI_ANALYSIS_TIMEOUT_MS 120000
+#define AI_ANALYSIS_TIMEOUT_MS 12000
 // timeout alarm task, including buzzer alarm and flow light alarm
 static void timeout_alarm_light_task(void *param)
 {
@@ -115,27 +116,42 @@ void my_battery_update_cb(lv_timer_t * timer) {
         lv_label_set_text_fmt(label, "%d%%", bat);
     }
 }
+//------------lvgl timer to realtime clock show----//
+static void realtime_clock_update_cb(lv_timer_t *timer) {
+    if (lv_scr_act() != guider_ui.screen_main) return;
+    if (guider_ui.screen_main_btn_realtime_label == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_main_btn_realtime_label)) return;
+    ds3231_time_t now;
+    if (ds3231_get_time(I2C_NUM_0, &now) != ESP_OK) return;
+    lv_label_set_text_fmt(guider_ui.screen_main_btn_realtime_label, "%02d:%02d",
+                          now.hour, now.minute);
+}
 //------------nvs flash task thread---------------//
 void nvs_thread(void *param){
-    nvs_handle_t nvs_handle;
     nvs_handle_t timing_handle;
-    nvs_open("List", NVS_READWRITE,&nvs_handle);
     nvs_open("Timing", NVS_READWRITE,&timing_handle);
      while (1)
      {
-        if(todo_back_label){ //record info from todolist to flash
-            nvs_set_i8(nvs_handle,"val",val);
-            nvs_set_blob(nvs_handle, "done_array", done_array, sizeof(done_array));
-            if(ESP_OK  != nvs_commit(nvs_handle)){
-                ESP_LOGI("nvs","!!!!write flash fail!!!");
-            }
-            todo_back_label = 0;   
-        }else if(main_load_label){ //load info from flash to todolist
-            nvs_get_i8(nvs_handle,"val",&val);
-            size_t len = sizeof(done_array);
-            nvs_get_blob(nvs_handle, "done_array", done_array, &len);
-            ESP_LOGI("nvs","val = %d\r\n",val);
+        if(todo_back_label){ //done flags already saved to NVS by set_done()
+            printf("Saving done flags to NVS...\n");
+            g_todo_list = ui_todo_list; // Sync back the done flags from UI to Storage struct
+            _nvs_save_done();
+            todo_back_label = 0;
+        }else if(main_load_label){ //reload task list from CSV + NVS done flags
             main_load_label = 0;
+        }else if(todo_archive_label){ // user triggered archiving
+            todo_archive_label = 0;
+            printf("Archiving completed tasks...\n");
+            // Sync struct to get the latest done state just to be safe
+            g_todo_list = ui_todo_list;
+            todo_storage_archive_done_tasks();
+            // Update ui list to reflect removals
+            ui_todo_list = g_todo_list;
+            done_sum = todo_storage_get_done_count();
+            todo_sum = g_todo_list.count - done_sum;
+            // 重新加载 task_done.csv 到内存，通知主循环刷新 UI
+            donelist_load_from_csv();
+            donelist_load_label = 1;
         }else if(led_green_en){
             led_green_en = 0;
             set_flow_light(34, 80, 32);
@@ -326,6 +342,11 @@ void app_main(void)
     memcpy(&g_ui_weekly_result, &g_ai_weekly_result, sizeof(ui_ai_result_t));
     //----------init spiffs for word card-----------//
     init_spiffs();
+    //----------init todo storage (SPIFFS + NVS)----//
+    todo_storage_init();
+    ui_todo_list = g_todo_list;  // sync initial todo list from storage
+    done_sum = todo_storage_get_done_count();
+    todo_sum = g_todo_list.count - done_sum;
     //----------wifi cfg init-----------------//
     //wifi sta mode
     init_wifi();
@@ -348,9 +369,11 @@ void app_main(void)
 
     // Create battery timer once — runs every 5s, updates only when on screen_main
     bat_timer = lv_timer_create(my_battery_update_cb, 5000, NULL);
+    // Create realtime clock timer — runs every 3s, updates btn_realtime on screen_main
+    lv_timer_create(realtime_clock_update_cb, 3000, NULL);
 
     //-------------multi task thread----------------//
-    xTaskCreatePinnedToCore(nvs_thread,"nvs_thread",4096,NULL,10,NULL,0);
+    xTaskCreatePinnedToCore(nvs_thread,"nvs_thread",8192,NULL,10,NULL,0);
     xTaskCreatePinnedToCore(wifi_time_thread,"time_thread",4096,NULL,10,NULL,1);
 
     //--------------main loop task-----------------//
@@ -422,6 +445,24 @@ void app_main(void)
             ai_request_pending = 0;
         }
         
+        /* donelist 异步刷新：归档完成后重新渲染当前页 */
+        if (donelist_load_label) {
+            donelist_load_label = 0;
+            if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                if (lv_scr_act() == guider_ui.screen_donelist) {
+                    done_total_tasks = ui_done_list.count;
+                    donelist_page_num = done_total_tasks / 4;
+                    if ((done_total_tasks % 4 != 0) || (done_total_tasks == 0)) donelist_page_num += 1;
+                    if (donelist_page_cur < 1) donelist_page_cur = 1;
+                    if (donelist_page_cur > donelist_page_num) donelist_page_cur = donelist_page_num;
+                    lv_label_set_text_fmt(guider_ui.screen_donelist_label_donenum,  "%d", done_total_tasks);
+                    lv_label_set_text_fmt(guider_ui.screen_donelist_label_nosavenum, "%d", done_sum);
+                    lv_label_set_text_fmt(guider_ui.screen_donelist_label_page,      "%d/%d", donelist_page_cur, donelist_page_num);
+                    donelist_render_page(donelist_page_cur);
+                }
+                xSemaphoreGive(lvgl_mutex);
+            }
+        }
         // -----------------LVGL task managing-----------------//
         if(xSemaphoreTake(lvgl_mutex, portMAX_DELAY) == pdTRUE){
             lv_task_handler();  // LVGL task managing

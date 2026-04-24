@@ -16,16 +16,20 @@
 #include "lvgl.h"
 #include "custom.h"
 #include "widgets_init.h"
-//#include "lv_port_indev.h"
+
 //lv group define
 lv_group_t *g = NULL;
 //todolist variables
-int8_t val = 1;
-int8_t val_cur = 1;
-int8_t done_array[9][4] = {0};
+todo_list_t ui_todo_list = {0};
+bool   todosel_back = 0;
+int8_t todo_index = 0;
+int8_t page_num = 25;
+int8_t page_cur = 1;
+bool   done_array[25][4] = {0};
 int8_t done_sum = 0;
-int8_t todo_sum = 0;
+int8_t todo_sum = 100;
 bool todo_back_label = 0;
+bool todo_archive_label = 0;
 bool main_load_label = 0;
 char current_task_name[128] = {0};
 //timer variables
@@ -96,6 +100,11 @@ int review_index = 0;
 //screen_ai variables
 bool ai_day_start = 0;
 bool ai_week_start = 0;
+done_list_t ui_done_list      = {0};
+bool donelist_load_label      = 0;
+uint8_t donelist_page_cur     = 0;
+uint8_t donelist_page_num     = 0;
+int     done_total_tasks      = 0;
 /* AI 结果 UI 缓存，由 main.c 负责从 g_ai_* 同步进来 */
 ui_ai_result_t g_ui_daily_result  = {0};
 ui_ai_result_t g_ui_weekly_result = {0};
@@ -234,6 +243,97 @@ void wifi_disconnect_show(){
     // 5. Change Image Height
     ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 125, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
 }
+
+/* 进入 screen_ai 时显示 NVS 已存储的 AI 结果
+ * 优先显示每日结果，若无有效数据则尝试每周结果 */
+void screen_ai_load_nvs_data(bool day_or_week)
+{
+    ui_ai_result_t *r = NULL;
+    if (day_or_week == 0)
+        r = &g_ui_daily_result;
+    else if (day_or_week == 1)
+        r = &g_ui_weekly_result;
+    else
+        return;  /* NVS 中尚无数据，保持默认占位内容 */
+
+    lv_label_set_text(guider_ui.screen_ai_label_cat1, r->cat1_name);
+    lv_label_set_text(guider_ui.screen_ai_label_cat2, r->cat2_name);
+    lv_label_set_text(guider_ui.screen_ai_label_cat3, r->cat3_name);
+    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat1_num, "%d%%", r->cat1_percent);
+    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat2_num, "%d%%", r->cat2_percent);
+    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat3_num, "%d%%", r->cat3_percent);
+    lv_arc_set_value(guider_ui.screen_ai_arc_1, r->cat1_percent);
+    lv_arc_set_value(guider_ui.screen_ai_arc_2, r->cat2_percent);
+    lv_arc_set_value(guider_ui.screen_ai_arc_3, r->cat3_percent);
+    lv_label_set_text(guider_ui.screen_ai_label_sum,   r->summary);
+    lv_label_set_text(guider_ui.screen_ai_label_quote, r->quote);
+}
+
+int donelist_load_from_csv(void)
+{
+    FILE *f = fopen("/spiffs/task_done.csv", "r");
+    memset(&ui_done_list, 0, sizeof(ui_done_list));
+    if (!f) return 0;
+    char line[200];
+    while (fgets(line, sizeof(line), f) && ui_done_list.count < DONE_MAX_ITEMS) {
+        size_t len = strlen(line);
+        while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r')) line[--len] = '\0';
+        if (len == 0) continue;
+        char *p_name = strtok(line, ",");
+        char *p_date = strtok(NULL, ",");
+        char *p_dur  = strtok(NULL, ",");
+        if (!p_name || !p_date) continue;
+        strncpy(ui_done_list.items[ui_done_list.count].name, p_name,
+                sizeof(ui_done_list.items[0].name) - 1);
+        strncpy(ui_done_list.items[ui_done_list.count].date, p_date,
+                sizeof(ui_done_list.items[0].date) - 1);
+        ui_done_list.items[ui_done_list.count].duration_min =
+                (uint16_t)(p_dur ? atoi(p_dur) : 0);
+        ui_done_list.count++;
+    }
+    fclose(f);
+    return ui_done_list.count;
+}
+
+void donelist_render_page(int page_cur)
+{
+    lv_obj_t *name_labels[4] = {
+        guider_ui.screen_donelist_label_done1,
+        guider_ui.screen_donelist_label_done2,
+        guider_ui.screen_donelist_label_done3,
+        guider_ui.screen_donelist_label_done4,
+    };
+    lv_obj_t *date_labels[4] = {
+        guider_ui.screen_donelist_label_date1,
+        guider_ui.screen_donelist_label_date2,
+        guider_ui.screen_donelist_label_date3,
+        guider_ui.screen_donelist_label_date4,
+    };
+    lv_obj_t *focus_labels[4] = {
+        guider_ui.screen_donelist_label_focus1,
+        guider_ui.screen_donelist_label_focus2,
+        guider_ui.screen_donelist_label_focus3,
+        guider_ui.screen_donelist_label_focus4,
+    };
+    for (int i = 0; i < 4; i++) {
+        int idx = (page_cur - 1) * 4 + i;
+        if (idx < ui_done_list.count) {
+            lv_label_set_text(name_labels[i], ui_done_list.items[idx].name);
+            lv_label_set_text(date_labels[i], ui_done_list.items[idx].date);
+            if (ui_done_list.items[idx].duration_min > 0) {
+                lv_label_set_text_fmt(focus_labels[i], "%dmin",
+                                      ui_done_list.items[idx].duration_min);
+            } else {
+                lv_label_set_text(focus_labels[i], "-");
+            }
+        } else {
+            lv_label_set_text(name_labels[i], "");
+            lv_label_set_text(date_labels[i], "");
+            lv_label_set_text(focus_labels[i], "");
+        }
+    }
+}
+
 //-----------------button added -------------------------------//
 //-------------------------------------------------------------//
 //buttion add function screen_todolist
@@ -283,7 +383,7 @@ void screen_main_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_main_btn_word);
     lv_group_add_obj(g, guider_ui.screen_main_btn_timer); 
     lv_group_add_obj(g, guider_ui.screen_main_btn_setting);
-    lv_group_add_obj(g, guider_ui.screen_main_btn_plane); 
+    lv_group_add_obj(g, guider_ui.screen_main_btn_realtime);
 }
 //buttion add function screen_pomodoro
 void screen_timing_buttion_add(){
@@ -301,8 +401,7 @@ void screen_timing_buttion_add(){
             lv_indev_set_group(indev, g);
         }
     }
-    lv_group_add_obj(g, guider_ui.screen_timing_btn_pomodoro);  
-    lv_group_add_obj(g, guider_ui.screen_timing_btn_back);
+    lv_group_add_obj(g, guider_ui.screen_timing_btn_main);  
 
 }
 
@@ -322,16 +421,14 @@ void screen_pomodoro_buttion_add(){
             lv_indev_set_group(indev, g);
         }
     }
-
+    lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_start);
+    lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_reset);
+    lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_back);  
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_stopwatch); 
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_countdown);
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_minus);
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_addnum);
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_plus);
-    lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_start);
-    lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_reset);
-    lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_home); 
-    lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_back);  
 
 }
 //buttion add function screen_wordmeun
@@ -504,29 +601,26 @@ void screen_ai_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_ai_btn_back);  
 
 }
-/* 进入 screen_ai 时显示 NVS 已存储的 AI 结果
- * 优先显示每日结果，若无有效数据则尝试每周结果 */
-void screen_ai_load_nvs_data(bool day_or_week)
-{
-    ui_ai_result_t *r = NULL;
-    if (day_or_week == 0)
-        r = &g_ui_daily_result;
-    else if (day_or_week == 1)
-        r = &g_ui_weekly_result;
-    else
-        return;  /* NVS 中尚无数据，保持默认占位内容 */
-
-    lv_label_set_text(guider_ui.screen_ai_label_cat1, r->cat1_name);
-    lv_label_set_text(guider_ui.screen_ai_label_cat2, r->cat2_name);
-    lv_label_set_text(guider_ui.screen_ai_label_cat3, r->cat3_name);
-    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat1_num, "%d%%", r->cat1_percent);
-    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat2_num, "%d%%", r->cat2_percent);
-    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat3_num, "%d%%", r->cat3_percent);
-    lv_arc_set_value(guider_ui.screen_ai_arc_1, r->cat1_percent);
-    lv_arc_set_value(guider_ui.screen_ai_arc_2, r->cat2_percent);
-    lv_arc_set_value(guider_ui.screen_ai_arc_3, r->cat3_percent);
-    lv_label_set_text(guider_ui.screen_ai_label_sum,   r->summary);
-    lv_label_set_text(guider_ui.screen_ai_label_quote, r->quote);
+//buttion add function screen_donelist
+void screen_donelist_buttion_add(){
+    if(g == NULL) {
+        g = lv_group_create();
+    } else {
+        lv_group_remove_all_objs(g); 
+    }
+    //setting default group
+    lv_group_set_default(g);
+    //indev with group
+    lv_indev_t * indev = NULL;
+    while ((indev = lv_indev_get_next(indev))) {
+        if (lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
+            lv_indev_set_group(indev, g);
+        }
+    }
+    lv_group_add_obj(g, guider_ui.screen_donelist_btn_lastpage);  
+    lv_group_add_obj(g, guider_ui.screen_donelist_btn_nxtpage); 
+    lv_group_add_obj(g, guider_ui.screen_donelist_btn_back); 
+    lv_group_add_obj(g, guider_ui.screen_donelist_btn_save);
 }
 
 void custom_init(lv_ui *ui)

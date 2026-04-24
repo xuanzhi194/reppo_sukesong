@@ -251,47 +251,6 @@ void setup_scr_screen_pomodoro(lv_ui *ui)
     lv_obj_set_style_text_font(ui->screen_pomodoro_btn_back, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_text_opa(ui->screen_pomodoro_btn_back, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
 
-    //Write codes screen_pomodoro_btn_home
-    ui->screen_pomodoro_btn_home = lv_btn_create(ui->screen_pomodoro);
-    ui->screen_pomodoro_btn_home_label = lv_label_create(ui->screen_pomodoro_btn_home);
-    lv_label_set_text(ui->screen_pomodoro_btn_home_label, "");
-    lv_label_set_long_mode(ui->screen_pomodoro_btn_home_label, LV_LABEL_LONG_WRAP);
-    lv_obj_align(ui->screen_pomodoro_btn_home_label, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_set_style_pad_all(ui->screen_pomodoro_btn_home, 0, LV_STATE_DEFAULT);
-    lv_obj_set_width(ui->screen_pomodoro_btn_home_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_pomodoro_btn_home, 294, 3);
-    lv_obj_set_size(ui->screen_pomodoro_btn_home, 20, 20);
-
-    //Write style for screen_pomodoro_btn_home, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_bg_opa(ui->screen_pomodoro_btn_home, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(ui->screen_pomodoro_btn_home, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_pomodoro_btn_home, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_pomodoro_btn_home, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_src(ui->screen_pomodoro_btn_home, &_pomodoro2_20x20, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_opa(ui->screen_pomodoro_btn_home, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_recolor_opa(ui->screen_pomodoro_btn_home, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_pomodoro_btn_home, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_pomodoro_btn_home, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_pomodoro_btn_home, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_pomodoro_btn_home, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write style for screen_pomodoro_btn_home, Part: LV_PART_MAIN, State: LV_STATE_FOCUSED.
-    lv_obj_set_style_bg_opa(ui->screen_pomodoro_btn_home, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_border_width(ui->screen_pomodoro_btn_home, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_radius(ui->screen_pomodoro_btn_home, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_width(ui->screen_pomodoro_btn_home, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_pomodoro_btn_home, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_opa(ui->screen_pomodoro_btn_home, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_spread(ui->screen_pomodoro_btn_home, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_ofs_x(ui->screen_pomodoro_btn_home, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_ofs_y(ui->screen_pomodoro_btn_home, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_img_src(ui->screen_pomodoro_btn_home, &_pomodoro2_20x20, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_img_opa(ui->screen_pomodoro_btn_home, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_img_recolor_opa(ui->screen_pomodoro_btn_home, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_color(ui->screen_pomodoro_btn_home, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_font(ui->screen_pomodoro_btn_home, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_opa(ui->screen_pomodoro_btn_home, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
-
     //Write codes screen_pomodoro_btn_start
     ui->screen_pomodoro_btn_start = lv_btn_create(ui->screen_pomodoro);
     ui->screen_pomodoro_btn_start_label = lv_label_create(ui->screen_pomodoro_btn_start);

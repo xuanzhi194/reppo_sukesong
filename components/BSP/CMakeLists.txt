@@ -4,6 +4,7 @@ set(src_dirs
             keypad
             wifi
             word_storage
+            todo_storage
             buzzer
             bat_percent
             ds3231
@@ -20,6 +21,7 @@ set(include_dirs
             keypad
             wifi
             word_storage
+            todo_storage
             buzzer
             bat_percent
             ds3231

@@ -38,13 +38,9 @@ typedef struct
 	lv_obj_t *screen_main_btn_setting_label;
 	lv_obj_t *screen_main_img_uptext;
 	lv_obj_t *screen_main_label_uptext;
-	lv_obj_t *screen_main_img_plane;
-	lv_obj_t *screen_main_btn_plane;
-	lv_obj_t *screen_main_btn_plane_label;
 	lv_obj_t *screen_main_img_probg1;
 	lv_obj_t *screen_main_label_done;
 	lv_obj_t *screen_main_label_donenum;
-	lv_obj_t *screen_main_img_runpace;
 	lv_obj_t *screen_main_label_nodone;
 	lv_obj_t *screen_main_img_probg2;
 	lv_obj_t *screen_main_label_todonum;
@@ -52,6 +48,8 @@ typedef struct
 	lv_obj_t *screen_main_btn_todolist_label;
 	lv_obj_t *screen_main_label_battery;
 	lv_obj_t *screen_main_img_gp1;
+	lv_obj_t *screen_main_btn_realtime;
+	lv_obj_t *screen_main_btn_realtime_label;
 	lv_obj_t *screen_todolist;
 	bool screen_todolist_del;
 	lv_obj_t *screen_todolist_btn_back;
@@ -67,8 +65,6 @@ typedef struct
 	lv_obj_t *screen_todolist_label_indexcut;
 	lv_obj_t *screen_todolist_label_indexcur;
 	lv_obj_t *screen_todolist_label_indexall;
-	lv_obj_t *screen_todolist_label_done;
-	lv_obj_t *screen_todolist_label_todo;
 	lv_obj_t *screen_todolist_label_donenum;
 	lv_obj_t *screen_todolist_label_todonum;
 	lv_obj_t *screen_todolist_label_todo1;
@@ -81,13 +77,11 @@ typedef struct
 	lv_obj_t *screen_todolist_btn_nxtpage_label;
 	lv_obj_t *screen_timing;
 	bool screen_timing_del;
+	lv_obj_t *screen_timing_btn_main;
+	lv_obj_t *screen_timing_btn_main_label;
 	lv_obj_t *screen_timing_label_realtime;
 	lv_obj_t *screen_timing_label_day;
 	lv_obj_t *screen_timing_label_date;
-	lv_obj_t *screen_timing_btn_pomodoro;
-	lv_obj_t *screen_timing_btn_pomodoro_label;
-	lv_obj_t *screen_timing_btn_back;
-	lv_obj_t *screen_timing_btn_back_label;
 	lv_obj_t *screen_timing_img_night;
 	lv_obj_t *screen_timing_img_morning;
 	lv_obj_t *screen_pomodoro;
@@ -103,8 +97,6 @@ typedef struct
 	lv_obj_t *screen_pomodoro_btn_countdown_label;
 	lv_obj_t *screen_pomodoro_btn_back;
 	lv_obj_t *screen_pomodoro_btn_back_label;
-	lv_obj_t *screen_pomodoro_btn_home;
-	lv_obj_t *screen_pomodoro_btn_home_label;
 	lv_obj_t *screen_pomodoro_btn_start;
 	lv_obj_t *screen_pomodoro_btn_start_label;
 	lv_obj_t *screen_pomodoro_btn_reset;
@@ -297,6 +289,35 @@ typedef struct
 	lv_obj_t *screen_ai_btn_sum_label;
 	lv_obj_t *screen_ai_btn_cat;
 	lv_obj_t *screen_ai_btn_cat_label;
+	lv_obj_t *screen_donelist;
+	bool screen_donelist_del;
+	lv_obj_t *screen_donelist_line_4;
+	lv_obj_t *screen_donelist_line_3;
+	lv_obj_t *screen_donelist_line_2;
+	lv_obj_t *screen_donelist_line_1;
+	lv_obj_t *screen_donelist_label_donenum;
+	lv_obj_t *screen_donelist_label_nosavenum;
+	lv_obj_t *screen_donelist_label_done1;
+	lv_obj_t *screen_donelist_label_date1;
+	lv_obj_t *screen_donelist_label_done2;
+	lv_obj_t *screen_donelist_label_done3;
+	lv_obj_t *screen_donelist_label_done4;
+	lv_obj_t *screen_donelist_label_date2;
+	lv_obj_t *screen_donelist_label_date3;
+	lv_obj_t *screen_donelist_label_date4;
+	lv_obj_t *screen_donelist_label_page;
+	lv_obj_t *screen_donelist_btn_save;
+	lv_obj_t *screen_donelist_btn_save_label;
+	lv_obj_t *screen_donelist_btn_nxtpage;
+	lv_obj_t *screen_donelist_btn_nxtpage_label;
+	lv_obj_t *screen_donelist_btn_lastpage;
+	lv_obj_t *screen_donelist_btn_lastpage_label;
+	lv_obj_t *screen_donelist_label_focus1;
+	lv_obj_t *screen_donelist_label_focus2;
+	lv_obj_t *screen_donelist_label_focus3;
+	lv_obj_t *screen_donelist_label_focus4;
+	lv_obj_t *screen_donelist_btn_back;
+	lv_obj_t *screen_donelist_btn_back_label;
 	lv_obj_t *g_kb_top_layer;
 }lv_ui;
 
@@ -333,6 +354,7 @@ void setup_scr_screen_setting(lv_ui *ui);
 void setup_scr_screen_wificfg(lv_ui *ui);
 void setup_scr_screen_todosel(lv_ui *ui);
 void setup_scr_screen_ai(lv_ui *ui);
+void setup_scr_screen_donelist(lv_ui *ui);
 #include "extra/widgets/animimg/lv_animimg.h"
 LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_00);
 LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_05);
@@ -363,32 +385,22 @@ LV_IMG_DECLARE(_A_word_BG1_alpha_60x80);
 LV_IMG_DECLARE(_A_time_BG1_alpha_60x80);
 LV_IMG_DECLARE(_A_setting_BG1_alpha_60x80);
 LV_IMG_DECLARE(_probg4_alpha_160x15);
-LV_IMG_DECLARE(_plane_alpha_35x28);
 LV_IMG_DECLARE(_progress_bg2_alpha_76x18);
-LV_IMG_DECLARE(_progress_bg3_alpha_206x20);
 LV_IMG_DECLARE(_progress_bg2_alpha_76x18);
 LV_IMG_DECLARE(_reppo_main_gp1_alpha_75x16);
 
-LV_IMG_DECLARE(_screen_todolist_bg_320x170);
+LV_IMG_DECLARE(_A_todo_bg_320x170);
 
 LV_IMG_DECLARE(_home_20x20);
 
 LV_IMG_DECLARE(_home_20x20);
 
-LV_IMG_DECLARE(_Reppo_Overview_bg_320x170);
-
-LV_IMG_DECLARE(_home_20x20);
-
-LV_IMG_DECLARE(_home_20x20);
+LV_IMG_DECLARE(_A_timing_BG_320x170);
 LV_IMG_DECLARE(_night_alpha_25x25);
-LV_IMG_DECLARE(_morning_alpha_33x31);
+LV_IMG_DECLARE(_morning_alpha_30x30);
 
 LV_IMG_DECLARE(_pomodoro_bg_320x170);
 LV_IMG_DECLARE(_pomorect_alpha_257x52);
-
-LV_IMG_DECLARE(_pomodoro2_20x20);
-
-LV_IMG_DECLARE(_pomodoro2_20x20);
 
 LV_IMG_DECLARE(_word_BG_320x170);
 LV_IMG_DECLARE(_word_rectangle_alpha_129x21);
@@ -498,17 +510,18 @@ LV_IMG_DECLARE(_gemini_alpha_15x15);
 LV_IMG_DECLARE(_ai_sum_bg_alpha_305x172);
 LV_IMG_DECLARE(_gemini_alpha_15x15);
 
+LV_IMG_DECLARE(_A_reppo_donelis_bg_320x170);
+
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
 LV_FONT_DECLARE(lv_font_AlexBrush_Regular_16)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_12)
 LV_FONT_DECLARE(lv_font_Acme_Regular_16)
 LV_FONT_DECLARE(lv_font_arial_11)
 LV_FONT_DECLARE(lv_font_montserratMedium_20)
-LV_FONT_DECLARE(lv_font_Acme_Regular_12)
 LV_FONT_DECLARE(lv_font_Acme_Regular_14)
 LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_16)
-LV_FONT_DECLARE(lv_font_Abel_regular_58)
-LV_FONT_DECLARE(lv_font_Abel_regular_20)
+LV_FONT_DECLARE(lv_font_Abel_regular_83)
+LV_FONT_DECLARE(lv_font_Abel_regular_15)
 LV_FONT_DECLARE(lv_font_Abel_regular_30)
 LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_14)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_13)
@@ -523,8 +536,10 @@ LV_FONT_DECLARE(lv_font_Acme_Regular_30)
 LV_FONT_DECLARE(lv_font_arial_14)
 LV_FONT_DECLARE(lv_font_montserratMedium_10)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_14)
+LV_FONT_DECLARE(lv_font_Acme_Regular_12)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_13)
 LV_FONT_DECLARE(lv_font_arial_16)
+LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_11)
 
 
 #ifdef __cplusplus

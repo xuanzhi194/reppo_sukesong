@@ -28,7 +28,7 @@ void setup_scr_screen_wordcard(lv_ui *ui)
     lv_obj_set_style_bg_color(ui->screen_wordcard, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_wordcard, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_src(ui->screen_wordcard, &_word_BG1_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_opa(ui->screen_wordcard, 143, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_opa(ui->screen_wordcard, 220, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_recolor_opa(ui->screen_wordcard, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_wordcard_img_wordrect

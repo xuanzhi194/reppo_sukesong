@@ -30,6 +30,7 @@ void events_init_screen_setting(lv_ui *ui);
 void events_init_screen_wificfg(lv_ui *ui);
 void events_init_screen_todosel(lv_ui *ui);
 void events_init_screen_ai(lv_ui *ui);
+void events_init_screen_donelist(lv_ui *ui);
 
 #ifdef __cplusplus
 }
