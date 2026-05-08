@@ -43,6 +43,7 @@ bool countdown_process_label = 0;
 bool stopwatch_start_label = 0;
 bool stopwatch_process_label = 0;
 bool countdown_timeout_pending = 0;
+int  current_task_index = 0;
 //timing variables
 bool task_real_time_en = 0;
 bool timing_back_en = 0;
@@ -160,6 +161,19 @@ static void countdown_cb(lv_timer_t *t){
         lv_timer_del(t);
         pomodoro_timer = NULL;
         lv_label_set_text(guider_ui.screen_pomodoro_label_timer,"00:00:00");
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_complete, LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_continue, LV_STATE_DISABLED);
+        lv_obj_clear_flag(guider_ui.screen_pomodoro_img_timeout, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_minus,LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_plus,LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_addnum,LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_reset,LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_start,LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_back,LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_countdown,LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_stopwatch,LV_STATE_DISABLED);
+        lv_obj_add_flag(guider_ui.screen_pomodoro_btn_start,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_pomodoro_btn_reset,LV_OBJ_FLAG_HIDDEN);
         countdown_timeout_pending = 1;
         countdown_start_label = 0;
         countdown_process_label = 0;
@@ -338,6 +352,20 @@ void donelist_render_page(int page_cur)
 //-------------------------------------------------------------//
 //buttion add function screen_todolist
 //buttion add function screen_todolist
+
+void clear_focus_box(lv_obj_t * obj) {
+    // 1. 彻底关掉外轮廓 (这是最常见的蓝框来源)
+    lv_obj_set_style_outline_width(obj, 0, LV_STATE_FOCUSED);
+    lv_obj_set_style_outline_width(obj, 0, LV_STATE_FOCUS_KEY); // 针对键盘聚焦
+    
+    // 2. 彻底关掉边框 (Material 主题有时会加粗边框作为焦点反馈)
+    lv_obj_set_style_border_width(obj, 0, LV_STATE_FOCUSED);
+    lv_obj_set_style_border_width(obj, 0, LV_STATE_FOCUS_KEY);
+    
+    // 3. 彻底关掉阴影
+    lv_obj_set_style_shadow_width(obj, 0, LV_STATE_FOCUSED);
+}
+
 void screen_todolist_buttion_add(){
     if(g == NULL) {
         g = lv_group_create();
@@ -361,7 +389,12 @@ void screen_todolist_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_todolist_btn_lastpage);
     lv_group_add_obj(g, guider_ui.screen_todolist_btn_nxtpage);
     lv_group_add_obj(g, guider_ui.screen_todolist_btn_back);
-    
+
+    clear_focus_box(guider_ui.screen_todolist_btn_todo1);
+    clear_focus_box(guider_ui.screen_todolist_btn_todo2);
+    clear_focus_box(guider_ui.screen_todolist_btn_todo3);
+    clear_focus_box(guider_ui.screen_todolist_btn_todo4);
+
 }
 //buttion add function screen_main
 void screen_main_buttion_add(){
@@ -380,10 +413,22 @@ void screen_main_buttion_add(){
         }
     }
     lv_group_add_obj(g, guider_ui.screen_main_btn_todolist);  
-    lv_group_add_obj(g, guider_ui.screen_main_btn_word);
-    lv_group_add_obj(g, guider_ui.screen_main_btn_timer); 
+    lv_group_add_obj(g, guider_ui.screen_main_btn_done); 
+    lv_group_add_obj(g, guider_ui.screen_main_btn_word); 
+    lv_group_add_obj(g, guider_ui.screen_main_btn_timer);
+    lv_group_add_obj(g, guider_ui.screen_main_btn_ai); 
+    lv_group_add_obj(g, guider_ui.screen_main_btn_fun);
     lv_group_add_obj(g, guider_ui.screen_main_btn_setting);
     lv_group_add_obj(g, guider_ui.screen_main_btn_realtime);
+    //clear focus box
+    clear_focus_box(guider_ui.screen_main_btn_todolist);
+    clear_focus_box(guider_ui.screen_main_btn_done);
+    clear_focus_box(guider_ui.screen_main_btn_word);
+    clear_focus_box(guider_ui.screen_main_btn_timer);
+    clear_focus_box(guider_ui.screen_main_btn_ai);
+    clear_focus_box(guider_ui.screen_main_btn_fun);
+    clear_focus_box(guider_ui.screen_main_btn_setting);
+    clear_focus_box(guider_ui.screen_main_btn_realtime);
 }
 //buttion add function screen_pomodoro
 void screen_timing_buttion_add(){
@@ -402,6 +447,7 @@ void screen_timing_buttion_add(){
         }
     }
     lv_group_add_obj(g, guider_ui.screen_timing_btn_main);  
+    clear_focus_box(guider_ui.screen_timing_btn_main);
 
 }
 
@@ -429,6 +475,8 @@ void screen_pomodoro_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_minus);
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_addnum);
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_plus);
+    lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_complete);
+    lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_continue);
 
 }
 //buttion add function screen_wordmeun
@@ -453,6 +501,7 @@ void screen_wordmenu_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_learn); 
     lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_review); 
     lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_back); 
+    
 }
 
 //buttion add function screen_wordcard
@@ -555,6 +604,7 @@ void screen_wificfg_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_wificfg_btn_cancel);  
     lv_group_add_obj(g, guider_ui.screen_wificfg_btn_connect); 
     lv_group_add_obj(g, guider_ui.screen_wificfg_btn_back);  
+
 } 
 
 //buttion add function screen_todosel

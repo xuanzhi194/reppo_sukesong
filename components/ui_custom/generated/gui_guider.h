@@ -23,33 +23,35 @@ typedef struct
 	lv_obj_t *screen_reppo_reppo_gif;
 	lv_obj_t *screen_main;
 	bool screen_main_del;
-	lv_obj_t *screen_main_img_wifi;
-	lv_obj_t *screen_main_img_battery;
-	lv_obj_t *screen_main_img_ble;
-	lv_obj_t *screen_main_img_todolist;
-	lv_obj_t *screen_main_img_word;
-	lv_obj_t *screen_main_img_timer;
-	lv_obj_t *screen_main_img_setting;
+	lv_obj_t *screen_main_cont_main;
+	lv_obj_t *screen_main_btn_todolist;
+	lv_obj_t *screen_main_btn_todolist_label;
+	lv_obj_t *screen_main_btn_done;
+	lv_obj_t *screen_main_btn_done_label;
 	lv_obj_t *screen_main_btn_word;
 	lv_obj_t *screen_main_btn_word_label;
 	lv_obj_t *screen_main_btn_timer;
 	lv_obj_t *screen_main_btn_timer_label;
+	lv_obj_t *screen_main_btn_ai;
+	lv_obj_t *screen_main_btn_ai_label;
+	lv_obj_t *screen_main_btn_fun;
+	lv_obj_t *screen_main_btn_fun_label;
 	lv_obj_t *screen_main_btn_setting;
 	lv_obj_t *screen_main_btn_setting_label;
-	lv_obj_t *screen_main_img_uptext;
-	lv_obj_t *screen_main_label_uptext;
-	lv_obj_t *screen_main_img_probg1;
-	lv_obj_t *screen_main_label_done;
 	lv_obj_t *screen_main_label_donenum;
-	lv_obj_t *screen_main_label_nodone;
-	lv_obj_t *screen_main_img_probg2;
 	lv_obj_t *screen_main_label_todonum;
-	lv_obj_t *screen_main_btn_todolist;
-	lv_obj_t *screen_main_btn_todolist_label;
-	lv_obj_t *screen_main_label_battery;
-	lv_obj_t *screen_main_img_gp1;
 	lv_obj_t *screen_main_btn_realtime;
 	lv_obj_t *screen_main_btn_realtime_label;
+	lv_obj_t *screen_main_img_todo_icon;
+	lv_obj_t *screen_main_img_fun_icon;
+	lv_obj_t *screen_main_img_setting_icon;
+	lv_obj_t *screen_main_img_ai_icon;
+	lv_obj_t *screen_main_img_timer_icon;
+	lv_obj_t *screen_main_img_book_icon;
+	lv_obj_t *screen_main_img_done_icon;
+	lv_obj_t *screen_main_img_point_icon;
+	lv_obj_t *screen_main_label_chosen;
+	lv_obj_t *screen_main_arc_battery;
 	lv_obj_t *screen_todolist;
 	bool screen_todolist_del;
 	lv_obj_t *screen_todolist_btn_back;
@@ -67,14 +69,14 @@ typedef struct
 	lv_obj_t *screen_todolist_label_indexall;
 	lv_obj_t *screen_todolist_label_donenum;
 	lv_obj_t *screen_todolist_label_todonum;
-	lv_obj_t *screen_todolist_label_todo1;
-	lv_obj_t *screen_todolist_label_todo2;
-	lv_obj_t *screen_todolist_label_todo3;
-	lv_obj_t *screen_todolist_label_todo4;
 	lv_obj_t *screen_todolist_btn_lastpage;
 	lv_obj_t *screen_todolist_btn_lastpage_label;
 	lv_obj_t *screen_todolist_btn_nxtpage;
 	lv_obj_t *screen_todolist_btn_nxtpage_label;
+	lv_obj_t *screen_todolist_line_1;
+	lv_obj_t *screen_todolist_line_2;
+	lv_obj_t *screen_todolist_line_3;
+	lv_obj_t *screen_todolist_line_4;
 	lv_obj_t *screen_timing;
 	bool screen_timing_del;
 	lv_obj_t *screen_timing_btn_main;
@@ -84,29 +86,6 @@ typedef struct
 	lv_obj_t *screen_timing_label_date;
 	lv_obj_t *screen_timing_img_night;
 	lv_obj_t *screen_timing_img_morning;
-	lv_obj_t *screen_pomodoro;
-	bool screen_pomodoro_del;
-	lv_obj_t *screen_pomodoro_label_addnum;
-	lv_obj_t *screen_pomodoro_img_pomorect1;
-	lv_obj_t *screen_pomodoro_label_timer;
-	lv_obj_t *screen_pomodoro_label_funcstate;
-	lv_obj_t *screen_pomodoro_label_pomodoro;
-	lv_obj_t *screen_pomodoro_btn_stopwatch;
-	lv_obj_t *screen_pomodoro_btn_stopwatch_label;
-	lv_obj_t *screen_pomodoro_btn_countdown;
-	lv_obj_t *screen_pomodoro_btn_countdown_label;
-	lv_obj_t *screen_pomodoro_btn_back;
-	lv_obj_t *screen_pomodoro_btn_back_label;
-	lv_obj_t *screen_pomodoro_btn_start;
-	lv_obj_t *screen_pomodoro_btn_start_label;
-	lv_obj_t *screen_pomodoro_btn_reset;
-	lv_obj_t *screen_pomodoro_btn_reset_label;
-	lv_obj_t *screen_pomodoro_btn_addnum;
-	lv_obj_t *screen_pomodoro_btn_addnum_label;
-	lv_obj_t *screen_pomodoro_btn_minus;
-	lv_obj_t *screen_pomodoro_btn_minus_label;
-	lv_obj_t *screen_pomodoro_btn_plus;
-	lv_obj_t *screen_pomodoro_btn_plus_label;
 	lv_obj_t *screen_wordmeun;
 	bool screen_wordmeun_del;
 	lv_obj_t *screen_wordmeun_img_learn;
@@ -130,6 +109,34 @@ typedef struct
 	lv_obj_t *screen_wordmeun_label_Review;
 	lv_obj_t *screen_wordmeun_btn_review;
 	lv_obj_t *screen_wordmeun_btn_review_label;
+	lv_obj_t *screen_pomodoro;
+	bool screen_pomodoro_del;
+	lv_obj_t *screen_pomodoro_label_addnum;
+	lv_obj_t *screen_pomodoro_img_pomorect1;
+	lv_obj_t *screen_pomodoro_label_timer;
+	lv_obj_t *screen_pomodoro_label_funcstate;
+	lv_obj_t *screen_pomodoro_label_pomodoro;
+	lv_obj_t *screen_pomodoro_btn_stopwatch;
+	lv_obj_t *screen_pomodoro_btn_stopwatch_label;
+	lv_obj_t *screen_pomodoro_btn_countdown;
+	lv_obj_t *screen_pomodoro_btn_countdown_label;
+	lv_obj_t *screen_pomodoro_btn_back;
+	lv_obj_t *screen_pomodoro_btn_back_label;
+	lv_obj_t *screen_pomodoro_btn_start;
+	lv_obj_t *screen_pomodoro_btn_start_label;
+	lv_obj_t *screen_pomodoro_btn_reset;
+	lv_obj_t *screen_pomodoro_btn_reset_label;
+	lv_obj_t *screen_pomodoro_btn_addnum;
+	lv_obj_t *screen_pomodoro_btn_addnum_label;
+	lv_obj_t *screen_pomodoro_btn_minus;
+	lv_obj_t *screen_pomodoro_btn_minus_label;
+	lv_obj_t *screen_pomodoro_btn_plus;
+	lv_obj_t *screen_pomodoro_btn_plus_label;
+	lv_obj_t *screen_pomodoro_img_timeout;
+	lv_obj_t *screen_pomodoro_btn_complete;
+	lv_obj_t *screen_pomodoro_btn_complete_label;
+	lv_obj_t *screen_pomodoro_btn_continue;
+	lv_obj_t *screen_pomodoro_btn_continue_label;
 	lv_obj_t *screen_wordcard;
 	bool screen_wordcard_del;
 	lv_obj_t *screen_wordcard_img_wordrect;
@@ -346,8 +353,8 @@ void setup_scr_screen_reppo(lv_ui *ui);
 void setup_scr_screen_main(lv_ui *ui);
 void setup_scr_screen_todolist(lv_ui *ui);
 void setup_scr_screen_timing(lv_ui *ui);
-void setup_scr_screen_pomodoro(lv_ui *ui);
 void setup_scr_screen_wordmeun(lv_ui *ui);
+void setup_scr_screen_pomodoro(lv_ui *ui);
 void setup_scr_screen_wordcard(lv_ui *ui);
 void setup_scr_screen_reviewcard(lv_ui *ui);
 void setup_scr_screen_setting(lv_ui *ui);
@@ -376,37 +383,59 @@ LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_50);
 LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_51);
 LV_IMG_DECLARE(screen_reppo_reppo_gifreppo_startshow_1_52);
 
-LV_IMG_DECLARE(_Reppo_bg1_320x170);
-LV_IMG_DECLARE(_wifi_log_2_alpha_24x24);
-LV_IMG_DECLARE(_battery_label_v3_alpha_18x18);
-LV_IMG_DECLARE(_ble_label_v3_alpha_14x14);
-LV_IMG_DECLARE(_A_todolist_BG1_alpha_60x80);
-LV_IMG_DECLARE(_A_word_BG1_alpha_60x80);
-LV_IMG_DECLARE(_A_time_BG1_alpha_60x80);
-LV_IMG_DECLARE(_A_setting_BG1_alpha_60x80);
-LV_IMG_DECLARE(_probg4_alpha_160x15);
-LV_IMG_DECLARE(_progress_bg2_alpha_76x18);
-LV_IMG_DECLARE(_progress_bg2_alpha_76x18);
-LV_IMG_DECLARE(_reppo_main_gp1_alpha_75x16);
+LV_IMG_DECLARE(_AAA_main_bg_320x170);
 
-LV_IMG_DECLARE(_A_todo_bg_320x170);
+LV_IMG_DECLARE(_AAA_main_todolist_34x49);
 
-LV_IMG_DECLARE(_home_20x20);
+LV_IMG_DECLARE(_AAA_main_todolist_34x49);
 
-LV_IMG_DECLARE(_home_20x20);
+LV_IMG_DECLARE(_AAA_main_donelist_40x49);
+
+LV_IMG_DECLARE(_AAA_main_donelist_40x49);
+
+LV_IMG_DECLARE(_AAA_main_books_63x47);
+
+LV_IMG_DECLARE(_AAA_main_books_63x47);
+
+LV_IMG_DECLARE(_AAA_main_time_38x50);
+
+LV_IMG_DECLARE(_AAA_main_time_38x50);
+
+LV_IMG_DECLARE(_AAA_main_ai_44x49);
+
+LV_IMG_DECLARE(_AAA_main_ai_44x49);
+
+LV_IMG_DECLARE(_AAA_main_fun_50x49);
+
+LV_IMG_DECLARE(_AAA_main_fun_50x49);
+
+LV_IMG_DECLARE(_AAA_main_setting_41x49);
+
+LV_IMG_DECLARE(_AAA_main_setting_41x49);
+LV_IMG_DECLARE(_AAA_small_todo_alpha_16x15);
+LV_IMG_DECLARE(_AAA_smallfun_alpha_19x18);
+LV_IMG_DECLARE(_AAA_small_setting_alpha_16x16);
+LV_IMG_DECLARE(_AAA_small_deepseek_alpha_20x16);
+LV_IMG_DECLARE(_AAA_small_timer_alpha_15x15);
+LV_IMG_DECLARE(_AAA_small_words_alpha_17x15);
+LV_IMG_DECLARE(_AAA_small_Done_alpha_15x15);
+LV_IMG_DECLARE(_AAA_main_dian_alpha_6x6);
+
+LV_IMG_DECLARE(_AAA_todolist_bg_320x170);
 
 LV_IMG_DECLARE(_A_timing_BG_320x170);
 LV_IMG_DECLARE(_night_alpha_25x25);
 LV_IMG_DECLARE(_morning_alpha_30x30);
-
-LV_IMG_DECLARE(_pomodoro_bg_320x170);
-LV_IMG_DECLARE(_pomorect_alpha_257x52);
 
 LV_IMG_DECLARE(_word_BG_320x170);
 LV_IMG_DECLARE(_word_rectangle_alpha_129x21);
 LV_IMG_DECLARE(_word_rectangle_alpha_264x94);
 LV_IMG_DECLARE(_book_alpha_39x46);
 LV_IMG_DECLARE(_word_rectangle_alpha_129x21);
+
+LV_IMG_DECLARE(_pomodoro_bg_320x170);
+LV_IMG_DECLARE(_pomorect_alpha_257x52);
+LV_IMG_DECLARE(_AAA_TIME_BG1_alpha_296x133);
 
 LV_IMG_DECLARE(_word_BG1_320x170);
 LV_IMG_DECLARE(_word_rectangle_alpha_264x136);
@@ -487,7 +516,7 @@ LV_IMG_DECLARE(_wifi_log_2_alpha_110x110);
 LV_IMG_DECLARE(_wifi_false_alpha_20x20);
 LV_IMG_DECLARE(_password_icon2_alpha_19x18);
 
-LV_IMG_DECLARE(_reppo_todo_sel_320x170);
+LV_IMG_DECLARE(_AAA_todosel_bg_320x170);
 
 LV_IMG_DECLARE(_v1_320x170);
 
@@ -513,30 +542,29 @@ LV_IMG_DECLARE(_gemini_alpha_15x15);
 LV_IMG_DECLARE(_A_reppo_donelis_bg_320x170);
 
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
-LV_FONT_DECLARE(lv_font_AlexBrush_Regular_16)
-LV_FONT_DECLARE(lv_font_Alatsi_Regular_12)
-LV_FONT_DECLARE(lv_font_Acme_Regular_16)
-LV_FONT_DECLARE(lv_font_arial_11)
+LV_FONT_DECLARE(lv_font_Acme_Regular_12)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_14)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_20)
 LV_FONT_DECLARE(lv_font_Acme_Regular_14)
-LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_16)
 LV_FONT_DECLARE(lv_font_Abel_regular_83)
 LV_FONT_DECLARE(lv_font_Abel_regular_15)
-LV_FONT_DECLARE(lv_font_Abel_regular_30)
-LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_14)
-LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_13)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_16)
-LV_FONT_DECLARE(lv_font_montserratMedium_25)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_18)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_14)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_17)
-LV_FONT_DECLARE(lv_font_Acme_Regular_22)
+LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_16)
+LV_FONT_DECLARE(lv_font_Abel_regular_30)
+LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_14)
+LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_13)
+LV_FONT_DECLARE(lv_font_montserratMedium_25)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)
+LV_FONT_DECLARE(lv_font_Acme_Regular_22)
 LV_FONT_DECLARE(lv_font_Acme_Regular_30)
 LV_FONT_DECLARE(lv_font_arial_14)
 LV_FONT_DECLARE(lv_font_montserratMedium_10)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_14)
-LV_FONT_DECLARE(lv_font_Acme_Regular_12)
+LV_FONT_DECLARE(lv_font_Alatsi_Regular_12)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_13)
 LV_FONT_DECLARE(lv_font_arial_16)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_11)

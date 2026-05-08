@@ -72,6 +72,7 @@ extern bool main_load_label;
 extern int8_t done_sum;
 extern int8_t todo_sum;
 //timer
+extern int  current_task_index;
 extern int16_t timer_all_num ;
 extern uint32_t timer_all_seconds;
 extern lv_timer_t *pomodoro_timer;

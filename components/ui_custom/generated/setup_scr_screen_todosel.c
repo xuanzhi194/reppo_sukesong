@@ -25,7 +25,7 @@ void setup_scr_screen_todosel(lv_ui *ui)
 
     //Write style for screen_todosel, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_bg_opa(ui->screen_todosel, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_src(ui->screen_todosel, &_reppo_todo_sel_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_src(ui->screen_todosel, &_AAA_todosel_bg_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_opa(ui->screen_todosel, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_recolor_opa(ui->screen_todosel, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -37,8 +37,8 @@ void setup_scr_screen_todosel(lv_ui *ui)
     lv_obj_align(ui->screen_todosel_btn_complete_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_todosel_btn_complete, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_todosel_btn_complete_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_todosel_btn_complete, 26, 79);
-    lv_obj_set_size(ui->screen_todosel_btn_complete, 131, 27);
+    lv_obj_set_pos(ui->screen_todosel_btn_complete, 18, 85);
+    lv_obj_set_size(ui->screen_todosel_btn_complete, 137, 28);
 
     //Write style for screen_todosel_btn_complete, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_bg_opa(ui->screen_todosel_btn_complete, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -55,7 +55,7 @@ void setup_scr_screen_todosel(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_todosel_btn_complete, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_todosel_btn_complete, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_width(ui->screen_todosel_btn_complete, 10, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_todosel_btn_complete, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_todosel_btn_complete, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_todosel_btn_complete, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_todosel_btn_complete, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_todosel_btn_complete, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
@@ -72,8 +72,8 @@ void setup_scr_screen_todosel(lv_ui *ui)
     lv_obj_align(ui->screen_todosel_btn_focus_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_todosel_btn_focus, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_todosel_btn_focus_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_todosel_btn_focus, 163, 80);
-    lv_obj_set_size(ui->screen_todosel_btn_focus, 128, 25);
+    lv_obj_set_pos(ui->screen_todosel_btn_focus, 162, 86);
+    lv_obj_set_size(ui->screen_todosel_btn_focus, 138, 26);
 
     //Write style for screen_todosel_btn_focus, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_bg_opa(ui->screen_todosel_btn_focus, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -90,7 +90,7 @@ void setup_scr_screen_todosel(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_todosel_btn_focus, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_todosel_btn_focus, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_width(ui->screen_todosel_btn_focus, 10, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_todosel_btn_focus, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_todosel_btn_focus, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_todosel_btn_focus, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_todosel_btn_focus, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_todosel_btn_focus, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
@@ -107,7 +107,7 @@ void setup_scr_screen_todosel(lv_ui *ui)
     lv_obj_align(ui->screen_todosel_btn_cancel_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_todosel_btn_cancel, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_todosel_btn_cancel_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_todosel_btn_cancel, 138, 116);
+    lv_obj_set_pos(ui->screen_todosel_btn_cancel, 137, 128);
     lv_obj_set_size(ui->screen_todosel_btn_cancel, 43, 15);
 
     //Write style for screen_todosel_btn_cancel, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -125,7 +125,7 @@ void setup_scr_screen_todosel(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_todosel_btn_cancel, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_todosel_btn_cancel, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_width(ui->screen_todosel_btn_cancel, 10, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_todosel_btn_cancel, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_todosel_btn_cancel, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_todosel_btn_cancel, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_todosel_btn_cancel, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_todosel_btn_cancel, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
@@ -136,16 +136,16 @@ void setup_scr_screen_todosel(lv_ui *ui)
 
     //Write codes screen_todosel_label_task
     ui->screen_todosel_label_task = lv_label_create(ui->screen_todosel);
-    lv_label_set_text(ui->screen_todosel_label_task, "TO DO 1: DONE");
+    lv_label_set_text(ui->screen_todosel_label_task, "阅读一小时");
     lv_label_set_long_mode(ui->screen_todosel_label_task, LV_LABEL_LONG_SCROLL);
-    lv_obj_set_pos(ui->screen_todosel_label_task, 86, 55);
+    lv_obj_set_pos(ui->screen_todosel_label_task, 84, 59);
     lv_obj_set_size(ui->screen_todosel_label_task, 150, 16);
 
     //Write style for screen_todosel_label_task, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_todosel_label_task, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_todosel_label_task, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_todosel_label_task, lv_color_hex(0xffc1fb), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_todosel_label_task, &lv_font_AdobeFangsongStdRegular_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_todosel_label_task, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_todosel_label_task, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_todosel_label_task, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_todosel_label_task, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_todosel_label_task, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

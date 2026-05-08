@@ -79,8 +79,8 @@ void init_scr_del_flag(lv_ui *ui)
     ui->screen_main_del = true;
     ui->screen_todolist_del = true;
     ui->screen_timing_del = true;
-    ui->screen_pomodoro_del = true;
     ui->screen_wordmeun_del = true;
+    ui->screen_pomodoro_del = true;
     ui->screen_wordcard_del = true;
     ui->screen_reviewcard_del = true;
     ui->screen_setting_del = true;

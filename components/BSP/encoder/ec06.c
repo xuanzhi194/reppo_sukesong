@@ -2,6 +2,7 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "driver/gpio.h"
+#include <stdbool.h>
 #include <stdlib.h>
 
 static const char *TAG = "ENCODER";
@@ -12,22 +13,38 @@ static const char *TAG = "ENCODER";
 #define ENCODER_A_GPIO 1
 #define ENCODER_B_GPIO 2
 
-// 2. 硬件判定阈值：机械编码器转动一格(Detent)通常会产生 4 个硬件脉冲
-#define EC_STEP_PER_DETENT 4   
+// 2. 软件步进阈值。提高阈值可降低灵敏度、减少误触：
+//    8 约等于两格合并一次 UI 事件，手感更稳。
+#define EC_STEP_PER_DETENT 8
 
-// 3. 防抖冷却时间 (微秒)：120ms
-#define EC_DEBOUNCE_US 120000
+// 3. 两次 UI 步进的最短间隔（微秒）。硬件滤波已经处理触点毛刺，
+//    这里只限制同一次机械抖动造成的重复触发，同时允许快速连续旋转。
+#define EC_EVENT_GAP_US 30000
 
-// 4. 反向迟滞量：当试图改变旋转方向时，需要额外增加的脉冲门槛
-//    这能有效防止停止时的机械回弹导致的误触
-#define EC_HYSTERESIS   2
+// 4. 停顿超过该时间后，丢弃未达到一格的残余脉冲，避免下次转动被旧抖动影响。
+#define EC_IDLE_RESET_US 180000
+
+// 5. 异常情况下的累加上限。快速旋转时保留多个待发送事件，但不让残值无限堆积。
+#define EC_ACCUM_LIMIT (EC_STEP_PER_DETENT * 8)
 
 // ===============================================
 
 static pcnt_unit_handle_t pcnt_unit = NULL;
 static int accumulated_count = 0;     // 软件累加器
-static int last_direction = 0;        // 上次生效的方向: 1为正(顺), -1为负(逆), 0初始
-static int64_t last_trigger_time = 0; // 上次触发时间
+static int64_t last_trigger_time = -1; // 首次不经过冷却（-1 表示尚未有过有效步进）
+static int64_t last_motion_time = -1;  // 最近一次读到硬件脉冲的时间
+static bool release_pending = false;   // keypad 模式下，每个 NEXT/PREV 后需要插入一次释放
+
+static int clamp_accumulated_count(int value)
+{
+    if (value > EC_ACCUM_LIMIT) {
+        return EC_ACCUM_LIMIT;
+    }
+    if (value < -EC_ACCUM_LIMIT) {
+        return -EC_ACCUM_LIMIT;
+    }
+    return value;
+}
 
 /**
  * @brief 初始化编码器驱动
@@ -48,10 +65,10 @@ void init_encoder_direction() {
     };
     ESP_ERROR_CHECK(pcnt_new_unit(&unit_config, &pcnt_unit));
 
-    // 3. 设置硬件毛刺滤波 (10000ns = 10us)
-    //    过滤掉所有短于 10us 的电气毛刺
+    // 3. 硬件毛刺滤波（纳秒→内部计数，见 pcnt_unit_set_glitch_filter，须使 thres ≤ 1023）
+    //    在常见 80MHz APB 下，约 12.7µs 为上限；取 12µs 作为较严滤抖仍合法的最大值之一。
     pcnt_glitch_filter_config_t filter_config = {
-        .max_glitch_ns = 10000,
+        .max_glitch_ns = 12000,
     };
     ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
 
@@ -96,63 +113,57 @@ void init_encoder_direction() {
 
 /**
  * @brief 检测编码器旋转事件
- * @return 0: 无动作, 1: 逆时针(PREV), 2: 顺时针(NEXT)
+ * @return 0: 无动作, 1: 顺时针(NEXT, lv_port 映射键值 1), 2: 逆时针(PREV, 键值 2)
  */
 uint8_t check_encoder_direction() {
     int curr_hw_count = 0;
+    int64_t now = esp_timer_get_time();
     
     // 1. 读取硬件计数器当前的增量
     ESP_ERROR_CHECK(pcnt_unit_get_count(pcnt_unit, &curr_hw_count));
     
-    if (curr_hw_count == 0) {
-        return 0; // 硬件没动，直接返回
-    }
-
-    // 2. 将硬件增量累加到软件变量中，清空硬件计数器
-    //    这样不仅防止硬件溢出，还能让我们的逻辑始终处理相对增量
-    accumulated_count += curr_hw_count;
-    ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
-
-    // 3. 逻辑检查：阈值 + 迟滞
-    int direction_now = (accumulated_count > 0) ? 1 : -1;
-    int threshold = EC_STEP_PER_DETENT;
-
-    // 核心改进：迟滞 (Hysteresis)
-    // 如果当前旋转意图和上次生效方向相反（例如上次顺时针，这次想逆时针），
-    // 增加阈值门槛。这能有效屏蔽掉停止时的机械回弹（backlash）。
-    // last_direction: 1 (CW), -1 (CCW), 0 (Init)
-    if (last_direction != 0 && direction_now != last_direction) {
-        threshold += EC_HYSTERESIS;
-    }
-
-    // 检查累加值是否达到计算后的动态阈值
-    if (abs(accumulated_count) >= threshold) {
-        
-        int64_t now = esp_timer_get_time();
-        
-        // 更新记录“最后一次有效方向”
-        last_direction = direction_now; 
-        
-        // 归零软件累加器
+    // 2. 停顿后只清掉不足一格的残余脉冲，完整步进会继续派发给 UI。
+    if (abs(accumulated_count) < EC_STEP_PER_DETENT && last_motion_time >= 0 && (now - last_motion_time) > EC_IDLE_RESET_US) {
         accumulated_count = 0;
-
-        // --- 防抖时间冷却逻辑 ---
-        if ((now - last_trigger_time) > EC_DEBOUNCE_US) {
-            last_trigger_time = now;
-            
-            if (direction_now == 1) {
-                // 正数 -> 顺时针
-                ESP_LOGI(TAG, "Action: NEXT >>");
-                return 1; 
-            } else {
-                // 负数 -> 逆时针
-                ESP_LOGI(TAG, "Action: << PREV");
-                return 2; 
-            }
-        } 
-        // 冷却期内的操作会被吞掉，但 accumulated_count 已清零，
-        // 保证了快速旋转时不会积压错误的脉冲。
     }
 
-    return 0;
+    // 3. 始终代数相加，保留快速旋转产生的多格事件，方向由累加值符号决定。
+    if (curr_hw_count != 0) {
+        last_motion_time = now;
+        accumulated_count += curr_hw_count;
+        ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
+        accumulated_count = clamp_accumulated_count(accumulated_count);
+    }
+
+    // 4. 当前输入驱动把旋钮映射为 keypad。连续两次返回 NEXT/PREV 会被 LVGL 视为
+    //    同一次按住，所以每个旋转事件后先返回一次 0，形成 PRESS -> RELEASE。
+    if (release_pending) {
+        release_pending = false;
+        return 0;
+    }
+
+    if (accumulated_count == 0) {
+        return 0;
+    }
+
+    // 5. 达到一格才触发；间隔期内保留累加值，下一次 read 继续派发，快速旋转不丢步。
+    if (abs(accumulated_count) < EC_STEP_PER_DETENT) {
+        return 0;
+    }
+
+    if (last_trigger_time >= 0 && (now - last_trigger_time) < EC_EVENT_GAP_US) {
+        return 0;
+    }
+
+    last_trigger_time = now;
+    release_pending = true;
+    int sign = (accumulated_count > 0) ? 1 : -1;
+    accumulated_count -= sign * EC_STEP_PER_DETENT;
+
+    if (sign > 0) {
+        ESP_LOGD(TAG, "Action: NEXT >>");
+        return 1;
+    }
+    ESP_LOGD(TAG, "Action: << PREV");
+    return 2;
 }

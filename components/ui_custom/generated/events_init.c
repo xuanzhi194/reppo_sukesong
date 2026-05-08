@@ -16,6 +16,8 @@
 #endif
 
 #include "custom.h"
+lv_obj_t *main_cont;
+
 int8_t wordbook_totalnum = 3;
 int review_solve_num = 0;
 lv_obj_t* menu_cont;
@@ -52,54 +54,17 @@ static void screen_main_event_handler (lv_event_t *e)
         lv_label_set_text_fmt(guider_ui.screen_main_label_donenum, "%d", done_sum);
         lv_label_set_text_fmt(guider_ui.screen_main_label_todonum, "%d", todo_sum);
 
-        break;
-    }
-    default:
-        break;
-    }
-}
+        // //container configure flex
+        main_cont = guider_ui.screen_main_cont_main;
+        lv_obj_set_style_clip_corner(main_cont, false, 0);
+        lv_obj_set_flex_flow(main_cont, LV_FLEX_FLOW_ROW);
+        lv_obj_set_scroll_dir(main_cont, LV_DIR_HOR);
+        lv_obj_set_flex_align(main_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        lv_obj_set_scroll_snap_x(main_cont, LV_SCROLL_SNAP_CENTER);
+        lv_obj_set_style_pad_column(main_cont, 45, 0); // 设置图标间距
+        lv_obj_scroll_to_view(lv_obj_get_child(main_cont, 0), LV_ANIM_ON);
 
-static void screen_main_btn_word_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_main_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
 
-static void screen_main_btn_timer_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_pomodoro, guider_ui.screen_pomodoro_del, &guider_ui.screen_main_del, setup_scr_screen_pomodoro, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_main_btn_setting_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_setting, guider_ui.screen_setting_del, &guider_ui.screen_main_del, setup_scr_screen_setting, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
         break;
     }
     default:
@@ -114,8 +79,236 @@ static void screen_main_btn_todolist_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_main_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"TODO");
+        lv_obj_clear_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 83, 155);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_todolist, -5, LV_STATE_FOCUSED);
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_main_btn_done_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_donelist, guider_ui.screen_donelist_del, &guider_ui.screen_main_del, setup_scr_screen_donelist, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"DONE");
+        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 108, 155);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_done, -5, LV_STATE_FOCUSED);
+
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_main_btn_word_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_main_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"WORD");
+        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 134, 155);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_word, -5, LV_STATE_FOCUSED);
+
+
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_main_btn_timer_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_pomodoro, guider_ui.screen_pomodoro_del, &guider_ui.screen_main_del, setup_scr_screen_pomodoro, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"POMODORO");
+        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 159, 155);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_timer, -5, LV_STATE_FOCUSED);
+
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_main_btn_ai_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_ai, guider_ui.screen_ai_del, &guider_ui.screen_main_del, setup_scr_screen_ai, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"AI SUMMARY");
+        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 186, 155);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_ai, -5, LV_STATE_FOCUSED);
+
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_main_btn_fun_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"FUN");
+        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon,213, 155);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_fun, -5, LV_STATE_FOCUSED);
+
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_main_btn_setting_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_setting, guider_ui.screen_setting_del, &guider_ui.screen_main_del, setup_scr_screen_setting, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"SETTING");
+        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 238, 155);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_setting, -5, LV_STATE_FOCUSED);
+
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
         break;
     }
     default:
@@ -140,10 +333,13 @@ static void screen_main_btn_realtime_event_handler (lv_event_t *e)
 void events_init_screen_main (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_main, screen_main_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_main_btn_todolist, screen_main_btn_todolist_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_main_btn_done, screen_main_btn_done_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_word, screen_main_btn_word_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_timer, screen_main_btn_timer_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_main_btn_ai, screen_main_btn_ai_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_main_btn_fun, screen_main_btn_fun_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_setting, screen_main_btn_setting_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_main_btn_todolist, screen_main_btn_todolist_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_realtime, screen_main_btn_realtime_event_handler, LV_EVENT_ALL, ui);
 }
 
@@ -214,37 +410,37 @@ static void screen_todolist_event_handler (lv_event_t *e)
         lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexcur, "%d", page_cur);
 
         //here code to load 1-4 task info into label_todo1 - label_todo4
-        lv_label_set_text(guider_ui.screen_todolist_label_todo1,ui_todo_list.items[page_cur*4-4].name);
-        lv_label_set_text(guider_ui.screen_todolist_label_todo2,ui_todo_list.items[page_cur*4-3].name);
-        lv_label_set_text(guider_ui.screen_todolist_label_todo3,ui_todo_list.items[page_cur*4-2].name);
-        lv_label_set_text(guider_ui.screen_todolist_label_todo4,ui_todo_list.items[page_cur*4-1].name);
+        lv_label_set_text(guider_ui.screen_todolist_btn_todo1_label,ui_todo_list.items[page_cur*4-4].name);
+        lv_label_set_text(guider_ui.screen_todolist_btn_todo2_label,ui_todo_list.items[page_cur*4-3].name);
+        lv_label_set_text(guider_ui.screen_todolist_btn_todo3_label,ui_todo_list.items[page_cur*4-2].name);
+        lv_label_set_text(guider_ui.screen_todolist_btn_todo4_label,ui_todo_list.items[page_cur*4-1].name);
         //show tasks for their init state color
         if(ui_todo_list.items[(page_cur-1)*4 + 0].done == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+            lv_obj_clear_flag(guider_ui.screen_todolist_line_1, LV_OBJ_FLAG_HIDDEN);
             ui_todo_list.items[(page_cur-1)*4 + 0].done = 1;
         } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+            lv_obj_add_flag(guider_ui.screen_todolist_line_1, LV_OBJ_FLAG_HIDDEN);
             ui_todo_list.items[(page_cur-1)*4 + 0].done = 0;
         }
         if(ui_todo_list.items[(page_cur-1)*4 + 1].done == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+            lv_obj_clear_flag(guider_ui.screen_todolist_line_2, LV_OBJ_FLAG_HIDDEN);
             ui_todo_list.items[(page_cur-1)*4 + 1].done = 1;
         } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+            lv_obj_add_flag(guider_ui.screen_todolist_line_2, LV_OBJ_FLAG_HIDDEN);
             ui_todo_list.items[(page_cur-1)*4 + 1].done = 0;
         }
         if(ui_todo_list.items[(page_cur-1)*4 + 2].done == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+            lv_obj_clear_flag(guider_ui.screen_todolist_line_3, LV_OBJ_FLAG_HIDDEN);
             ui_todo_list.items[(page_cur-1)*4 + 2].done = 1;
         } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+            lv_obj_add_flag(guider_ui.screen_todolist_line_3, LV_OBJ_FLAG_HIDDEN);
             ui_todo_list.items[(page_cur-1)*4 + 2].done = 0;
         }
         if(ui_todo_list.items[(page_cur-1)*4 + 3].done == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+            lv_obj_clear_flag(guider_ui.screen_todolist_line_4, LV_OBJ_FLAG_HIDDEN);
             ui_todo_list.items[(page_cur-1)*4 + 3].done = 1;
         } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+            lv_obj_add_flag(guider_ui.screen_todolist_line_4, LV_OBJ_FLAG_HIDDEN);
             ui_todo_list.items[(page_cur-1)*4 + 3].done = 0;
         }
         break;
@@ -283,16 +479,12 @@ static void screen_todolist_btn_todo1_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo1, LV_LABEL_LONG_SCROLL_CIRCULAR);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo2, LV_LABEL_LONG_CLIP);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo3, LV_LABEL_LONG_CLIP);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo4, LV_LABEL_LONG_CLIP);
+        ui_animation(guider_ui.screen_todolist_btn_todo1, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo1), 45, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo1, LV_LABEL_LONG_CLIP);
-
+        lv_obj_set_y(guider_ui.screen_todolist_btn_todo1, 51);
         break;
     }
     default:
@@ -312,16 +504,12 @@ static void screen_todolist_btn_todo2_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo2, LV_LABEL_LONG_SCROLL_CIRCULAR);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo1, LV_LABEL_LONG_CLIP);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo3, LV_LABEL_LONG_CLIP);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo4, LV_LABEL_LONG_CLIP);
+        ui_animation(guider_ui.screen_todolist_btn_todo2, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo2), 45, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo2, LV_LABEL_LONG_CLIP);
-
+        lv_obj_set_y(guider_ui.screen_todolist_btn_todo2, 51);
         break;
     }
     default:
@@ -341,16 +529,12 @@ static void screen_todolist_btn_todo3_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo3, LV_LABEL_LONG_SCROLL_CIRCULAR);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo1, LV_LABEL_LONG_CLIP);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo2, LV_LABEL_LONG_CLIP);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo4, LV_LABEL_LONG_CLIP);
+        ui_animation(guider_ui.screen_todolist_btn_todo3, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo3), 98, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo3, LV_LABEL_LONG_CLIP);
-
+        lv_obj_set_y(guider_ui.screen_todolist_btn_todo3, 104);
         break;
     }
     default:
@@ -364,21 +548,18 @@ static void screen_todolist_btn_todo4_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        todo_index = 3;
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
+        todo_index = 3;
         break;
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo4, LV_LABEL_LONG_SCROLL_CIRCULAR);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo1, LV_LABEL_LONG_CLIP);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo2, LV_LABEL_LONG_CLIP);
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo3, LV_LABEL_LONG_CLIP);
+        ui_animation(guider_ui.screen_todolist_btn_todo4, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo4), 98, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
-        lv_label_set_long_mode(guider_ui.screen_todolist_label_todo4, LV_LABEL_LONG_CLIP);
+        lv_obj_set_y(guider_ui.screen_todolist_btn_todo4, 104);
         break;
     }
     default:
@@ -438,38 +619,37 @@ static void screen_todolist_btn_lastpage_event_handler (lv_event_t *e)
             lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexcur, "%d", page_cur);
 
             //here code to load 1-4 task info into label_todo1 - label_todo4
-            lv_label_set_text(guider_ui.screen_todolist_label_todo1,ui_todo_list.items[page_cur*4-4].name);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo2,ui_todo_list.items[page_cur*4-3].name);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo3,ui_todo_list.items[page_cur*4-2].name);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo4,ui_todo_list.items[page_cur*4-1].name);
-
+            lv_label_set_text(guider_ui.screen_todolist_btn_todo1_label,ui_todo_list.items[page_cur*4-4].name);
+            lv_label_set_text(guider_ui.screen_todolist_btn_todo2_label,ui_todo_list.items[page_cur*4-3].name);
+            lv_label_set_text(guider_ui.screen_todolist_btn_todo3_label,ui_todo_list.items[page_cur*4-2].name);
+            lv_label_set_text(guider_ui.screen_todolist_btn_todo4_label,ui_todo_list.items[page_cur*4-1].name);
             //show tasks for their init state color
             if(ui_todo_list.items[(page_cur-1)*4 + 0].done == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_clear_flag(guider_ui.screen_todolist_line_1, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 0].done = 1;
             } else {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_add_flag(guider_ui.screen_todolist_line_1, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 0].done = 0;
             }
             if(ui_todo_list.items[(page_cur-1)*4 + 1].done == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_clear_flag(guider_ui.screen_todolist_line_2, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 1].done = 1;
             } else {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_add_flag(guider_ui.screen_todolist_line_2, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 1].done = 0;
             }
             if(ui_todo_list.items[(page_cur-1)*4 + 2].done == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_clear_flag(guider_ui.screen_todolist_line_3, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 2].done = 1;
             } else {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_add_flag(guider_ui.screen_todolist_line_3, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 2].done = 0;
             }
             if(ui_todo_list.items[(page_cur-1)*4 + 3].done == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_clear_flag(guider_ui.screen_todolist_line_4, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 3].done = 1;
             } else {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_add_flag(guider_ui.screen_todolist_line_4, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 3].done = 0;
             }
         }
@@ -532,38 +712,37 @@ static void screen_todolist_btn_nxtpage_event_handler (lv_event_t *e)
             lv_label_set_text_fmt(guider_ui.screen_todolist_label_indexcur, "%d", page_cur);
 
             //here code to load 1-4 task info into label_todo1 - label_todo4
-            lv_label_set_text(guider_ui.screen_todolist_label_todo1,ui_todo_list.items[page_cur*4-4].name);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo2,ui_todo_list.items[page_cur*4-3].name);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo3,ui_todo_list.items[page_cur*4-2].name);
-            lv_label_set_text(guider_ui.screen_todolist_label_todo4,ui_todo_list.items[page_cur*4-1].name);
-
+            lv_label_set_text(guider_ui.screen_todolist_btn_todo1_label,ui_todo_list.items[page_cur*4-4].name);
+            lv_label_set_text(guider_ui.screen_todolist_btn_todo2_label,ui_todo_list.items[page_cur*4-3].name);
+            lv_label_set_text(guider_ui.screen_todolist_btn_todo3_label,ui_todo_list.items[page_cur*4-2].name);
+            lv_label_set_text(guider_ui.screen_todolist_btn_todo4_label,ui_todo_list.items[page_cur*4-1].name);
             //show tasks for their init state color
             if(ui_todo_list.items[(page_cur-1)*4 + 0].done == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_clear_flag(guider_ui.screen_todolist_line_1, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 0].done = 1;
             } else {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_add_flag(guider_ui.screen_todolist_line_1, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 0].done = 0;
             }
             if(ui_todo_list.items[(page_cur-1)*4 + 1].done == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_clear_flag(guider_ui.screen_todolist_line_2, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 1].done = 1;
             } else {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo2, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_add_flag(guider_ui.screen_todolist_line_2, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 1].done = 0;
             }
             if(ui_todo_list.items[(page_cur-1)*4 + 2].done == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_clear_flag(guider_ui.screen_todolist_line_3, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 2].done = 1;
             } else {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo3, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_add_flag(guider_ui.screen_todolist_line_3, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 2].done = 0;
             }
             if(ui_todo_list.items[(page_cur-1)*4 + 3].done == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_clear_flag(guider_ui.screen_todolist_line_4, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 3].done = 1;
             } else {
-                lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo4, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
+                lv_obj_add_flag(guider_ui.screen_todolist_line_4, LV_OBJ_FLAG_HIDDEN);
                 ui_todo_list.items[(page_cur-1)*4 + 3].done = 0;
             }
         }
@@ -628,6 +807,124 @@ void events_init_screen_timing (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_timing_btn_main, screen_timing_btn_main_event_handler, LV_EVENT_ALL, ui);
 }
 
+static void screen_wordmeun_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_SCREEN_LOAD_START:
+    {
+        //screen buttion add
+        screen_wordmenu_buttion_add();
+        //-----------------//
+        int process_percent = (book_info[wordbook_index].word_learned_num*100) / book_info[wordbook_index].word_total_num;
+        lv_label_set_text(guider_ui.screen_wordmeun_label_bookname,book_info[wordbook_index].book_name);
+        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_divdernum,"%d/%d words (%d%%)",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_total_num,process_percent);
+        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordindicate,"Learn: %d Review: %d",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_review_num);
+        lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,process_percent,LV_ANIM_ON);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_wordmeun_btn_back_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        lv_obj_t * act_scr = lv_scr_act();
+        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_wordmeun_btn_bookleft_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        if(wordbook_index >= 1) {
+            wordbook_index -= 1;
+            int16_t process_percent = (book_info[wordbook_index].word_learned_num* 100) / book_info[wordbook_index].word_total_num;
+            lv_label_set_text(guider_ui.screen_wordmeun_label_bookname,book_info[wordbook_index].book_name);
+            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_divdernum,"%d/%d words (%d%%)",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_total_num,process_percent);
+            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordindicate,"Learn: %d Review: %d",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_review_num);
+            lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,process_percent,LV_ANIM_ON);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_wordmeun_btn_bookright_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        if(wordbook_index < wordbook_totalnum-1) {
+            wordbook_index += 1;
+            int16_t process_percent = (book_info[wordbook_index].word_learned_num* 100) / book_info[wordbook_index].word_total_num;
+            lv_label_set_text(guider_ui.screen_wordmeun_label_bookname,book_info[wordbook_index].book_name);
+            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_divdernum,"%d/%d words (%d%%)",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_total_num,process_percent);
+            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordindicate,"Learn: %d Review: %d",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_review_num);
+            lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,process_percent,LV_ANIM_ON);
+        }
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_wordmeun_btn_learn_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordcard, guider_ui.screen_wordcard_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_wordcard, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_wordmeun_btn_review_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_reviewcard, guider_ui.screen_reviewcard_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_reviewcard, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void events_init_screen_wordmeun (lv_ui *ui)
+{
+    lv_obj_add_event_cb(ui->screen_wordmeun, screen_wordmeun_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_wordmeun_btn_back, screen_wordmeun_btn_back_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_wordmeun_btn_bookleft, screen_wordmeun_btn_bookleft_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_wordmeun_btn_bookright, screen_wordmeun_btn_bookright_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_wordmeun_btn_learn, screen_wordmeun_btn_learn_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_wordmeun_btn_review, screen_wordmeun_btn_review_event_handler, LV_EVENT_ALL, ui);
+}
+
 static void screen_pomodoro_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -647,6 +944,9 @@ static void screen_pomodoro_event_handler (lv_event_t *e)
         countdown_process_label = 0;
         stopwatch_start_label = 0;
         stopwatch_process_label = 0;
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_complete, LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_continue, LV_STATE_DISABLED);
+        lv_obj_add_flag(guider_ui.screen_pomodoro_img_timeout, LV_OBJ_FLAG_HIDDEN);
         //focus or not juge
         if(focus_en == 1) {
             if(guider_ui.screen_pomodoro_label_pomodoro != NULL) {
@@ -885,6 +1185,92 @@ static void screen_pomodoro_btn_plus_event_handler (lv_event_t *e)
     }
 }
 
+static void screen_pomodoro_btn_complete_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        pomodoro_countdown = 1;
+        pomodoro_stopwatch = 0;
+        timer_all_num = 25; //minutes
+        timer_all_seconds = 0;
+        pomodoro_timer = NULL;
+        pomodoro_stopwatch = 0;
+        countdown_start_label = 0;
+        countdown_process_label = 0;
+        stopwatch_start_label = 0;
+        stopwatch_process_label = 0;
+        lv_label_set_text(guider_ui.screen_pomodoro_label_timer,"00:25:00");
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_complete, LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_continue, LV_STATE_DISABLED);
+        lv_obj_add_flag(guider_ui.screen_pomodoro_img_timeout, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_minus,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_plus,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_addnum,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_reset,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_start,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_back,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_countdown,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_stopwatch,LV_STATE_DISABLED);
+        lv_obj_clear_flag(guider_ui.screen_pomodoro_btn_start,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_pomodoro_btn_reset,LV_OBJ_FLAG_HIDDEN);
+
+        //task done
+        ui_todo_list.items[current_task_index].done = 1;
+        done_sum += 1; //add 1
+        todo_sum -= 1;
+        lv_label_set_text(guider_ui.screen_pomodoro_label_pomodoro,"Pomodoro Timer");
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_pomodoro_btn_continue_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        lv_label_set_text(guider_ui.screen_pomodoro_label_timer,"00:25:00");
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_complete, LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_continue, LV_STATE_DISABLED);
+        lv_obj_add_flag(guider_ui.screen_pomodoro_img_timeout, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_minus,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_plus,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_addnum,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_reset,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_start,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_back,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_countdown,LV_STATE_DISABLED);
+        lv_obj_clear_state(guider_ui.screen_pomodoro_btn_stopwatch,LV_STATE_DISABLED);
+        lv_obj_clear_flag(guider_ui.screen_pomodoro_btn_start,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_pomodoro_btn_reset,LV_OBJ_FLAG_HIDDEN);
+
+        pomodoro_countdown = 1;
+        pomodoro_stopwatch = 0;
+        timer_all_num = 25; //minutes
+        timer_all_seconds = 0;
+        pomodoro_timer = NULL;
+        pomodoro_stopwatch = 0;
+        countdown_start_label = 0;
+        countdown_process_label = 0;
+        stopwatch_start_label = 0;
+        stopwatch_process_label = 0;
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_complete, LV_STATE_DISABLED);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_continue, LV_STATE_DISABLED);
+        lv_obj_add_flag(guider_ui.screen_pomodoro_img_timeout, LV_OBJ_FLAG_HIDDEN);
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void events_init_screen_pomodoro (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_pomodoro, screen_pomodoro_event_handler, LV_EVENT_ALL, ui);
@@ -896,124 +1282,8 @@ void events_init_screen_pomodoro (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_addnum, screen_pomodoro_btn_addnum_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_minus, screen_pomodoro_btn_minus_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_plus, screen_pomodoro_btn_plus_event_handler, LV_EVENT_ALL, ui);
-}
-
-static void screen_wordmeun_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_SCREEN_LOAD_START:
-    {
-        //screen buttion add
-        screen_wordmenu_buttion_add();
-        //-----------------//
-        int process_percent = (book_info[wordbook_index].word_learned_num*100) / book_info[wordbook_index].word_total_num;
-        lv_label_set_text(guider_ui.screen_wordmeun_label_bookname,book_info[wordbook_index].book_name);
-        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_divdernum,"%d/%d words (%d%%)",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_total_num,process_percent);
-        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordindicate,"Learn: %d Review: %d",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_review_num);
-        lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,process_percent,LV_ANIM_ON);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordmeun_btn_back_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordmeun_btn_bookleft_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        if(wordbook_index >= 1) {
-            wordbook_index -= 1;
-            int16_t process_percent = (book_info[wordbook_index].word_learned_num* 100) / book_info[wordbook_index].word_total_num;
-            lv_label_set_text(guider_ui.screen_wordmeun_label_bookname,book_info[wordbook_index].book_name);
-            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_divdernum,"%d/%d words (%d%%)",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_total_num,process_percent);
-            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordindicate,"Learn: %d Review: %d",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_review_num);
-            lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,process_percent,LV_ANIM_ON);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordmeun_btn_bookright_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        if(wordbook_index < wordbook_totalnum-1) {
-            wordbook_index += 1;
-            int16_t process_percent = (book_info[wordbook_index].word_learned_num* 100) / book_info[wordbook_index].word_total_num;
-            lv_label_set_text(guider_ui.screen_wordmeun_label_bookname,book_info[wordbook_index].book_name);
-            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_divdernum,"%d/%d words (%d%%)",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_total_num,process_percent);
-            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordindicate,"Learn: %d Review: %d",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_review_num);
-            lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,process_percent,LV_ANIM_ON);
-        }
-
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordmeun_btn_learn_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordcard, guider_ui.screen_wordcard_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_wordcard, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordmeun_btn_review_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_reviewcard, guider_ui.screen_reviewcard_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_reviewcard, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-void events_init_screen_wordmeun (lv_ui *ui)
-{
-    lv_obj_add_event_cb(ui->screen_wordmeun, screen_wordmeun_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordmeun_btn_back, screen_wordmeun_btn_back_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordmeun_btn_bookleft, screen_wordmeun_btn_bookleft_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordmeun_btn_bookright, screen_wordmeun_btn_bookright_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordmeun_btn_learn, screen_wordmeun_btn_learn_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordmeun_btn_review, screen_wordmeun_btn_review_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_pomodoro_btn_complete, screen_pomodoro_btn_complete_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_pomodoro_btn_continue, screen_pomodoro_btn_continue_event_handler, LV_EVENT_ALL, ui);
 }
 
 static void screen_wordcard_event_handler (lv_event_t *e)
@@ -1999,13 +2269,13 @@ static void screen_todosel_event_handler (lv_event_t *e)
 
         const char *text_ptr = NULL;
         if(todo_index == 0) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo1);
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo1_label);
         } else if(todo_index == 1) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo2);
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo2_label);
         } else if(todo_index == 2) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo3);
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo3_label);
         } else if(todo_index == 3) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo4);
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo4_label);
         }
 
         if(guider_ui.screen_todosel_label_task != NULL && text_ptr != NULL) {
@@ -2027,12 +2297,10 @@ static void screen_todosel_btn_complete_event_handler (lv_event_t *e)
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todosel_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, true, true);
         //task done or not label change
         if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0x9a9a9a), LV_PART_MAIN|LV_STATE_DEFAULT);
             ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 1;
             done_sum += 1; //add 1
             todo_sum -= 1;
         } else {
-            lv_obj_set_style_text_color(guider_ui.screen_todolist_label_todo1, lv_color_hex(0xFFFFFF), LV_PART_MAIN|LV_STATE_DEFAULT);
             ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 0;
             done_sum -= 1; //delete 1
             todo_sum += 1;
@@ -2059,19 +2327,20 @@ static void screen_todosel_btn_focus_event_handler (lv_event_t *e)
         //copy label to todosel menu
         const char *text_ptr = NULL;
         if(todo_index == 0) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo1);
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo1_label);
         } else if(todo_index == 1) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo2);
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo2_label);
         } else if(todo_index == 2) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo3);
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo3_label);
         } else if(todo_index == 3) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_label_todo4);
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo4_label);
         }
         // copy into current_task_name
         strncpy(current_task_name, text_ptr, sizeof(current_task_name) - 1);
         current_task_name[sizeof(current_task_name) - 1] = '\0'; // make sure string \0 ending
         todo_back_label = 1;
         focus_en = 1;
+        current_task_index = (page_cur-1) * 4 + todo_index;
         lv_obj_clear_flag(guider_ui.screen_todolist, LV_OBJ_FLAG_CLICKABLE);
         break;
     }

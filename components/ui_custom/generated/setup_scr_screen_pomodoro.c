@@ -126,8 +126,8 @@ void setup_scr_screen_pomodoro(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_pomodoro_label_pomodoro, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_pomodoro_label_pomodoro, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_pomodoro_label_pomodoro, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_pomodoro_label_pomodoro, &lv_font_AdobeFangsongStdRegular_16, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_pomodoro_label_pomodoro, 163, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_pomodoro_label_pomodoro, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_pomodoro_label_pomodoro, 229, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_pomodoro_label_pomodoro, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_pomodoro_label_pomodoro, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(ui->screen_pomodoro_label_pomodoro, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -437,6 +437,110 @@ void setup_scr_screen_pomodoro(lv_ui *ui)
     lv_obj_set_style_text_color(ui->screen_pomodoro_btn_plus, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_text_font(ui->screen_pomodoro_btn_plus, &lv_font_montserratMedium_25, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_text_opa(ui->screen_pomodoro_btn_plus, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
+
+    //Write codes screen_pomodoro_img_timeout
+    ui->screen_pomodoro_img_timeout = lv_img_create(ui->screen_pomodoro);
+    lv_obj_add_flag(ui->screen_pomodoro_img_timeout, LV_OBJ_FLAG_CLICKABLE);
+    lv_img_set_src(ui->screen_pomodoro_img_timeout, &_AAA_TIME_BG1_alpha_296x133);
+    lv_img_set_pivot(ui->screen_pomodoro_img_timeout, 50,50);
+    lv_img_set_angle(ui->screen_pomodoro_img_timeout, 0);
+    lv_obj_set_pos(ui->screen_pomodoro_img_timeout, 18, 22);
+    lv_obj_set_size(ui->screen_pomodoro_img_timeout, 296, 133);
+
+    //Write style for screen_pomodoro_img_timeout, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_img_recolor_opa(ui->screen_pomodoro_img_timeout, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_img_recolor(ui->screen_pomodoro_img_timeout, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_img_opa(ui->screen_pomodoro_img_timeout, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_pomodoro_img_timeout, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(ui->screen_pomodoro_img_timeout, true, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_pomodoro_btn_complete
+    ui->screen_pomodoro_btn_complete = lv_btn_create(ui->screen_pomodoro);
+    ui->screen_pomodoro_btn_complete_label = lv_label_create(ui->screen_pomodoro_btn_complete);
+    lv_label_set_text(ui->screen_pomodoro_btn_complete_label, "");
+    lv_label_set_long_mode(ui->screen_pomodoro_btn_complete_label, LV_LABEL_LONG_WRAP);
+    lv_obj_align(ui->screen_pomodoro_btn_complete_label, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_pad_all(ui->screen_pomodoro_btn_complete, 0, LV_STATE_DEFAULT);
+    lv_obj_set_width(ui->screen_pomodoro_btn_complete_label, LV_PCT(100));
+    lv_obj_set_pos(ui->screen_pomodoro_btn_complete, 37, 113);
+    lv_obj_set_size(ui->screen_pomodoro_btn_complete, 121, 18);
+
+    //Write style for screen_pomodoro_btn_complete, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_bg_opa(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_pomodoro_btn_complete, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_pomodoro_btn_complete, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_pomodoro_btn_complete, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_pomodoro_btn_complete, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write style for screen_pomodoro_btn_complete, Part: LV_PART_MAIN, State: LV_STATE_FOCUSED.
+    lv_obj_set_style_bg_opa(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_border_width(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_radius(ui->screen_pomodoro_btn_complete, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_width(ui->screen_pomodoro_btn_complete, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_pomodoro_btn_complete, lv_color_hex(0xaad7ef), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_opa(ui->screen_pomodoro_btn_complete, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_spread(ui->screen_pomodoro_btn_complete, 3, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_ofs_x(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_ofs_y(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_color(ui->screen_pomodoro_btn_complete, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_font(ui->screen_pomodoro_btn_complete, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_opa(ui->screen_pomodoro_btn_complete, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
+
+    //Write style for screen_pomodoro_btn_complete, Part: LV_PART_MAIN, State: LV_STATE_DISABLED.
+    lv_obj_set_style_bg_opa(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_border_width(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_radius(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_shadow_width(ui->screen_pomodoro_btn_complete, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_text_color(ui->screen_pomodoro_btn_complete, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_text_font(ui->screen_pomodoro_btn_complete, &lv_font_montserratMedium_12, LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_text_opa(ui->screen_pomodoro_btn_complete, 255, LV_PART_MAIN|LV_STATE_DISABLED);
+
+    //Write codes screen_pomodoro_btn_continue
+    ui->screen_pomodoro_btn_continue = lv_btn_create(ui->screen_pomodoro);
+    ui->screen_pomodoro_btn_continue_label = lv_label_create(ui->screen_pomodoro_btn_continue);
+    lv_label_set_text(ui->screen_pomodoro_btn_continue_label, "");
+    lv_label_set_long_mode(ui->screen_pomodoro_btn_continue_label, LV_LABEL_LONG_WRAP);
+    lv_obj_align(ui->screen_pomodoro_btn_continue_label, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_pad_all(ui->screen_pomodoro_btn_continue, 0, LV_STATE_DEFAULT);
+    lv_obj_set_width(ui->screen_pomodoro_btn_continue_label, LV_PCT(100));
+    lv_obj_set_pos(ui->screen_pomodoro_btn_continue, 167, 113);
+    lv_obj_set_size(ui->screen_pomodoro_btn_continue, 121, 18);
+
+    //Write style for screen_pomodoro_btn_continue, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_bg_opa(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_pomodoro_btn_continue, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_pomodoro_btn_continue, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_pomodoro_btn_continue, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_pomodoro_btn_continue, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write style for screen_pomodoro_btn_continue, Part: LV_PART_MAIN, State: LV_STATE_FOCUSED.
+    lv_obj_set_style_bg_opa(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_border_width(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_radius(ui->screen_pomodoro_btn_continue, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_width(ui->screen_pomodoro_btn_continue, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_pomodoro_btn_continue, lv_color_hex(0xaad7ef), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_opa(ui->screen_pomodoro_btn_continue, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_spread(ui->screen_pomodoro_btn_continue, 3, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_ofs_x(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_ofs_y(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_color(ui->screen_pomodoro_btn_continue, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_font(ui->screen_pomodoro_btn_continue, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_opa(ui->screen_pomodoro_btn_continue, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
+
+    //Write style for screen_pomodoro_btn_continue, Part: LV_PART_MAIN, State: LV_STATE_DISABLED.
+    lv_obj_set_style_bg_opa(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_border_width(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_radius(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_shadow_width(ui->screen_pomodoro_btn_continue, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_text_color(ui->screen_pomodoro_btn_continue, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_text_font(ui->screen_pomodoro_btn_continue, &lv_font_montserratMedium_12, LV_PART_MAIN|LV_STATE_DISABLED);
+    lv_obj_set_style_text_opa(ui->screen_pomodoro_btn_continue, 255, LV_PART_MAIN|LV_STATE_DISABLED);
 
     //The custom code of screen_pomodoro.
 

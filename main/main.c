@@ -110,10 +110,10 @@ static void ai_result_light_show(bool success,uint8_t retry_count)
 //------------lvgl timer to battery show----------//
 void my_battery_update_cb(lv_timer_t * timer) {
     if (lv_scr_act() != guider_ui.screen_main) return;
-    lv_obj_t * label = guider_ui.screen_main_label_battery;
-    if(label != NULL && lv_obj_is_valid(label)) {
+    lv_obj_t * arc = guider_ui.screen_main_arc_battery;
+    if(arc != NULL && lv_obj_is_valid(arc)) {
         int bat = get_battery_percentage();
-        lv_label_set_text_fmt(label, "%d%%", bat);
+        lv_arc_set_value(arc, bat);
     }
 }
 //------------lvgl timer to realtime clock show----//
@@ -351,11 +351,11 @@ void app_main(void)
     //wifi sta mode
     init_wifi();
     init_ntp = 0;
-    while(!is_wifi_connected()){
-         wifi_connect_to_new_network("wphone", "seanhhhh");
-         vTaskDelay(3000);
-         wifi_success = is_wifi_connected();
-    }
+    // while(!is_wifi_connected()){
+    //      wifi_connect_to_new_network("wphone", "seanhhhh");
+    //      vTaskDelay(3000);
+    //      wifi_success = is_wifi_connected();
+    // }
     // ------------create LVGL mutex-----------//
     lvgl_mutex = xSemaphoreCreateMutex();
     // ------------set lvgl by gui guider-----------//
