@@ -30,8 +30,8 @@ void setup_scr_screen_reppo(lv_ui *ui)
 
     //Write codes screen_reppo_reppo_gif
     ui->screen_reppo_reppo_gif = lv_animimg_create(ui->screen_reppo);
-    lv_animimg_set_src(ui->screen_reppo_reppo_gif, (const void **) screen_reppo_reppo_gif_imgs, 19);
-    lv_animimg_set_duration(ui->screen_reppo_reppo_gif, 50*19);
+    lv_animimg_set_src(ui->screen_reppo_reppo_gif, (const void **) screen_reppo_reppo_gif_imgs, 24);
+    lv_animimg_set_duration(ui->screen_reppo_reppo_gif, 50*24);
     lv_animimg_set_repeat_count(ui->screen_reppo_reppo_gif, 1);
     lv_animimg_start(ui->screen_reppo_reppo_gif);
     lv_obj_set_pos(ui->screen_reppo_reppo_gif, 0, 0);

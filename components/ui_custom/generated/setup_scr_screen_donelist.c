@@ -25,7 +25,7 @@ void setup_scr_screen_donelist(lv_ui *ui)
 
     //Write style for screen_donelist, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_bg_opa(ui->screen_donelist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_src(ui->screen_donelist, &_A_reppo_donelis_bg_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_src(ui->screen_donelist, &_AAA_done_bg_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_opa(ui->screen_donelist, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_recolor_opa(ui->screen_donelist, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -38,7 +38,7 @@ void setup_scr_screen_donelist(lv_ui *ui)
 
     //Write style for screen_donelist_line_4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_line_width(ui->screen_donelist_line_4, 1, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(ui->screen_donelist_line_4, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_line_color(ui->screen_donelist_line_4, lv_color_hex(0x7698bc), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_line_opa(ui->screen_donelist_line_4, 130, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_line_rounded(ui->screen_donelist_line_4, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -51,7 +51,7 @@ void setup_scr_screen_donelist(lv_ui *ui)
 
     //Write style for screen_donelist_line_3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_line_width(ui->screen_donelist_line_3, 1, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(ui->screen_donelist_line_3, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_line_color(ui->screen_donelist_line_3, lv_color_hex(0x7698bc), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_line_opa(ui->screen_donelist_line_3, 136, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_line_rounded(ui->screen_donelist_line_3, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -64,7 +64,7 @@ void setup_scr_screen_donelist(lv_ui *ui)
 
     //Write style for screen_donelist_line_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_line_width(ui->screen_donelist_line_2, 1, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(ui->screen_donelist_line_2, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_line_color(ui->screen_donelist_line_2, lv_color_hex(0x7698bc), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_line_opa(ui->screen_donelist_line_2, 130, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_line_rounded(ui->screen_donelist_line_2, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -77,7 +77,7 @@ void setup_scr_screen_donelist(lv_ui *ui)
 
     //Write style for screen_donelist_line_1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_line_width(ui->screen_donelist_line_1, 1, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(ui->screen_donelist_line_1, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_line_color(ui->screen_donelist_line_1, lv_color_hex(0x7698bc), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_line_opa(ui->screen_donelist_line_1, 134, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_line_rounded(ui->screen_donelist_line_1, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -85,14 +85,14 @@ void setup_scr_screen_donelist(lv_ui *ui)
     ui->screen_donelist_label_donenum = lv_label_create(ui->screen_donelist);
     lv_label_set_text(ui->screen_donelist_label_donenum, "100");
     lv_label_set_long_mode(ui->screen_donelist_label_donenum, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_donelist_label_donenum, 168, 11);
-    lv_obj_set_size(ui->screen_donelist_label_donenum, 29, 17);
+    lv_obj_set_pos(ui->screen_donelist_label_donenum, 152, 9);
+    lv_obj_set_size(ui->screen_donelist_label_donenum, 33, 13);
 
     //Write style for screen_donelist_label_donenum, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_donenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_donenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_donenum, lv_color_hex(0x9fcdd4), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_donenum, &lv_font_SourceHanSerifSC_Regular_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_donenum, lv_color_hex(0x0689a1), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_donenum, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_donenum, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_donenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_donenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -108,14 +108,14 @@ void setup_scr_screen_donelist(lv_ui *ui)
     ui->screen_donelist_label_nosavenum = lv_label_create(ui->screen_donelist);
     lv_label_set_text(ui->screen_donelist_label_nosavenum, "100");
     lv_label_set_long_mode(ui->screen_donelist_label_nosavenum, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_donelist_label_nosavenum, 265, 11);
-    lv_obj_set_size(ui->screen_donelist_label_nosavenum, 29, 15);
+    lv_obj_set_pos(ui->screen_donelist_label_nosavenum, 252, 9);
+    lv_obj_set_size(ui->screen_donelist_label_nosavenum, 33, 13);
 
     //Write style for screen_donelist_label_nosavenum, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_nosavenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_nosavenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_nosavenum, lv_color_hex(0xdcaabd), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_nosavenum, &lv_font_SourceHanSerifSC_Regular_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_nosavenum, lv_color_hex(0x8b287d), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_nosavenum, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_nosavenum, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_nosavenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_nosavenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -127,29 +127,6 @@ void setup_scr_screen_donelist(lv_ui *ui)
     lv_obj_set_style_pad_left(ui->screen_donelist_label_nosavenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_donelist_label_nosavenum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-    //Write codes screen_donelist_label_done1
-    ui->screen_donelist_label_done1 = lv_label_create(ui->screen_donelist);
-    lv_label_set_text(ui->screen_donelist_label_done1, "跑步3公里");
-    lv_label_set_long_mode(ui->screen_donelist_label_done1, LV_LABEL_LONG_DOT);
-    lv_obj_set_pos(ui->screen_donelist_label_done1, 28, 37);
-    lv_obj_set_size(ui->screen_donelist_label_done1, 165, 18);
-
-    //Write style for screen_donelist_label_done1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_done1, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_done1, &lv_font_AdobeFangsongStdRegular_16, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_donelist_label_done1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_donelist_label_done1, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
     //Write codes screen_donelist_label_date1
     ui->screen_donelist_label_date1 = lv_label_create(ui->screen_donelist);
     lv_label_set_text(ui->screen_donelist_label_date1, "2026.04.13");
@@ -160,8 +137,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     //Write style for screen_donelist_label_date1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_date1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_date1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_date1, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_date1, &lv_font_SourceHanSerifSC_Regular_11, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_date1, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_date1, &lv_font_SourceHanSansSC_Medium_11, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_date1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_date1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_date1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -173,6 +150,29 @@ void setup_scr_screen_donelist(lv_ui *ui)
     lv_obj_set_style_pad_left(ui->screen_donelist_label_date1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_donelist_label_date1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
+    //Write codes screen_donelist_label_done1
+    ui->screen_donelist_label_done1 = lv_label_create(ui->screen_donelist);
+    lv_label_set_text(ui->screen_donelist_label_done1, "跑步3公里");
+    lv_label_set_long_mode(ui->screen_donelist_label_done1, LV_LABEL_LONG_DOT);
+    lv_obj_set_pos(ui->screen_donelist_label_done1, 28, 38);
+    lv_obj_set_size(ui->screen_donelist_label_done1, 165, 18);
+
+    //Write style for screen_donelist_label_done1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_done1, lv_color_hex(0x2f76a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_done1, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_donelist_label_done1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_donelist_label_done1, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_donelist_label_done1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
     //Write codes screen_donelist_label_done2
     ui->screen_donelist_label_done2 = lv_label_create(ui->screen_donelist);
     lv_label_set_text(ui->screen_donelist_label_done2, "考研英语一第二次模拟考试");
@@ -183,8 +183,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     //Write style for screen_donelist_label_done2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_done2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_done2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_done2, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_done2, &lv_font_AdobeFangsongStdRegular_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_done2, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_done2, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_done2, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_done2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_done2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -200,14 +200,14 @@ void setup_scr_screen_donelist(lv_ui *ui)
     ui->screen_donelist_label_done3 = lv_label_create(ui->screen_donelist);
     lv_label_set_text(ui->screen_donelist_label_done3, "阅读专业书籍");
     lv_label_set_long_mode(ui->screen_donelist_label_done3, LV_LABEL_LONG_DOT);
-    lv_obj_set_pos(ui->screen_donelist_label_done3, 28, 89);
+    lv_obj_set_pos(ui->screen_donelist_label_done3, 28, 91);
     lv_obj_set_size(ui->screen_donelist_label_done3, 165, 18);
 
     //Write style for screen_donelist_label_done3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_done3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_done3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_done3, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_done3, &lv_font_AdobeFangsongStdRegular_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_done3, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_done3, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_done3, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_done3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_done3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -223,14 +223,14 @@ void setup_scr_screen_donelist(lv_ui *ui)
     ui->screen_donelist_label_done4 = lv_label_create(ui->screen_donelist);
     lv_label_set_text(ui->screen_donelist_label_done4, "马克思主义论文");
     lv_label_set_long_mode(ui->screen_donelist_label_done4, LV_LABEL_LONG_DOT);
-    lv_obj_set_pos(ui->screen_donelist_label_done4, 28, 116);
+    lv_obj_set_pos(ui->screen_donelist_label_done4, 28, 118);
     lv_obj_set_size(ui->screen_donelist_label_done4, 165, 18);
 
     //Write style for screen_donelist_label_done4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_done4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_done4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_done4, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_done4, &lv_font_AdobeFangsongStdRegular_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_done4, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_done4, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_done4, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_done4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_done4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -252,8 +252,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     //Write style for screen_donelist_label_date2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_date2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_date2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_date2, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_date2, &lv_font_SourceHanSerifSC_Regular_11, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_date2, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_date2, &lv_font_SourceHanSansSC_Medium_11, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_date2, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_date2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_date2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -275,8 +275,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     //Write style for screen_donelist_label_date3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_date3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_date3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_date3, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_date3, &lv_font_SourceHanSerifSC_Regular_11, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_date3, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_date3, &lv_font_SourceHanSansSC_Medium_11, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_date3, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_date3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_date3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -298,8 +298,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     //Write style for screen_donelist_label_date4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_date4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_date4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_date4, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_date4, &lv_font_SourceHanSerifSC_Regular_11, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_date4, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_date4, &lv_font_SourceHanSansSC_Medium_11, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_date4, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_date4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_date4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -313,16 +313,16 @@ void setup_scr_screen_donelist(lv_ui *ui)
 
     //Write codes screen_donelist_label_page
     ui->screen_donelist_label_page = lv_label_create(ui->screen_donelist);
-    lv_label_set_text(ui->screen_donelist_label_page, "1/12");
+    lv_label_set_text(ui->screen_donelist_label_page, "1/1");
     lv_label_set_long_mode(ui->screen_donelist_label_page, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_donelist_label_page, 116, 145);
+    lv_obj_set_pos(ui->screen_donelist_label_page, 117, 147);
     lv_obj_set_size(ui->screen_donelist_label_page, 90, 15);
 
     //Write style for screen_donelist_label_page, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_page, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_page, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_page, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_page, &lv_font_AdobeFangsongStdRegular_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_page, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_page, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_page, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_page, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_page, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -342,7 +342,7 @@ void setup_scr_screen_donelist(lv_ui *ui)
     lv_obj_align(ui->screen_donelist_btn_save_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_donelist_btn_save, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_donelist_btn_save_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_donelist_btn_save, 294, 8);
+    lv_obj_set_pos(ui->screen_donelist_btn_save, 294, 7);
     lv_obj_set_size(ui->screen_donelist_btn_save, 18, 19);
 
     //Write style for screen_donelist_btn_save, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -360,7 +360,7 @@ void setup_scr_screen_donelist(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_donelist_btn_save, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_donelist_btn_save, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_width(ui->screen_donelist_btn_save, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_donelist_btn_save, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_donelist_btn_save, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_donelist_btn_save, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_donelist_btn_save, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_donelist_btn_save, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
@@ -377,8 +377,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     lv_obj_align(ui->screen_donelist_btn_nxtpage_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_donelist_btn_nxtpage, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_donelist_btn_nxtpage_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_donelist_btn_nxtpage, 211, 141);
-    lv_obj_set_size(ui->screen_donelist_btn_nxtpage, 103, 23);
+    lv_obj_set_pos(ui->screen_donelist_btn_nxtpage, 217, 145);
+    lv_obj_set_size(ui->screen_donelist_btn_nxtpage, 97, 19);
 
     //Write style for screen_donelist_btn_nxtpage, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_bg_opa(ui->screen_donelist_btn_nxtpage, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -395,7 +395,7 @@ void setup_scr_screen_donelist(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_donelist_btn_nxtpage, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_donelist_btn_nxtpage, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_width(ui->screen_donelist_btn_nxtpage, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_donelist_btn_nxtpage, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_donelist_btn_nxtpage, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_donelist_btn_nxtpage, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_donelist_btn_nxtpage, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_donelist_btn_nxtpage, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
@@ -412,8 +412,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     lv_obj_align(ui->screen_donelist_btn_lastpage_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_donelist_btn_lastpage, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_donelist_btn_lastpage_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_donelist_btn_lastpage, 7, 141);
-    lv_obj_set_size(ui->screen_donelist_btn_lastpage, 103, 23);
+    lv_obj_set_pos(ui->screen_donelist_btn_lastpage, 5, 146);
+    lv_obj_set_size(ui->screen_donelist_btn_lastpage, 94, 18);
 
     //Write style for screen_donelist_btn_lastpage, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_bg_opa(ui->screen_donelist_btn_lastpage, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -430,7 +430,7 @@ void setup_scr_screen_donelist(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_donelist_btn_lastpage, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_donelist_btn_lastpage, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_width(ui->screen_donelist_btn_lastpage, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_donelist_btn_lastpage, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_donelist_btn_lastpage, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_donelist_btn_lastpage, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_donelist_btn_lastpage, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_donelist_btn_lastpage, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
@@ -449,8 +449,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     //Write style for screen_donelist_label_focus1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_focus1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_focus1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_focus1, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_focus1, &lv_font_SourceHanSerifSC_Regular_11, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_focus1, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_focus1, &lv_font_SourceHanSansSC_Medium_11, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_focus1, 240, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_focus1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_focus1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -472,8 +472,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     //Write style for screen_donelist_label_focus2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_focus2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_focus2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_focus2, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_focus2, &lv_font_SourceHanSerifSC_Regular_11, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_focus2, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_focus2, &lv_font_SourceHanSansSC_Medium_11, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_focus2, 244, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_focus2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_focus2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -495,8 +495,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     //Write style for screen_donelist_label_focus3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_focus3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_focus3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_focus3, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_focus3, &lv_font_SourceHanSerifSC_Regular_11, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_focus3, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_focus3, &lv_font_SourceHanSansSC_Medium_11, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_focus3, 245, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_focus3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_focus3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -518,8 +518,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     //Write style for screen_donelist_label_focus4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_donelist_label_focus4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_label_focus4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_label_focus4, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_label_focus4, &lv_font_SourceHanSerifSC_Regular_11, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_label_focus4, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_label_focus4, &lv_font_SourceHanSansSC_Medium_11, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_label_focus4, 244, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_donelist_label_focus4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_donelist_label_focus4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -534,12 +534,12 @@ void setup_scr_screen_donelist(lv_ui *ui)
     //Write codes screen_donelist_btn_back
     ui->screen_donelist_btn_back = lv_btn_create(ui->screen_donelist);
     ui->screen_donelist_btn_back_label = lv_label_create(ui->screen_donelist_btn_back);
-    lv_label_set_text(ui->screen_donelist_btn_back_label, "");
+    lv_label_set_text(ui->screen_donelist_btn_back_label, "<");
     lv_label_set_long_mode(ui->screen_donelist_btn_back_label, LV_LABEL_LONG_WRAP);
     lv_obj_align(ui->screen_donelist_btn_back_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_donelist_btn_back, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_donelist_btn_back_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_donelist_btn_back, 6, 9);
+    lv_obj_set_pos(ui->screen_donelist_btn_back, 7, 8);
     lv_obj_set_size(ui->screen_donelist_btn_back, 20, 17);
 
     //Write style for screen_donelist_btn_back, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -547,8 +547,8 @@ void setup_scr_screen_donelist(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_donelist_btn_back, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_donelist_btn_back, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_donelist_btn_back, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_donelist_btn_back, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_donelist_btn_back, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_donelist_btn_back, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_donelist_btn_back, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_donelist_btn_back, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(ui->screen_donelist_btn_back, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -557,13 +557,13 @@ void setup_scr_screen_donelist(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_donelist_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_donelist_btn_back, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_width(ui->screen_donelist_btn_back, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_donelist_btn_back, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_donelist_btn_back, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_donelist_btn_back, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_donelist_btn_back, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_donelist_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_y(ui->screen_donelist_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_color(ui->screen_donelist_btn_back, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_font(ui->screen_donelist_btn_back, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_color(ui->screen_donelist_btn_back, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_font(ui->screen_donelist_btn_back, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_text_opa(ui->screen_donelist_btn_back, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
 
     //The custom code of screen_donelist.

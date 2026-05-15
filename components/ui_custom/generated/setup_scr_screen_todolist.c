@@ -98,7 +98,7 @@ void setup_scr_screen_todolist(lv_ui *ui)
     ui->screen_todolist_btn_todo2 = lv_btn_create(ui->screen_todolist);
     ui->screen_todolist_btn_todo2_label = lv_label_create(ui->screen_todolist_btn_todo2);
     lv_label_set_text(ui->screen_todolist_btn_todo2_label, "给家人打电话");
-    lv_label_set_long_mode(ui->screen_todolist_btn_todo2_label, LV_LABEL_LONG_WRAP);
+    lv_label_set_long_mode(ui->screen_todolist_btn_todo2_label, LV_LABEL_LONG_CLIP);
     lv_obj_align(ui->screen_todolist_btn_todo2_label, LV_ALIGN_LEFT_MID, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_todolist_btn_todo2, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_todolist_btn_todo2_label, LV_PCT(100));
@@ -128,7 +128,7 @@ void setup_scr_screen_todolist(lv_ui *ui)
     ui->screen_todolist_btn_todo3 = lv_btn_create(ui->screen_todolist);
     ui->screen_todolist_btn_todo3_label = lv_label_create(ui->screen_todolist_btn_todo3);
     lv_label_set_text(ui->screen_todolist_btn_todo3_label, "阅读专业书籍");
-    lv_label_set_long_mode(ui->screen_todolist_btn_todo3_label, LV_LABEL_LONG_WRAP);
+    lv_label_set_long_mode(ui->screen_todolist_btn_todo3_label, LV_LABEL_LONG_CLIP);
     lv_obj_align(ui->screen_todolist_btn_todo3_label, LV_ALIGN_LEFT_MID, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_todolist_btn_todo3, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_todolist_btn_todo3_label, LV_PCT(100));
@@ -158,7 +158,7 @@ void setup_scr_screen_todolist(lv_ui *ui)
     ui->screen_todolist_btn_todo4 = lv_btn_create(ui->screen_todolist);
     ui->screen_todolist_btn_todo4_label = lv_label_create(ui->screen_todolist_btn_todo4);
     lv_label_set_text(ui->screen_todolist_btn_todo4_label, "复习功课");
-    lv_label_set_long_mode(ui->screen_todolist_btn_todo4_label, LV_LABEL_LONG_WRAP);
+    lv_label_set_long_mode(ui->screen_todolist_btn_todo4_label, LV_LABEL_LONG_CLIP);
     lv_obj_align(ui->screen_todolist_btn_todo4_label, LV_ALIGN_LEFT_MID, 0, 0);
     lv_obj_set_style_pad_all(ui->screen_todolist_btn_todo4, 0, LV_STATE_DEFAULT);
     lv_obj_set_width(ui->screen_todolist_btn_todo4_label, LV_PCT(100));

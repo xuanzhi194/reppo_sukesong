@@ -19,7 +19,7 @@
 lv_obj_t *main_cont;
 
 int8_t wordbook_totalnum = 3;
-int review_solve_num = 0;
+int tmp_review_num = 0;
 lv_obj_t* menu_cont;
 bool is_week = 0;
 
@@ -473,8 +473,15 @@ static void screen_todolist_btn_todo1_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
+
         todo_index = 0;
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
+        if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+            break;
+        } else {
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+            break;
+        }
         break;
     }
     case LV_EVENT_FOCUSED:
@@ -499,7 +506,12 @@ static void screen_todolist_btn_todo2_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         todo_index = 1;
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
+        if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+        } else {
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+        }
+
         break;
     }
     case LV_EVENT_FOCUSED:
@@ -524,7 +536,12 @@ static void screen_todolist_btn_todo3_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         todo_index = 2;
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
+        if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+        } else {
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+        }
+
         break;
     }
     case LV_EVENT_FOCUSED:
@@ -548,8 +565,13 @@ static void screen_todolist_btn_todo4_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         todo_index = 3;
+        if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+        } else {
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+        }
+
         break;
     }
     case LV_EVENT_FOCUSED:
@@ -765,6 +787,198 @@ void events_init_screen_todolist (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_todolist_btn_nxtpage, screen_todolist_btn_nxtpage_event_handler, LV_EVENT_ALL, ui);
 }
 
+static void screen_todosel_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_SCREEN_LOAD_START:
+    {
+        //buttion add
+        screen_todosel_buttion_add();
+
+        const char *text_ptr = NULL;
+        if(todo_index == 0) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo1_label);
+        } else if(todo_index == 1) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo2_label);
+        } else if(todo_index == 2) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo3_label);
+        } else if(todo_index == 3) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo4_label);
+        }
+
+        if(guider_ui.screen_todosel_label_task != NULL && text_ptr != NULL) {
+            lv_label_set_text(guider_ui.screen_todosel_label_task, text_ptr);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_todosel_btn_complete_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todosel_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        //task done or not label change
+        if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
+            ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 1;
+            done_sum += 1; //add 1
+            todo_sum -= 1;
+        } else {
+            ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 0;
+            done_sum -= 1; //delete 1
+            todo_sum += 1;
+        }
+        //show done sum and todo sum
+        lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
+        lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
+        //todosel_back label
+        todosel_back = 1;
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_todosel_btn_focus_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_pomodoro, guider_ui.screen_pomodoro_del, &guider_ui.screen_todosel_del, setup_scr_screen_pomodoro, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        //copy label to todosel menu
+        const char *text_ptr = NULL;
+        if(todo_index == 0) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo1_label);
+        } else if(todo_index == 1) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo2_label);
+        } else if(todo_index == 2) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo3_label);
+        } else if(todo_index == 3) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo4_label);
+        }
+        // copy into current_task_name
+        strncpy(current_task_name, text_ptr, sizeof(current_task_name) - 1);
+        current_task_name[sizeof(current_task_name) - 1] = '\0'; // make sure string \0 ending
+        todo_back_label = 1;
+        focus_en = 1;
+        current_task_index = (page_cur-1) * 4 + todo_index;
+        lv_obj_clear_flag(guider_ui.screen_todolist, LV_OBJ_FLAG_CLICKABLE);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_todosel_btn_cancel_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todosel_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        todosel_back = 1;
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void events_init_screen_todosel (lv_ui *ui)
+{
+    lv_obj_add_event_cb(ui->screen_todosel, screen_todosel_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_todosel_btn_complete, screen_todosel_btn_complete_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_todosel_btn_focus, screen_todosel_btn_focus_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_todosel_btn_cancel, screen_todosel_btn_cancel_event_handler, LV_EVENT_ALL, ui);
+}
+
+static void screen_todoback_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_SCREEN_LOAD_START:
+    {
+        //buttion add
+        screen_todoback_buttion_add();
+
+        const char *text_ptr = NULL;
+        if(todo_index == 0) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo1_label);
+        } else if(todo_index == 1) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo2_label);
+        } else if(todo_index == 2) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo3_label);
+        } else if(todo_index == 3) {
+            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo4_label);
+        }
+
+        if(guider_ui.screen_todoback_label_name != NULL && text_ptr != NULL) {
+            lv_label_set_text(guider_ui.screen_todoback_label_name, text_ptr);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_todoback_btn_cancel_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todoback_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        todosel_back = 1;
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_todoback_btn_recover_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todoback_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        //task done or not label change
+        if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
+            ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 1;
+            done_sum += 1; //add 1
+            todo_sum -= 1;
+        } else {
+            ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 0;
+            done_sum -= 1; //delete 1
+            todo_sum += 1;
+        }
+        //todosel_back label
+        todosel_back = 1;
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void events_init_screen_todoback (lv_ui *ui)
+{
+    lv_obj_add_event_cb(ui->screen_todoback, screen_todoback_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_todoback_btn_cancel, screen_todoback_btn_cancel_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_todoback_btn_recover, screen_todoback_btn_recover_event_handler, LV_EVENT_ALL, ui);
+}
+
 static void screen_timing_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -816,70 +1030,10 @@ static void screen_wordmeun_event_handler (lv_event_t *e)
         //screen buttion add
         screen_wordmenu_buttion_add();
         //-----------------//
-        int process_percent = (book_info[wordbook_index].word_learned_num*100) / book_info[wordbook_index].word_total_num;
-        lv_label_set_text(guider_ui.screen_wordmeun_label_bookname,book_info[wordbook_index].book_name);
-        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_divdernum,"%d/%d words (%d%%)",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_total_num,process_percent);
-        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordindicate,"Learn: %d Review: %d",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_review_num);
+        int process_percent = learned_cards_num / total_cards_num;
+        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_reviewnum,"%d%%",process_percent);
+        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_reviewnum,"Review: %d",review_cards_num);
         lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,process_percent,LV_ANIM_ON);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordmeun_btn_back_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordmeun_btn_bookleft_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        if(wordbook_index >= 1) {
-            wordbook_index -= 1;
-            int16_t process_percent = (book_info[wordbook_index].word_learned_num* 100) / book_info[wordbook_index].word_total_num;
-            lv_label_set_text(guider_ui.screen_wordmeun_label_bookname,book_info[wordbook_index].book_name);
-            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_divdernum,"%d/%d words (%d%%)",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_total_num,process_percent);
-            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordindicate,"Learn: %d Review: %d",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_review_num);
-            lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,process_percent,LV_ANIM_ON);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordmeun_btn_bookright_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        if(wordbook_index < wordbook_totalnum-1) {
-            wordbook_index += 1;
-            int16_t process_percent = (book_info[wordbook_index].word_learned_num* 100) / book_info[wordbook_index].word_total_num;
-            lv_label_set_text(guider_ui.screen_wordmeun_label_bookname,book_info[wordbook_index].book_name);
-            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_divdernum,"%d/%d words (%d%%)",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_total_num,process_percent);
-            lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordindicate,"Learn: %d Review: %d",book_info[wordbook_index].word_learned_num,book_info[wordbook_index].word_review_num);
-            lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,process_percent,LV_ANIM_ON);
-        }
-
         break;
     }
     default:
@@ -915,14 +1069,200 @@ static void screen_wordmeun_btn_review_event_handler (lv_event_t *e)
     }
 }
 
+static void screen_wordmeun_btn_back_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void events_init_screen_wordmeun (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_wordmeun, screen_wordmeun_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordmeun_btn_back, screen_wordmeun_btn_back_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordmeun_btn_bookleft, screen_wordmeun_btn_bookleft_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordmeun_btn_bookright, screen_wordmeun_btn_bookright_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_wordmeun_btn_learn, screen_wordmeun_btn_learn_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_wordmeun_btn_review, screen_wordmeun_btn_review_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_wordmeun_btn_back, screen_wordmeun_btn_back_event_handler, LV_EVENT_ALL, ui);
+}
+
+static void screen_wordcard_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_SCREEN_LOAD_START:
+    {
+        //screen button add
+        screen_wordcard_buttion_add();
+        //------------------------//
+        cards_index = 1;
+        lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",cards_index,round_cards_num);
+
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_wordcard_btn_dui_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+
+        if(cards_index == round_cards_num) {
+            led_green_en = 1; // flow light rgb
+            cards_index += 1;
+            learned_cards_num += 1;
+            wordcard_change = 1;
+            lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
+            lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
+            lv_obj_add_state(guider_ui.screen_wordcard_btn_back, LV_STATE_FOCUSED);
+            lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",round_cards_num,round_cards_num);
+        } else if(cards_index < round_cards_num) {
+            led_green_en = 1; // flow light rgb
+            cards_index += 1;
+            learned_cards_num += 1;
+            wordcard_change = 1;
+            lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",cards_index,round_cards_num);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_wordcard_btn_cuo_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        led_red_en = 1; //flow light rgb
+        review_cards_num += 1;
+        cards_index += 1;
+        lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",cards_index,round_cards_num);
+        wordcard_change = 1;
+        if(cards_index >= round_cards_num) {
+            lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
+            lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
+            lv_obj_add_state(guider_ui.screen_wordcard_btn_back, LV_STATE_FOCUSED);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_wordcard_btn_back_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_wordcard_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void events_init_screen_wordcard (lv_ui *ui)
+{
+    lv_obj_add_event_cb(ui->screen_wordcard, screen_wordcard_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_wordcard_btn_dui, screen_wordcard_btn_dui_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_wordcard_btn_cuo, screen_wordcard_btn_cuo_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_wordcard_btn_back, screen_wordcard_btn_back_event_handler, LV_EVENT_ALL, ui);
+}
+
+static void screen_reviewcard_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_SCREEN_LOAD_START:
+    {
+        //screen_wordcard
+        screen_reviewcard_buttion_add();
+        //--------------------//
+        if(review_cards_num == 0) {
+            lv_label_set_text(guider_ui.screen_reviewcard_label_index,"0/0");
+            lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui,LV_STATE_DISABLED);
+            lv_obj_add_state(guider_ui.screen_reviewcard_btn_back,LV_STATE_FOCUSED);
+            lv_label_set_text(guider_ui.screen_reviewcard_label_meaning,"No word need to review");
+            lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic,"");
+            lv_label_set_text(guider_ui.screen_reviewcard_label_spelling,"Good Job!");
+        } else {
+            cards_index = 1;
+            tmp_review_num = review_cards_num;
+            lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",cards_index,tmp_review_num);
+            reviewcard_change = 1;
+        }
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_reviewcard_btn_dui_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        led_green_en = 1;
+        if(cards_index > tmp_review_num) {
+            lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
+            lv_obj_add_state(guider_ui.screen_reviewcard_btn_back, LV_STATE_FOCUSED);
+        } else if(cards_index == tmp_review_num) {
+            cards_index += 1;
+            review_cards_num -= 1;
+            lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",tmp_review_num,tmp_review_num);
+            reviewcard_change = 1;
+        } else {
+            cards_index += 1;
+            review_cards_num -= 1;
+            lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",cards_index,tmp_review_num);
+            reviewcard_change = 1;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_reviewcard_btn_back_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_reviewcard_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void events_init_screen_reviewcard (lv_ui *ui)
+{
+    lv_obj_add_event_cb(ui->screen_reviewcard, screen_reviewcard_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_reviewcard_btn_dui, screen_reviewcard_btn_dui_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_reviewcard_btn_back, screen_reviewcard_btn_back_event_handler, LV_EVENT_ALL, ui);
 }
 
 static void screen_pomodoro_event_handler (lv_event_t *e)
@@ -947,6 +1287,8 @@ static void screen_pomodoro_event_handler (lv_event_t *e)
         lv_obj_add_state(guider_ui.screen_pomodoro_btn_complete, LV_STATE_DISABLED);
         lv_obj_add_state(guider_ui.screen_pomodoro_btn_continue, LV_STATE_DISABLED);
         lv_obj_add_flag(guider_ui.screen_pomodoro_img_timeout, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_pomodoro_img_stopwatch, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_pomodoro_img_countdown, LV_OBJ_FLAG_HIDDEN);
         //focus or not juge
         if(focus_en == 1) {
             if(guider_ui.screen_pomodoro_label_pomodoro != NULL) {
@@ -970,7 +1312,8 @@ static void screen_pomodoro_btn_stopwatch_event_handler (lv_event_t *e)
         if(countdown_start_label == 0) {
             pomodoro_countdown = 0;
             pomodoro_stopwatch = 1;
-            lv_label_set_text(guider_ui.screen_pomodoro_label_funcstate,"StopWatch");
+            lv_obj_clear_flag(guider_ui.screen_pomodoro_img_stopwatch, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(guider_ui.screen_pomodoro_img_countdown, LV_OBJ_FLAG_HIDDEN);
             lv_label_set_text(guider_ui.screen_pomodoro_label_timer,"00:00:00");
             timer_all_num = 0;
         }
@@ -992,7 +1335,8 @@ static void screen_pomodoro_btn_countdown_event_handler (lv_event_t *e)
             pomodoro_countdown = 1;
             pomodoro_stopwatch = 0;
             timer_all_num = 25;
-            lv_label_set_text(guider_ui.screen_pomodoro_label_funcstate,"CountDown");
+            lv_obj_add_flag(guider_ui.screen_pomodoro_img_stopwatch, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_pomodoro_img_countdown, LV_OBJ_FLAG_HIDDEN);
             lv_label_set_text(guider_ui.screen_pomodoro_label_timer,"00:25:00");
         }
 
@@ -1046,30 +1390,24 @@ static void screen_pomodoro_btn_start_event_handler (lv_event_t *e)
                 countdown_start(timer_all_num);
                 countdown_start_label = 1;
                 countdown_process_label = 1;
-                lv_label_set_text(guider_ui.screen_pomodoro_btn_start_label,"Pause");
             } else if(countdown_process_label == 1) {
                 countdown_process_label = 0;
                 lv_timer_pause(pomodoro_timer);
-                lv_label_set_text(guider_ui.screen_pomodoro_btn_start_label,"Start");
             } else if(countdown_process_label == 0) {
                 countdown_process_label = 1;
                 lv_timer_resume(pomodoro_timer);
-                lv_label_set_text(guider_ui.screen_pomodoro_btn_start_label,"Pause");
             }
         } else if(pomodoro_stopwatch == 1) {
             if(stopwatch_start_label == 0) {
                 stopwatch_start();
                 stopwatch_start_label = 1;
                 stopwatch_process_label = 1;
-                lv_label_set_text(guider_ui.screen_pomodoro_btn_start_label,"Pause");
             } else if(stopwatch_process_label == 1) {
                 stopwatch_process_label = 0;
                 lv_timer_pause(pomodoro_timer);
-                lv_label_set_text(guider_ui.screen_pomodoro_btn_start_label,"Start");
             } else if(stopwatch_process_label == 0) {
                 stopwatch_process_label = 1;
                 lv_timer_resume(pomodoro_timer);
-                lv_label_set_text(guider_ui.screen_pomodoro_btn_start_label,"Pause");
             }
         }
         break;
@@ -1121,63 +1459,15 @@ static void screen_pomodoro_btn_addnum_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        const char* txt = lv_label_get_text(guider_ui.screen_pomodoro_label_addnum);
+        const char* txt = lv_label_get_text(guider_ui.screen_pomodoro_btn_addnum_label);
         int timer_addnum = atoi(txt);
         if(timer_addnum == 1) {
-            lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_addnum,"%d",5);
+            lv_label_set_text_fmt(guider_ui.screen_pomodoro_btn_addnum_label,"%d",5);
         } else if(timer_addnum == 5) {
-            lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_addnum,"%d",10);
+            lv_label_set_text_fmt(guider_ui.screen_pomodoro_btn_addnum_label,"%d",10);
         } else if(timer_addnum == 10) {
-            lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_addnum,"%d",1);
+            lv_label_set_text_fmt(guider_ui.screen_pomodoro_btn_addnum_label,"%d",1);
         }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_pomodoro_btn_minus_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        const char* txt = lv_label_get_text(guider_ui.screen_pomodoro_label_addnum);
-        int timer_addnum = atoi(txt);
-        int timer_hours;
-        int timer_minutes;
-        if(timer_all_num >= timer_addnum && pomodoro_countdown == 1 && !countdown_start_label && !stopwatch_start_label) {
-            timer_all_num -= timer_addnum;
-            timer_hours = timer_all_num / 60;
-            timer_minutes = timer_all_num - (timer_hours*60);
-            lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer, "%02d:%02d:00",timer_hours,timer_minutes);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_pomodoro_btn_plus_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        const char* txt = lv_label_get_text(guider_ui.screen_pomodoro_label_addnum);
-        int timer_addnum = atoi(txt);
-        int timer_hours;
-        int timer_minutes;
-        if(pomodoro_countdown == 1 && timer_all_num + timer_addnum <= 1440 && !countdown_start_label && !stopwatch_start_label) {
-            timer_all_num += timer_addnum;
-            timer_hours = timer_all_num / 60;
-            timer_minutes = timer_all_num - (timer_hours*60);
-            lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer, "%02d:%02d:00",timer_hours,timer_minutes);
-        }
-
-
         break;
     }
     default:
@@ -1215,6 +1505,7 @@ static void screen_pomodoro_btn_complete_event_handler (lv_event_t *e)
         lv_obj_clear_state(guider_ui.screen_pomodoro_btn_stopwatch,LV_STATE_DISABLED);
         lv_obj_clear_flag(guider_ui.screen_pomodoro_btn_start,LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(guider_ui.screen_pomodoro_btn_reset,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_start, LV_STATE_FOCUSED);
 
         //task done
         ui_todo_list.items[current_task_index].done = 1;
@@ -1249,7 +1540,7 @@ static void screen_pomodoro_btn_continue_event_handler (lv_event_t *e)
         lv_obj_clear_state(guider_ui.screen_pomodoro_btn_stopwatch,LV_STATE_DISABLED);
         lv_obj_clear_flag(guider_ui.screen_pomodoro_btn_start,LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(guider_ui.screen_pomodoro_btn_reset,LV_OBJ_FLAG_HIDDEN);
-
+        lv_obj_add_state(guider_ui.screen_pomodoro_btn_start, LV_STATE_FOCUSED);
         pomodoro_countdown = 1;
         pomodoro_stopwatch = 0;
         timer_all_num = 25; //minutes
@@ -1271,6 +1562,54 @@ static void screen_pomodoro_btn_continue_event_handler (lv_event_t *e)
     }
 }
 
+static void screen_pomodoro_btn_plus_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        const char* txt = lv_label_get_text(guider_ui.screen_pomodoro_btn_addnum_label);
+        int timer_addnum = atoi(txt);
+        int timer_hours;
+        int timer_minutes;
+        if(pomodoro_countdown == 1 && timer_all_num + timer_addnum <= 1440 && !countdown_start_label && !stopwatch_start_label) {
+            timer_all_num += timer_addnum;
+            timer_hours = timer_all_num / 60;
+            timer_minutes = timer_all_num - (timer_hours*60);
+            lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer, "%02d:%02d:00",timer_hours,timer_minutes);
+        }
+
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_pomodoro_btn_minus_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        const char* txt = lv_label_get_text(guider_ui.screen_pomodoro_btn_addnum_label);
+        int timer_addnum = atoi(txt);
+        int timer_hours;
+        int timer_minutes;
+        if(timer_all_num >= timer_addnum && pomodoro_countdown == 1 && !countdown_start_label && !stopwatch_start_label) {
+            timer_all_num -= timer_addnum;
+            timer_hours = timer_all_num / 60;
+            timer_minutes = timer_all_num - (timer_hours*60);
+            lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer, "%02d:%02d:00",timer_hours,timer_minutes);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void events_init_screen_pomodoro (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_pomodoro, screen_pomodoro_event_handler, LV_EVENT_ALL, ui);
@@ -1280,463 +1619,10 @@ void events_init_screen_pomodoro (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_start, screen_pomodoro_btn_start_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_reset, screen_pomodoro_btn_reset_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_addnum, screen_pomodoro_btn_addnum_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_pomodoro_btn_minus, screen_pomodoro_btn_minus_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_pomodoro_btn_plus, screen_pomodoro_btn_plus_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_complete, screen_pomodoro_btn_complete_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_pomodoro_btn_continue, screen_pomodoro_btn_continue_event_handler, LV_EVENT_ALL, ui);
-}
-
-static void screen_wordcard_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_SCREEN_LOAD_START:
-    {
-        //screen_wordcard
-        screen_wordcard_buttion_add();
-        //--------------------//
-        lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",book_info[wordbook_index].word_index + 1,book_info[wordbook_index].word_total_num);
-        if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 0) {
-            lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_clear_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-        } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xdaffcb), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-        } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 2) {
-            lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xefcbd1), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-        }
-        wordcard_change = 1;
-
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordcard_btn_back_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_wordcard_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordcard_btn_left_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        if(book_info[wordbook_index].word_index >= 1) {
-            book_info[wordbook_index].word_index -= 1;
-            lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",book_info[wordbook_index].word_index + 1,book_info[wordbook_index].word_total_num);
-            if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 0) {
-                lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-                lv_obj_clear_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-                lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-            } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xdaffcb), LV_PART_MAIN|LV_STATE_DEFAULT);
-                lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-                lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-            } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 2) {
-                lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xefcbd1), LV_PART_MAIN|LV_STATE_DEFAULT);
-                lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-                lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-            }
-            wordcard_change = 1;
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordcard_btn_right_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        if(book_info[wordbook_index].word_index < book_info[wordbook_index].word_total_num - 1) {
-            book_info[wordbook_index].word_index += 1;
-            lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",book_info[wordbook_index].word_index + 1,book_info[wordbook_index].word_total_num);
-            if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 0) {
-                lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-                lv_obj_clear_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-                lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-            } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xdaffcb), LV_PART_MAIN|LV_STATE_DEFAULT);
-                lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-                lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-            } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 2) {
-                lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xefcbd1), LV_PART_MAIN|LV_STATE_DEFAULT);
-                lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-                lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-            }
-            wordcard_change = 1;
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordcard_btn_dui_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        led_green_en = 1;
-        int word_index_cur = book_info[wordbook_index].word_index;
-        if(book_info[wordbook_index].word_state[word_index_cur] == 0) {
-            book_info[wordbook_index].word_learned_num += 1;
-            book_info[wordbook_index].word_state[word_index_cur] = 1;
-        } else if(book_info[wordbook_index].word_state[word_index_cur] == 2) {
-            book_info[wordbook_index].word_learned_num += 1;
-            book_info[wordbook_index].word_review_num  -= 1;
-            book_info[wordbook_index].word_state[word_index_cur] = 1;
-        }
-        if(book_info[wordbook_index].word_index < book_info[wordbook_index].word_total_num - 1) {
-            book_info[wordbook_index].word_index += 1;
-            lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",book_info[wordbook_index].word_index + 1,book_info[wordbook_index].word_total_num);
-            wordcard_change = 1;
-        }
-
-        if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 0) {
-            lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_clear_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-        } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xdaffcb), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-        } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 2) {
-            lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xefcbd1), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordcard_btn_cuo_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        led_red_en = 1;
-        int word_index_cur = book_info[wordbook_index].word_index;
-        int review_num_cur = book_info[wordbook_index].word_review_num;
-
-        if(book_info[wordbook_index].word_state[word_index_cur] == 0) {
-            book_info[wordbook_index].review_absoulte_index[review_num_cur] = word_index_cur;
-            book_info[wordbook_index].word_review_num += 1;
-            book_info[wordbook_index].word_state[word_index_cur] = 2;
-        } else if(book_info[wordbook_index].word_state[word_index_cur] == 1) {
-            book_info[wordbook_index].review_absoulte_index[review_num_cur] = word_index_cur;
-            book_info[wordbook_index].word_review_num += 1;
-            book_info[wordbook_index].word_learned_num -= 1;
-            book_info[wordbook_index].word_state[word_index_cur] = 2;
-        }
-        //word_index add and show next word info to label
-        if(book_info[wordbook_index].word_index < book_info[wordbook_index].word_total_num - 1) {
-            book_info[wordbook_index].word_index += 1;
-            lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",book_info[wordbook_index].word_index + 1,book_info[wordbook_index].word_total_num);
-            wordcard_change = 1;
-        }
-
-        if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 0) {
-            lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_clear_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-        } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xdaffcb), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-        } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].word_index] == 2) {
-            lv_obj_set_style_text_color(guider_ui.screen_wordcard_label_spelling, lv_color_hex(0xefcbd1), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_wordcard_btn_home_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_wordcard_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-void events_init_screen_wordcard (lv_ui *ui)
-{
-    lv_obj_add_event_cb(ui->screen_wordcard, screen_wordcard_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordcard_btn_back, screen_wordcard_btn_back_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordcard_btn_left, screen_wordcard_btn_left_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordcard_btn_right, screen_wordcard_btn_right_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordcard_btn_dui, screen_wordcard_btn_dui_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordcard_btn_cuo, screen_wordcard_btn_cuo_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_wordcard_btn_home, screen_wordcard_btn_home_event_handler, LV_EVENT_ALL, ui);
-}
-
-static void screen_reviewcard_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_SCREEN_LOAD_START:
-    {
-        //screen button add
-        screen_reviewcard_buttion_add();
-        //------------------------//
-        review_index = 0;
-        review_solve_num = 0;
-        if(book_info[wordbook_index].word_review_num == 0) {
-            lv_obj_set_style_text_color(guider_ui.screen_reviewcard_label_spelling, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_reviewcard_btn_cuo, LV_STATE_DISABLED);
-            lv_label_set_text(guider_ui.screen_reviewcard_label_index,"0/0");
-        } else {
-            lv_obj_set_style_text_color(guider_ui.screen_reviewcard_label_spelling, lv_color_hex(0xefcbd1), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_clear_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_reviewcard_btn_cuo, LV_STATE_DISABLED);
-            review_index = 0;
-            lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",review_index + 1,book_info[wordbook_index].word_review_num);
-            reviewcard_change = 1;
-        }
-
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_reviewcard_btn_back_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_reviewcard_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        int review_new_index = 0;
-        for(int i = 0 ; i < book_info[wordbook_index].word_review_num ; i++) {
-            int word_index_tmp = book_info[wordbook_index].review_absoulte_index[i];
-            if(book_info[wordbook_index].word_state[word_index_tmp] == 2) {
-                book_info[wordbook_index].review_absoulte_index[review_new_index] = word_index_tmp;
-                review_new_index = review_new_index + 1;
-            }
-        }
-        book_info[wordbook_index].word_review_num -= review_solve_num;
-
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-
-
-
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_reviewcard_btn_left_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        if(review_index >= 1) {
-            review_index -= 1;
-            lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",review_index + 1,book_info[wordbook_index].word_review_num);
-            if(book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_reviewcard_label_spelling, lv_color_hex(0xdaffcb), LV_PART_MAIN|LV_STATE_DEFAULT);
-                lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-                lv_obj_clear_state(guider_ui.screen_reviewcard_btn_cuo, LV_STATE_DISABLED);
-            } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] == 2) {
-                lv_obj_set_style_text_color(guider_ui.screen_reviewcard_label_spelling, lv_color_hex(0xefcbd1), LV_PART_MAIN|LV_STATE_DEFAULT);
-                lv_obj_clear_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-                lv_obj_add_state(guider_ui.screen_reviewcard_btn_cuo, LV_STATE_DISABLED);
-            }
-            reviewcard_change = 1;
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_reviewcard_btn_right_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        if(review_index < book_info[wordbook_index].word_review_num - 1) {
-            review_index += 1;
-            lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",review_index + 1,book_info[wordbook_index].word_review_num);
-            if(book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] == 1) {
-                lv_obj_set_style_text_color(guider_ui.screen_reviewcard_label_spelling, lv_color_hex(0xdaffcb), LV_PART_MAIN|LV_STATE_DEFAULT);
-                lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-                lv_obj_clear_state(guider_ui.screen_reviewcard_btn_cuo, LV_STATE_DISABLED);
-            } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] == 2) {
-                lv_obj_set_style_text_color(guider_ui.screen_reviewcard_label_spelling, lv_color_hex(0xefcbd1), LV_PART_MAIN|LV_STATE_DEFAULT);
-                lv_obj_clear_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-                lv_obj_add_state(guider_ui.screen_reviewcard_btn_cuo, LV_STATE_DISABLED);
-            }
-            reviewcard_change = 1;
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_reviewcard_btn_dui_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        led_green_en = 1; // flow light rgb
-        if(review_index < book_info[wordbook_index].word_review_num - 1) {
-            book_info[wordbook_index].word_learned_num += 1;
-            review_solve_num += 1;
-            book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] = 1;
-            review_index += 1;
-            lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",review_index + 1,book_info[wordbook_index].word_review_num);
-            reviewcard_change = 1;
-        } else {
-            book_info[wordbook_index].word_learned_num += 1;
-            review_solve_num += 1;
-            book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] = 1;
-            lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",review_index + 1,book_info[wordbook_index].word_review_num);
-        }
-
-        if(book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_reviewcard_label_spelling, lv_color_hex(0xdaffcb), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_clear_state(guider_ui.screen_reviewcard_btn_cuo, LV_STATE_DISABLED);
-        } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] == 2) {
-            lv_obj_set_style_text_color(guider_ui.screen_reviewcard_label_spelling, lv_color_hex(0xefcbd1), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_clear_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_reviewcard_btn_cuo, LV_STATE_DISABLED);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_reviewcard_btn_home_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_reviewcard_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        int review_new_index = 0;
-        for(int i = 0 ; i < book_info[wordbook_index].word_review_num ; i++) {
-            int word_index_tmp = book_info[wordbook_index].review_absoulte_index[i];
-            if(book_info[wordbook_index].word_state[word_index_tmp] == 2) {
-                book_info[wordbook_index].review_absoulte_index[review_new_index] = word_index_tmp;
-                review_new_index = review_new_index + 1;
-            }
-        }
-        book_info[wordbook_index].word_review_num -= review_solve_num;
-
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_reviewcard_btn_cuo_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        led_red_en = 1; //flow light rgb
-        if(review_index < book_info[wordbook_index].word_review_num - 1) {
-            book_info[wordbook_index].word_learned_num -= 1;
-            review_solve_num -= 1;
-            book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] = 2;
-            review_index += 1;
-            lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",review_index + 1,book_info[wordbook_index].word_review_num);
-            reviewcard_change = 1;
-        } else {
-            book_info[wordbook_index].word_learned_num -= 1;
-            review_solve_num -= 1;
-            book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] = 2;
-            lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",review_index + 1,book_info[wordbook_index].word_review_num);
-        }
-
-        if(book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] == 1) {
-            lv_obj_set_style_text_color(guider_ui.screen_reviewcard_label_spelling, lv_color_hex(0xdaffcb), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_clear_state(guider_ui.screen_reviewcard_btn_cuo, LV_STATE_DISABLED);
-        } else if(book_info[wordbook_index].word_state[book_info[wordbook_index].review_absoulte_index[review_index]] == 2) {
-            lv_obj_set_style_text_color(guider_ui.screen_reviewcard_label_spelling, lv_color_hex(0xefcbd1), LV_PART_MAIN|LV_STATE_DEFAULT);
-            lv_obj_clear_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_reviewcard_btn_cuo, LV_STATE_DISABLED);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-void events_init_screen_reviewcard (lv_ui *ui)
-{
-    lv_obj_add_event_cb(ui->screen_reviewcard, screen_reviewcard_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_reviewcard_btn_back, screen_reviewcard_btn_back_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_reviewcard_btn_left, screen_reviewcard_btn_left_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_reviewcard_btn_right, screen_reviewcard_btn_right_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_reviewcard_btn_dui, screen_reviewcard_btn_dui_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_reviewcard_btn_home, screen_reviewcard_btn_home_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_reviewcard_btn_cuo, screen_reviewcard_btn_cuo_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_pomodoro_btn_plus, screen_pomodoro_btn_plus_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_pomodoro_btn_minus, screen_pomodoro_btn_minus_event_handler, LV_EVENT_ALL, ui);
 }
 
 static void screen_setting_event_handler (lv_event_t *e)
@@ -2258,120 +2144,6 @@ void events_init_screen_wificfg (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_wificfg_ta_password, screen_wificfg_ta_password_event_handler, LV_EVENT_ALL, ui);
 }
 
-static void screen_todosel_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_SCREEN_LOAD_START:
-    {
-        //buttion add
-        screen_todosel_buttion_add();
-
-        const char *text_ptr = NULL;
-        if(todo_index == 0) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo1_label);
-        } else if(todo_index == 1) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo2_label);
-        } else if(todo_index == 2) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo3_label);
-        } else if(todo_index == 3) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo4_label);
-        }
-
-        if(guider_ui.screen_todosel_label_task != NULL && text_ptr != NULL) {
-            lv_label_set_text(guider_ui.screen_todosel_label_task, text_ptr);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_todosel_btn_complete_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todosel_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, true, true);
-        //task done or not label change
-        if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
-            ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 1;
-            done_sum += 1; //add 1
-            todo_sum -= 1;
-        } else {
-            ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 0;
-            done_sum -= 1; //delete 1
-            todo_sum += 1;
-        }
-        //show done sum and todo sum
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
-        lv_label_set_text_fmt(guider_ui.screen_todolist_label_todonum, "%d", todo_sum);
-        //todosel_back label
-        todosel_back = 1;
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_todosel_btn_focus_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_pomodoro, guider_ui.screen_pomodoro_del, &guider_ui.screen_todosel_del, setup_scr_screen_pomodoro, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, true, true);
-        //copy label to todosel menu
-        const char *text_ptr = NULL;
-        if(todo_index == 0) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo1_label);
-        } else if(todo_index == 1) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo2_label);
-        } else if(todo_index == 2) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo3_label);
-        } else if(todo_index == 3) {
-            text_ptr = lv_label_get_text(guider_ui.screen_todolist_btn_todo4_label);
-        }
-        // copy into current_task_name
-        strncpy(current_task_name, text_ptr, sizeof(current_task_name) - 1);
-        current_task_name[sizeof(current_task_name) - 1] = '\0'; // make sure string \0 ending
-        todo_back_label = 1;
-        focus_en = 1;
-        current_task_index = (page_cur-1) * 4 + todo_index;
-        lv_obj_clear_flag(guider_ui.screen_todolist, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_todosel_btn_cancel_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todosel_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, true, true);
-        todosel_back = 1;
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-void events_init_screen_todosel (lv_ui *ui)
-{
-    lv_obj_add_event_cb(ui->screen_todosel, screen_todosel_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_todosel_btn_complete, screen_todosel_btn_complete_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_todosel_btn_focus, screen_todosel_btn_focus_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_todosel_btn_cancel, screen_todosel_btn_cancel_event_handler, LV_EVENT_ALL, ui);
-}
-
 static void screen_ai_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -2380,6 +2152,67 @@ static void screen_ai_event_handler (lv_event_t *e)
     {
         screen_ai_buttion_add();
         is_week = 0;
+        screen_ai_load_nvs_data(is_week);
+        int focus_level = 1;
+        int remain_focus_time = 0;
+        int max_level_time = 0;
+        for(int i = 0; i < 10; i++) {
+            if(all_focus_time < focus_level_hour[i]*60) {
+                focus_level = i + 1;
+                max_focus_time = focus_level_hour[i]*60;
+                if(i == 0) {
+                    remain_focus_time = all_focus_time;
+                    max_level_time = focus_level_hour[i]*60;
+                } else {
+                    remain_focus_time = all_focus_time - focus_level_hour[i-1]*60;
+                    max_level_time = focus_level_hour[i]*60 - focus_level_hour[i-1]*60;
+                }
+                break;
+            }
+        }
+
+        int focus_percent = remain_focus_time / max_level_time;
+        lv_bar_set_value(guider_ui.screen_ai_bar_focus,focus_percent,LV_ANIM_ON);
+        lv_label_set_text_fmt(guider_ui.screen_ai_label_duration,"%d/%d",all_focus_time,max_focus_time);
+        lv_obj_clear_flag(guider_ui.screen_ai_img_v1,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_ai_img_v2,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_ai_img_v3,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_ai_img_v4,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_ai_img_v5,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_ai_img_v6,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_ai_img_v7,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_ai_img_v8,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_ai_img_v9,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_ai_img_v10,LV_OBJ_FLAG_HIDDEN);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_ai_btn_back_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_ai_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_ai_btn_week_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ai_week_start = 1;
+        is_week = 1;
         screen_ai_load_nvs_data(is_week);
         break;
     }
@@ -2404,42 +2237,12 @@ static void screen_ai_btn_day_event_handler (lv_event_t *e)
     }
 }
 
-static void screen_ai_btn_week_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ai_week_start = 1;
-        is_week = 1;
-        screen_ai_load_nvs_data(is_week);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_ai_btn_back_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_ai_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
 void events_init_screen_ai (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_ai, screen_ai_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_ai_btn_day, screen_ai_btn_day_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_ai_btn_week, screen_ai_btn_week_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_ai_btn_back, screen_ai_btn_back_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_ai_btn_week, screen_ai_btn_week_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_ai_btn_day, screen_ai_btn_day_event_handler, LV_EVENT_ALL, ui);
 }
 
 static void screen_donelist_event_handler (lv_event_t *e)
@@ -2687,7 +2490,7 @@ static void screen_donelist_btn_back_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_setting, guider_ui.screen_setting_del, &guider_ui.screen_donelist_del, setup_scr_screen_setting, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_donelist_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
         break;
     }
     default:

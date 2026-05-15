@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <time.h>
+#include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -47,6 +48,33 @@ bool ai_request_pending = 0;
 TickType_t ai_request_deadline = 0;
 TaskHandle_t ai_wait_light_task_handle = NULL;
 #define AI_ANALYSIS_TIMEOUT_MS 12000
+
+static int s_last_review_cards_num = 0;
+
+static void wordcard_render(const word_session_state_t *st)
+{
+    if (st->finished || !st->valid) return;
+    lv_obj_clear_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
+    lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
+    lv_label_set_text(guider_ui.screen_wordcard_label_spelling, st->word.word);
+    lv_label_set_text(guider_ui.screen_wordcard_label_phonetic, st->word.phonetic);
+    lv_label_set_text(guider_ui.screen_wordcard_label_meaning, st->word.definition);
+}
+
+static void reviewcard_render(const word_session_state_t *st)
+{
+    if (st->finished || !st->valid) {
+        lv_label_set_text(guider_ui.screen_reviewcard_label_index, "0/0");
+        lv_label_set_text(guider_ui.screen_reviewcard_label_spelling, "Good Job!");
+        lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic, "");
+        lv_label_set_text(guider_ui.screen_reviewcard_label_meaning, "No word need to review");
+        lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
+        return;
+    }
+    lv_label_set_text(guider_ui.screen_reviewcard_label_spelling, st->word.word);
+    lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic, st->word.phonetic);
+    lv_label_set_text(guider_ui.screen_reviewcard_label_meaning, st->word.definition);
+}
 // timeout alarm task, including buzzer alarm and flow light alarm
 static void timeout_alarm_light_task(void *param)
 {
@@ -158,28 +186,40 @@ void nvs_thread(void *param){
         }else if(led_red_en){
             led_red_en = 0;
             set_flow_light(80, 32, 33);
-        }else if(wordcard_change){
-            get_word_from_csv(book_info[wordbook_index].word_index, &current_word,book_info[wordbook_index].book_name);
+        }
+
+        if(wordcard_change || reviewcard_change){
             if(xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) == pdTRUE){
-                lv_label_set_text(guider_ui.screen_wordcard_label_spelling,current_word.word);
-                lv_obj_set_style_text_font(guider_ui.screen_wordcard_label_phonetic, &lv_font_arial_14, 0);
-                lv_label_set_text(guider_ui.screen_wordcard_label_phonetic,current_word.phonetic);
-                lv_label_set_text(guider_ui.screen_wordcard_label_meaning,current_word.definition);
+                if(wordcard_change){
+                    wordcard_change = 0;
+                    if(wordcard_session_start){
+                        wordcard_session_start = 0;
+                        round_cards_num = word_storage_learn_start(WORDCARD_ROUND_SIZE);
+                        cards_index = (round_cards_num > 0) ? 1 : 0;
+                    }
+                    bool marked_wrong = (review_cards_num > s_last_review_cards_num);
+                    word_session_state_t st;
+                    word_storage_learn_signal(marked_wrong, &st);
+                    review_cards_num = word_storage_get_review_count();
+                    s_last_review_cards_num = review_cards_num;
+                    wordcard_render(&st);
+                }
+
+                if(reviewcard_change){
+                    reviewcard_change = 0;
+                    if(reviewcard_session_start){
+                        reviewcard_session_start = 0;
+                        word_storage_review_start();
+                    }
+                    word_session_state_t st;
+                    word_storage_review_signal(&st);
+                    review_cards_num = word_storage_get_review_count();
+                    s_last_review_cards_num = review_cards_num;
+                    reviewcard_render(&st);
+                }
+
                 xSemaphoreGive(lvgl_mutex);
             }
-            wordcard_change = 0;
-            vTaskDelay(50);
-        }else if(reviewcard_change){
-            get_word_from_csv(book_info[wordbook_index].review_absoulte_index[review_index], &current_word,book_info[wordbook_index].book_name);
-            if(xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) == pdTRUE){
-                lv_label_set_text(guider_ui.screen_reviewcard_label_spelling,current_word.word);
-                lv_obj_set_style_text_font(guider_ui.screen_reviewcard_label_phonetic,&lv_font_arial_14, 0);
-                lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic,current_word.phonetic);
-                lv_label_set_text(guider_ui.screen_reviewcard_label_meaning,current_word.definition);
-                xSemaphoreGive(lvgl_mutex);
-            }
-            reviewcard_change = 0;
-            vTaskDelay(50);
         }
         vTaskDelay(10);
      }
@@ -342,6 +382,11 @@ void app_main(void)
     memcpy(&g_ui_weekly_result, &g_ai_weekly_result, sizeof(ui_ai_result_t));
     //----------init spiffs for word card-----------//
     init_spiffs();
+    word_storage_init();
+    int word_total = word_storage_get_total_count();
+    total_cards_num  = (word_total > 0) ? word_total : 1; /* avoid /0 in UI */
+    review_cards_num = word_storage_get_review_count();
+    s_last_review_cards_num = review_cards_num;
     //----------init todo storage (SPIFFS + NVS)----//
     todo_storage_init();
     ui_todo_list = g_todo_list;  // sync initial todo list from storage

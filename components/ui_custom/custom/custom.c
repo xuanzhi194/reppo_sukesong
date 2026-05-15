@@ -19,15 +19,27 @@
 
 //lv group define
 lv_group_t *g = NULL;
-//todolist variables
-todo_list_t ui_todo_list = {0};
+//todolist variables (debug seed data for GUI Guider preview)
+todo_list_t ui_todo_list = {
+    .count = 8,
+    .items = {
+        {.name = "Morning standup",   .duration_min = 15, .done = 1, .finish_date = "2026-05-09"},
+        {.name = "Review PR #128",    .duration_min = 25, .done = 1, .finish_date = "2026-05-09"},
+        {.name = "Fix WiFi reconnect",.duration_min = 45, .done = 0, .finish_date = ""},
+        {.name = "LVGL animation tune", .duration_min = 30, .done = 0, .finish_date = ""},
+        {.name = "Write test notes",  .duration_min = 20, .done = 0, .finish_date = ""},
+        {.name = "Refactor timer flow", .duration_min = 35, .done = 0, .finish_date = ""},
+        {.name = "Sync NVS defaults", .duration_min = 18, .done = 0, .finish_date = ""},
+        {.name = "Polish main screen",.duration_min = 40, .done = 0, .finish_date = ""},
+    }
+};
 bool   todosel_back = 0;
 int8_t todo_index = 0;
-int8_t page_num = 25;
+int8_t page_num = 2;
 int8_t page_cur = 1;
 bool   done_array[25][4] = {0};
-int8_t done_sum = 0;
-int8_t todo_sum = 100;
+int8_t done_sum = 2;
+int8_t todo_sum = 6;
 bool todo_back_label = 0;
 bool todo_archive_label = 0;
 bool main_load_label = 0;
@@ -61,43 +73,19 @@ bool wifi_success = 0;
 char *wifi_ssid = NULL;
 //todosel variable
 bool focus_en = 0;
-//wordmenu variables
-wordbook_info_t book_info[3] = {
-    [0] = {
-        .word_index = 0,
-        .word_review_num = 0,
-        .review_absoulte_index = {0},
-        .word_learned_num = 0,   
-        .word_total_num = 50,
-        .book_name = "CET4",
-        .word_state = {0}
-    },
-    [1] = {
-        .word_index = 0,
-        .word_review_num = 0,
-        .review_absoulte_index = {0},
-        .word_learned_num = 0,   
-        .word_total_num = 50,
-        .book_name = "IELTS",
-        .word_state = {0}  
-    },
-    [2] = {
-        .word_index = 0,
-        .word_review_num = 0,
-        .review_absoulte_index = {0},
-        .word_learned_num = 0,   
-        .word_total_num = 50,
-        .book_name = "TOEFL",
-        .word_state = {0}       
-    },   
-};
 //wordcard variables
 bool wordcard_change = 0;
 bool reviewcard_change = 0;
+bool wordcard_session_start = 0;
+bool reviewcard_session_start = 0;
 bool led_green_en = 0;
 bool led_red_en = 0;
-int8_t wordbook_index = 0;
-int review_index = 0;
+int  review_index = 0;
+int  learned_cards_num = 0; //have learned cards num in all cards
+int  total_cards_num = 5000; //all cards number
+int  review_cards_num = 0; // review cards num in all cards
+int  cards_index = 0;
+int  round_cards_num = 30;
 //screen_ai variables
 bool ai_day_start = 0;
 bool ai_week_start = 0;
@@ -106,13 +94,15 @@ bool donelist_load_label      = 0;
 uint8_t donelist_page_cur     = 0;
 uint8_t donelist_page_num     = 0;
 int     done_total_tasks      = 0;
+int     all_focus_time = 0;
+int     focus_level_hour[10] = {3,9,15,30,60,100,150,230,350,500};
+int     max_focus_time = 30000;
 /* AI 结果 UI 缓存，由 main.c 负责从 g_ai_* 同步进来 */
 ui_ai_result_t g_ui_daily_result  = {0};
 ui_ai_result_t g_ui_weekly_result = {0};
 /* ========== 用户可改参数 ========== */
 #define DELAY_MS         1500          // 延时多久后切屏
 /* ================================= */
-
 
 static lv_timer_t *delay_timer = NULL;
 
@@ -495,9 +485,7 @@ void screen_wordmenu_buttion_add(){
             lv_indev_set_group(indev, g);
         }
     }
-     
-    lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_bookleft); 
-    lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_bookright); 
+    
     lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_learn); 
     lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_review); 
     lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_back); 
@@ -519,13 +507,13 @@ void screen_wordcard_buttion_add(){
         if (lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
             lv_indev_set_group(indev, g);
         }
-    }  
-    lv_group_add_obj(g, guider_ui.screen_wordcard_btn_left);
-    lv_group_add_obj(g, guider_ui.screen_wordcard_btn_right);    
+    }    
     lv_group_add_obj(g, guider_ui.screen_wordcard_btn_dui);  
     lv_group_add_obj(g, guider_ui.screen_wordcard_btn_cuo);  
-    lv_group_add_obj(g, guider_ui.screen_wordcard_btn_home); 
     lv_group_add_obj(g, guider_ui.screen_wordcard_btn_back);
+
+    wordcard_session_start = 1;
+    wordcard_change = 1;
 }
 
 //buttion add function screen_reviewcard
@@ -543,13 +531,12 @@ void screen_reviewcard_buttion_add(){
         if (lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
             lv_indev_set_group(indev, g);
         }
-    }
-    lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_left);
-    lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_right);    
-    lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_dui);  
-    lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_cuo);  
-    lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_home);  
+    }  
+    lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_dui);   
     lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_back); 
+
+    reviewcard_session_start = 1;
+    reviewcard_change = 1;
 }
 
 //buttion add function screen_setting
@@ -671,6 +658,25 @@ void screen_donelist_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_donelist_btn_nxtpage); 
     lv_group_add_obj(g, guider_ui.screen_donelist_btn_back); 
     lv_group_add_obj(g, guider_ui.screen_donelist_btn_save);
+}
+//buttion add function screen_todooback
+void screen_todoback_buttion_add(){
+    if(g == NULL) {
+        g = lv_group_create();
+    } else {
+        lv_group_remove_all_objs(g); 
+    }
+    //setting default group
+    lv_group_set_default(g);
+    //indev with group
+    lv_indev_t * indev = NULL;
+    while ((indev = lv_indev_get_next(indev))) {
+        if (lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
+            lv_indev_set_group(indev, g);
+        }
+    }
+    lv_group_add_obj(g, guider_ui.screen_todoback_btn_recover);  
+    lv_group_add_obj(g, guider_ui.screen_todoback_btn_cancel); 
 }
 
 void custom_init(lv_ui *ui)

@@ -14,7 +14,6 @@ extern "C" {
 #endif
 
 #include "gui_guider.h"
-
 /* todolist 类型定义（内联，防止与 todo_storage.h 重复定义）*/
 #ifndef TODO_MAX_ITEMS
 #define TODO_MAX_ITEMS  100
@@ -47,16 +46,16 @@ typedef struct {
 
 extern ui_ai_result_t g_ui_daily_result;
 extern ui_ai_result_t g_ui_weekly_result;
-//struct indicate
-typedef struct {
-    int word_index;
-    uint16_t review_absoulte_index[100]; // this index is to count word_index for review word
-    int word_review_num;    
-    int word_learned_num;   
-    int word_total_num;     
-    char book_name[32];  
-    uint8_t word_state[100]; //0 -> not learn or review 1 -> learned 2 -> review
-} wordbook_info_t;
+// //struct indicate
+// typedef struct {
+//     int word_index;
+//     uint16_t review_absoulte_index[100]; // this index is to count word_index for review word
+//     int word_review_num;    
+//     int word_learned_num;   
+//     int word_total_num;     
+//     char book_name[32];  
+//     uint8_t word_state[100]; //0 -> not learn or review 1 -> learned 2 -> review
+// } wordbook_info_t;
 
 // variables indicate
 //todolist
@@ -88,13 +87,18 @@ extern int16_t timing_year;
 extern int16_t timing_month;
 extern int16_t timing_day;
 extern int16_t timing_weekday;
-extern wordbook_info_t book_info[3];
 extern bool wordcard_change;
 extern bool reviewcard_change;
+extern bool wordcard_session_start;
+extern bool reviewcard_session_start;
 extern bool led_green_en; // Trigger green flow light on btn_dui click
 extern bool led_red_en;   // Trigger red flow light on btn_cuo click
-extern int8_t wordbook_index;
-extern int review_index;
+extern int  review_index;
+extern int  learned_cards_num;
+extern int  total_cards_num;
+extern int  review_cards_num;
+extern int  cards_index;
+extern int  round_cards_num;
 extern bool keyboard_start_en;
 extern bool wifi_scan_en;
 extern bool wifi_disconnect_en;
@@ -107,6 +111,9 @@ extern bool  focus_en;
 extern bool countdown_timeout_pending;
 extern bool ai_day_start;
 extern bool ai_week_start;
+extern int  all_focus_time;
+extern int  max_focus_time;
+extern int  focus_level_hour[10];
 /* done_list 结构体，用于 screen_donelist 展示 task_done.csv */
 #define DONE_MAX_ITEMS  100
 typedef struct {
@@ -148,6 +155,8 @@ void screen_wificfg_buttion_add();
 void screen_todosel_buttion_add();
 void screen_ai_buttion_add();
 void screen_donelist_buttion_add();
+void screen_todoback_buttion_add();
+
 void my_kb_event_cb(lv_event_t * e);
 #ifdef __cplusplus
 }
