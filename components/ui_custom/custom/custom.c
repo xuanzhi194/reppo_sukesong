@@ -216,7 +216,7 @@ void wifi_connect_show(){
 
     // 4. Update Label Color (Status2)
     // Assuming the light green color in the image is roughly #b7f0b8
-    lv_obj_set_style_text_color(guider_ui.screen_wificfg_label_status2, lv_color_hex(0xB7F0B8), 0);
+    lv_obj_set_style_text_color(guider_ui.screen_wificfg_label_status2, lv_color_hex(0x274a6e), 0);
 
     // 5. Change Image Height
     ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 125, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL); 
@@ -242,7 +242,7 @@ void wifi_disconnect_show(){
 
     // 4. Update Label Color (Status2)
     // Assuming the light green color in the image is roughly #b7f0b8
-    lv_obj_set_style_text_color(guider_ui.screen_wificfg_label_status2, lv_color_hex(0xFACBD3), 0);
+    lv_obj_set_style_text_color(guider_ui.screen_wificfg_label_status2, lv_color_hex(0x274a6e), 0);
 
     // 5. Change Image Height
     ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 125, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
@@ -679,6 +679,46 @@ void screen_todoback_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_todoback_btn_cancel); 
 }
 
+
+//buttion add function screen_answer
+void screen_answer_buttion_add(){
+    if(g == NULL) {
+        g = lv_group_create();
+    } else {
+        lv_group_remove_all_objs(g); 
+    }
+    //setting default group
+    lv_group_set_default(g);
+    //indev with group
+    lv_indev_t * indev = NULL;
+    while ((indev = lv_indev_get_next(indev))) {
+        if (lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
+            lv_indev_set_group(indev, g);
+        }
+    }
+    lv_group_add_obj(g, guider_ui.screen_answer_btn_start); 
+    clear_focus_box(guider_ui.screen_answer_btn_start);
+}
+
+//buttion add function screen_getanswer
+void screen_getanswer_buttion_add(){
+    if(g == NULL) {
+        g = lv_group_create();
+    } else {
+        lv_group_remove_all_objs(g); 
+    }
+    //setting default group
+    lv_group_set_default(g);
+    //indev with group
+    lv_indev_t * indev = NULL;
+    while ((indev = lv_indev_get_next(indev))) {
+        if (lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
+            lv_indev_set_group(indev, g);
+        }
+    }
+    lv_group_add_obj(g, guider_ui.screen_getanswer_btn_answer); 
+    clear_focus_box(guider_ui.screen_getanswer_btn_answer);
+}
 void custom_init(lv_ui *ui)
 {
 

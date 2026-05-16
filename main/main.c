@@ -256,13 +256,6 @@ void wifi_time_thread(void *arg)
                         timeinfo.tm_min);
                 
                 if(xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) == pdTRUE){
-                    if((timeinfo.tm_hour >= 19 && timeinfo.tm_hour <= 24) || (timeinfo.tm_hour <= 5)){
-                        lv_obj_clear_flag(guider_ui.screen_timing_img_night, LV_OBJ_FLAG_HIDDEN);
-                        lv_obj_add_flag(guider_ui.screen_timing_img_morning, LV_OBJ_FLAG_HIDDEN);
-                    }else{
-                        lv_obj_clear_flag(guider_ui.screen_timing_img_morning, LV_OBJ_FLAG_HIDDEN);
-                        lv_obj_add_flag(guider_ui.screen_timing_img_night, LV_OBJ_FLAG_HIDDEN);
-                    }
                     //show time in lvgl
                     if(timeinfo.tm_year+1900 >= 2026){
                         lv_label_set_text(guider_ui.screen_timing_label_date,date_str);
@@ -296,13 +289,6 @@ void wifi_time_thread(void *arg)
                     lv_label_set_text(guider_ui.screen_timing_label_date,date_str);
                     lv_label_set_text(guider_ui.screen_timing_label_realtime,time_str);
                     lv_label_set_text(guider_ui.screen_timing_label_day,week_days[now.day]); 
-                    if((now.hour >= 19 && now.hour <= 24) || (now.hour <= 5)){
-                        lv_obj_clear_flag(guider_ui.screen_timing_img_night, LV_OBJ_FLAG_HIDDEN);
-                        lv_obj_add_flag(guider_ui.screen_timing_img_morning, LV_OBJ_FLAG_HIDDEN);
-                    }else{
-                        lv_obj_clear_flag(guider_ui.screen_timing_img_morning, LV_OBJ_FLAG_HIDDEN);
-                        lv_obj_add_flag(guider_ui.screen_timing_img_night, LV_OBJ_FLAG_HIDDEN);
-                    }
                     xSemaphoreGive(lvgl_mutex);
                 }
                 vTaskDelay(990);
@@ -503,6 +489,7 @@ void app_main(void)
                     lv_label_set_text_fmt(guider_ui.screen_donelist_label_donenum,  "%d", done_total_tasks);
                     lv_label_set_text_fmt(guider_ui.screen_donelist_label_nosavenum, "%d", done_sum);
                     lv_label_set_text_fmt(guider_ui.screen_donelist_label_page,      "%d/%d", donelist_page_cur, donelist_page_num);
+                    lv_label_set_text_fmt(guider_ui.screen_donelist_label_page,      "%d/%d", donelist_page_cur + 1, donelist_page_num);
                     donelist_render_page(donelist_page_cur);
                 }
                 xSemaphoreGive(lvgl_mutex);

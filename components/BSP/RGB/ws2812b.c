@@ -39,7 +39,7 @@ void set_flow_light(uint32_t r, uint32_t g, uint32_t b) {
         led_strip_set_pixel(led_strip, i, r, g, b);
         // Refresh the hardware to show the color
         led_strip_refresh(led_strip);
-        vTaskDelay(pdMS_TO_TICKS(25));
+        vTaskDelay(pdMS_TO_TICKS(50));
         // Clear before next step for flow animation
         led_strip_clear(led_strip);
     }

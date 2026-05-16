@@ -156,6 +156,8 @@ void screen_todosel_buttion_add();
 void screen_ai_buttion_add();
 void screen_donelist_buttion_add();
 void screen_todoback_buttion_add();
+void screen_answer_buttion_add();
+void screen_getanswer_buttion_add();
 
 void my_kb_event_cb(lv_event_t * e);
 #ifdef __cplusplus

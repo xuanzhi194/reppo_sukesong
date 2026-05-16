@@ -22,6 +22,23 @@ int8_t wordbook_totalnum = 3;
 int tmp_review_num = 0;
 lv_obj_t* menu_cont;
 bool is_week = 0;
+static void loading_anim_done_cb(lv_anim_t * a)
+{
+    (void)a;
+    /* 与 events_init 里其它页面切换一致 */
+    ui_load_scr_animation(
+        &guider_ui,
+        &guider_ui.screen_getanswer,           /* 目标屏指针 */
+        guider_ui.screen_getanswer_del,         /* 若目标未创建则先 setup */
+        &guider_ui.screen_loading_del,          /* 当前 loading 的 del 标志 */
+        setup_scr_screen_getanswer,            /* 目标屏 setup 函数名以你工程为准 */
+        LV_SCR_LOAD_ANIM_FADE_ON,
+        200, 200,
+        true,   /* is_clean：是否清空旧屏内容，按你其它页面习惯 */
+        true    /* auto_del：动画结束后删除旧 screen（你要的“删除现有 screen”） */
+    );
+}
+
 
 static void screen_reppo_event_handler (lv_event_t *e)
 {
@@ -253,6 +270,7 @@ static void screen_main_btn_fun_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_answer, guider_ui.screen_answer_del, &guider_ui.screen_main_del, setup_scr_screen_answer, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
         break;
     }
     case LV_EVENT_FOCUSED:
@@ -2052,7 +2070,7 @@ static void screen_wificfg_btn_disconnect_event_handler (lv_event_t *e)
     {
         lv_obj_clear_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
         lv_label_set_text(guider_ui.screen_wificfg_label_status2, "Disconnected");
-        lv_obj_set_style_text_color(guider_ui.screen_wificfg_label_status2, lv_color_hex(0xdfbcca), LV_PART_MAIN|LV_STATE_DEFAULT);
+        lv_obj_set_style_text_color(guider_ui.screen_wificfg_label_status2, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
         wifi_disconnect_en = 1;
         break;
     }
@@ -2505,6 +2523,65 @@ void events_init_screen_donelist (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_donelist_btn_nxtpage, screen_donelist_btn_nxtpage_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_donelist_btn_lastpage, screen_donelist_btn_lastpage_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_donelist_btn_back, screen_donelist_btn_back_event_handler, LV_EVENT_ALL, ui);
+}
+
+static void screen_answer_btn_start_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_loading, guider_ui.screen_loading_del, &guider_ui.screen_answer_del, setup_scr_screen_loading, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void events_init_screen_answer (lv_ui *ui)
+{
+    lv_obj_add_event_cb(ui->screen_answer_btn_start, screen_answer_btn_start_event_handler, LV_EVENT_ALL, ui);
+}
+
+static void screen_loading_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_SCREEN_LOAD_START:
+    {
+        lv_img_set_pivot(guider_ui.screen_loading_img_icon, 29, 29);
+        ui_animation(guider_ui.screen_loading_img_icon, 3000, 0, lv_img_get_angle(guider_ui.screen_loading_img_icon), 360*10, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_img_set_angle, NULL, loading_anim_done_cb, NULL);
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void events_init_screen_loading (lv_ui *ui)
+{
+    lv_obj_add_event_cb(ui->screen_loading, screen_loading_event_handler, LV_EVENT_ALL, ui);
+}
+
+static void screen_getanswer_btn_answer_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_getanswer_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void events_init_screen_getanswer (lv_ui *ui)
+{
+    lv_obj_add_event_cb(ui->screen_getanswer_btn_answer, screen_getanswer_btn_answer_event_handler, LV_EVENT_ALL, ui);
 }
 
 

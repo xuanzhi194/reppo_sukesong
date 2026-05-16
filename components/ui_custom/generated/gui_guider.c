@@ -89,6 +89,9 @@ void init_scr_del_flag(lv_ui *ui)
     ui->screen_wificfg_del = true;
     ui->screen_ai_del = true;
     ui->screen_donelist_del = true;
+    ui->screen_answer_del = true;
+    ui->screen_loading_del = true;
+    ui->screen_getanswer_del = true;
 }
 
 void setup_ui(lv_ui *ui)

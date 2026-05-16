@@ -100,8 +100,10 @@ typedef struct
 	lv_obj_t *screen_timing_label_realtime;
 	lv_obj_t *screen_timing_label_day;
 	lv_obj_t *screen_timing_label_date;
-	lv_obj_t *screen_timing_img_night;
-	lv_obj_t *screen_timing_img_morning;
+	lv_obj_t *screen_timing_bar_battery;
+	lv_obj_t *screen_timing_img_baticon;
+	lv_obj_t *screen_timing_img_wificonnect;
+	lv_obj_t *screen_timing_img_wifidis;
 	lv_obj_t *screen_wordmeun;
 	bool screen_wordmeun_del;
 	lv_obj_t *screen_wordmeun_bar_process;
@@ -196,13 +198,11 @@ typedef struct
 	lv_obj_t *screen_wificfg_img_network;
 	lv_obj_t *screen_wificfg_btn_back;
 	lv_obj_t *screen_wificfg_btn_back_label;
-	lv_obj_t *screen_wificfg_label_wifi;
 	lv_obj_t *screen_wificfg_img_statusbg;
 	lv_obj_t *screen_wificfg_label_status;
 	lv_obj_t *screen_wificfg_img_wifiicon;
 	lv_obj_t *screen_wificfg_label_status2;
 	lv_obj_t *screen_wificfg_img_wififalse;
-	lv_obj_t *screen_wificfg_label_net;
 	lv_obj_t *screen_wificfg_list_1;
 	lv_obj_t *screen_wificfg_list_1_item0;
 	lv_obj_t *screen_wificfg_list_1_item1;
@@ -287,6 +287,17 @@ typedef struct
 	lv_obj_t *screen_donelist_label_focus4;
 	lv_obj_t *screen_donelist_btn_back;
 	lv_obj_t *screen_donelist_btn_back_label;
+	lv_obj_t *screen_answer;
+	bool screen_answer_del;
+	lv_obj_t *screen_answer_btn_start;
+	lv_obj_t *screen_answer_btn_start_label;
+	lv_obj_t *screen_loading;
+	bool screen_loading_del;
+	lv_obj_t *screen_loading_img_icon;
+	lv_obj_t *screen_getanswer;
+	bool screen_getanswer_del;
+	lv_obj_t *screen_getanswer_btn_answer;
+	lv_obj_t *screen_getanswer_btn_answer_label;
 	lv_obj_t *g_kb_top_layer;
 }lv_ui;
 
@@ -325,6 +336,9 @@ void setup_scr_screen_setting(lv_ui *ui);
 void setup_scr_screen_wificfg(lv_ui *ui);
 void setup_scr_screen_ai(lv_ui *ui);
 void setup_scr_screen_donelist(lv_ui *ui);
+void setup_scr_screen_answer(lv_ui *ui);
+void setup_scr_screen_loading(lv_ui *ui);
+void setup_scr_screen_getanswer(lv_ui *ui);
 #include "extra/widgets/animimg/lv_animimg.h"
 LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_00);
 LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_01);
@@ -395,9 +409,10 @@ LV_IMG_DECLARE(_AAA_todosel_bg_320x170);
 
 LV_IMG_DECLARE(_AAA_todo_fanqie_bg2_320x170);
 
-LV_IMG_DECLARE(_A_timing_BG_320x170);
-LV_IMG_DECLARE(_night_alpha_25x25);
-LV_IMG_DECLARE(_morning_alpha_30x30);
+LV_IMG_DECLARE(_AAA_clock_bg_320x170);
+LV_IMG_DECLARE(_AAA_shandian_icon_alpha_9x13);
+LV_IMG_DECLARE(_AAA_clock_wifi_icon_alpha_14x14);
+LV_IMG_DECLARE(_AAA_clock_wifiduan_icon_alpha_15x15);
 
 LV_IMG_DECLARE(_AAA_cishu_320x170);
 
@@ -449,12 +464,12 @@ LV_IMG_DECLARE(_Ellipse_alpha_25x25);
 LV_IMG_DECLARE(_Ellipse_alpha_25x25);
 LV_IMG_DECLARE(_Ellipse_alpha_25x25);
 
-LV_IMG_DECLARE(_screen_wifi_bg_320x170);
+LV_IMG_DECLARE(_AAA_wifi_lianjie_320x170);
 LV_IMG_DECLARE(_pomorect_alpha_160x125);
-LV_IMG_DECLARE(_pomorect_alpha_145x125);
-LV_IMG_DECLARE(_wifi_log_2_alpha_110x110);
+LV_IMG_DECLARE(_AAA_wifi_kuang_alpha_145x125);
+LV_IMG_DECLARE(_AAA_wifi_icons_alpha_110x110);
 LV_IMG_DECLARE(_wifi_false_alpha_20x20);
-LV_IMG_DECLARE(_password_icon2_alpha_19x18);
+LV_IMG_DECLARE(_AAA_wifi_suo_icon_alpha_13x15);
 
 LV_IMG_DECLARE(_AAA_Overview_BG_320x510);
 LV_IMG_DECLARE(_AAA_V10_alpha_304x158);
@@ -470,14 +485,21 @@ LV_IMG_DECLARE(_AAA_V1_alpha_304x158);
 
 LV_IMG_DECLARE(_AAA_done_bg_320x170);
 
+LV_IMG_DECLARE(_AAA_answer_start_bg_320x170);
+
+LV_IMG_DECLARE(_AAA_answer_wait_bg_320x170);
+LV_IMG_DECLARE(_AAA_answer_icon_bg_alpha_58x58);
+
+LV_IMG_DECLARE(_AAA__answer_end_bg_320x170);
+
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
 LV_FONT_DECLARE(lv_font_Acme_Regular_12)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_14)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_20)
 LV_FONT_DECLARE(lv_font_Acme_Regular_14)
-LV_FONT_DECLARE(lv_font_Abel_regular_83)
-LV_FONT_DECLARE(lv_font_Abel_regular_15)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_52)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_17)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_12)
 LV_FONT_DECLARE(lv_font_Acme_Regular_30)
 LV_FONT_DECLARE(lv_font_arial_14)
@@ -489,10 +511,9 @@ LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_13)
 LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_16)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_25)
-LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_14)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_12)
-LV_FONT_DECLARE(lv_font_Alatsi_Regular_13)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_11)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_13)
 
 
 #ifdef __cplusplus
