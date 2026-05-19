@@ -65,7 +65,7 @@ void setup_scr_screen_wordcard(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_wordcard_label_spelling, lv_color_hex(0x274a61), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_wordcard_label_spelling, &lv_font_Acme_Regular_30, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_wordcard_label_spelling, &lv_font_SourceHanSansSC_Medium_28, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_wordcard_label_spelling, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_wordcard_label_spelling, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -148,8 +148,8 @@ void setup_scr_screen_wordcard(lv_ui *ui)
     lv_obj_set_style_bg_opa(ui->screen_wordcard_btn_dui, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_border_width(ui->screen_wordcard_btn_dui, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_wordcard_btn_dui, 20, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_width(ui->screen_wordcard_btn_dui, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_wordcard_btn_dui, lv_color_hex(0x83a8d2), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_width(ui->screen_wordcard_btn_dui, 10, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_wordcard_btn_dui, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_wordcard_btn_dui, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_wordcard_btn_dui, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_wordcard_btn_dui, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
@@ -186,7 +186,7 @@ void setup_scr_screen_wordcard(lv_ui *ui)
     lv_obj_set_style_radius(ui->screen_wordcard_btn_cuo, 20, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_wordcard_btn_cuo, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_wordcard_btn_cuo, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_wordcard_btn_cuo, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_wordcard_btn_cuo, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_wordcard_btn_cuo, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(ui->screen_wordcard_btn_cuo, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -194,14 +194,14 @@ void setup_scr_screen_wordcard(lv_ui *ui)
     lv_obj_set_style_bg_opa(ui->screen_wordcard_btn_cuo, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_border_width(ui->screen_wordcard_btn_cuo, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_wordcard_btn_cuo, 20, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_width(ui->screen_wordcard_btn_cuo, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_wordcard_btn_cuo, lv_color_hex(0x83a8d2), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_width(ui->screen_wordcard_btn_cuo, 10, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_wordcard_btn_cuo, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_wordcard_btn_cuo, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_wordcard_btn_cuo, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_wordcard_btn_cuo, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_y(ui->screen_wordcard_btn_cuo, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_text_color(ui->screen_wordcard_btn_cuo, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_font(ui->screen_wordcard_btn_cuo, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_font(ui->screen_wordcard_btn_cuo, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_text_opa(ui->screen_wordcard_btn_cuo, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
 
     //Write style for screen_wordcard_btn_cuo, Part: LV_PART_MAIN, State: LV_STATE_DISABLED.

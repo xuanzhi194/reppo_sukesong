@@ -261,7 +261,34 @@ static uint32_t keypad_get_key(void)
 static uint32_t keypad_get_encoder(void)
 {
     /*Your code comes here*/
-    if(keypad_get_key_value(5)==1)return 5;  
+    /* ENTER 键去抖：避免双击造成快速连续切屏，从而引发动画/setup 叠加而崩溃。
+     * 一次按下只会触发一次，且距上次释放至少需 ENTER_DEBOUNCE_MS 才能再次触发。*/
+    #define ENTER_DEBOUNCE_MS 450u
+    static uint8_t  enter_last_raw   = 0;   /* 上一次采样到的物理电平 */
+    static uint8_t  enter_locked     = 0;   /* 当前是否处于“按下已被消费”状态 */
+    static uint32_t enter_release_ms = 0;   /* 最近一次释放的时间戳 */
+
+    uint8_t enter_raw = (keypad_get_key_value(5) == 1) ? 1 : 0;
+    uint32_t now_ms = lv_tick_get();
+
+    if (enter_raw && !enter_last_raw) {
+        /* 上升沿：检查是否过了去抖窗口 */
+        if (!enter_locked && (uint32_t)(now_ms - enter_release_ms) >= ENTER_DEBOUNCE_MS) {
+            enter_locked   = 1;
+            enter_last_raw = 1;
+            return 5;
+        }
+        /* 还在去抖窗口内：忽略这次按下 */
+        enter_last_raw = 1;
+    } else if (!enter_raw && enter_last_raw) {
+        /* 下降沿：记录释放时间，解除锁定 */
+        enter_release_ms = now_ms;
+        enter_locked     = 0;
+        enter_last_raw   = 0;
+    } else {
+        enter_last_raw = enter_raw;
+    }
+
     uint8_t encoder_value = check_encoder_direction();
     if(encoder_value == 1){
         if(keyboard_start_en == 1){

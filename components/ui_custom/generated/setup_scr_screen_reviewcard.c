@@ -148,8 +148,8 @@ void setup_scr_screen_reviewcard(lv_ui *ui)
     lv_obj_set_style_bg_opa(ui->screen_reviewcard_btn_dui, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_border_width(ui->screen_reviewcard_btn_dui, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_reviewcard_btn_dui, 20, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_width(ui->screen_reviewcard_btn_dui, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_reviewcard_btn_dui, lv_color_hex(0x83a8d2), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_width(ui->screen_reviewcard_btn_dui, 10, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_reviewcard_btn_dui, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_reviewcard_btn_dui, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_reviewcard_btn_dui, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_reviewcard_btn_dui, 0, LV_PART_MAIN|LV_STATE_FOCUSED);

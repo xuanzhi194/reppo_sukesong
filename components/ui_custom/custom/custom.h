@@ -46,16 +46,6 @@ typedef struct {
 
 extern ui_ai_result_t g_ui_daily_result;
 extern ui_ai_result_t g_ui_weekly_result;
-// //struct indicate
-// typedef struct {
-//     int word_index;
-//     uint16_t review_absoulte_index[100]; // this index is to count word_index for review word
-//     int word_review_num;    
-//     int word_learned_num;   
-//     int word_total_num;     
-//     char book_name[32];  
-//     uint8_t word_state[100]; //0 -> not learn or review 1 -> learned 2 -> review
-// } wordbook_info_t;
 
 // variables indicate
 //todolist
@@ -114,6 +104,8 @@ extern bool ai_week_start;
 extern int  all_focus_time;
 extern int  max_focus_time;
 extern int  focus_level_hour[10];
+extern bool volume_en;
+extern bool ble_success;
 /* done_list 结构体，用于 screen_donelist 展示 task_done.csv */
 #define DONE_MAX_ITEMS  100
 typedef struct {
@@ -158,6 +150,7 @@ void screen_donelist_buttion_add();
 void screen_todoback_buttion_add();
 void screen_answer_buttion_add();
 void screen_getanswer_buttion_add();
+void answer_book_show_random_answer(void);
 
 void my_kb_event_cb(lv_event_t * e);
 #ifdef __cplusplus

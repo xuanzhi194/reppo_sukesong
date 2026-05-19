@@ -158,7 +158,7 @@ void setup_scr_screen_timing(lv_ui *ui)
     lv_img_set_src(ui->screen_timing_img_baticon, &_AAA_shandian_icon_alpha_9x13);
     lv_img_set_pivot(ui->screen_timing_img_baticon, 50,50);
     lv_img_set_angle(ui->screen_timing_img_baticon, 0);
-    lv_obj_set_pos(ui->screen_timing_img_baticon, 156, 110);
+    lv_obj_set_pos(ui->screen_timing_img_baticon, 285, 109);
     lv_obj_set_size(ui->screen_timing_img_baticon, 9, 13);
 
     //Write style for screen_timing_img_baticon, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -190,7 +190,6 @@ void setup_scr_screen_timing(lv_ui *ui)
     lv_img_set_angle(ui->screen_timing_img_wifidis, 0);
     lv_obj_set_pos(ui->screen_timing_img_wifidis, 288, 7);
     lv_obj_set_size(ui->screen_timing_img_wifidis, 15, 15);
-    lv_obj_add_flag(ui->screen_timing_img_wifidis, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_timing_img_wifidis, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_timing_img_wifidis, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

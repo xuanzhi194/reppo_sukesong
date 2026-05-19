@@ -13,6 +13,7 @@
  *********************/
 #include <stdio.h>
 #include <string.h>
+#include "gui_guider.h"
 #include "lvgl.h"
 #include "custom.h"
 #include "widgets_init.h"
@@ -44,6 +45,8 @@ bool todo_back_label = 0;
 bool todo_archive_label = 0;
 bool main_load_label = 0;
 char current_task_name[128] = {0};
+bool volume_en = 0;
+bool ble_success = 0;
 //timer variables
 int16_t timer_all_num = 25; //minutes
 uint32_t timer_all_seconds = 0;
@@ -100,6 +103,118 @@ int     max_focus_time = 30000;
 /* AI 结果 UI 缓存，由 main.c 负责从 g_ai_* 同步进来 */
 ui_ai_result_t g_ui_daily_result  = {0};
 ui_ai_result_t g_ui_weekly_result = {0};
+
+/* 答案之书：字符串放 rodata；随机用 LVGL 的 lv_rand，不依赖 esp_random */
+static const char * const answer_book_answers[] = {
+    "先别急，答案会自己浮现",
+    "可以试试，但别用力过猛",
+    "今天适合迈出第一步",
+    "换个角度看，会更清楚",
+    "等等看，时机还差一点",
+    "答案在你忽略的细节里",
+    "把问题写下来，它会变小",
+    "去做，边做边修正",
+    "先完成，再完美",
+    "这件事值得认真对待",
+    "问问同伴，会有新思路",
+    "不要高估今天，也别低估长期",
+    "休息一下，效率会回来",
+    "它没有你想的那么难",
+    "这次选择简单一点",
+    "保留余地，是更聪明的决定",
+    "先把最小版本跑通",
+    "今晚不适合硬扛",
+    "你已经知道答案了",
+    "把复杂问题拆成三步",
+    "相信直觉，但检查证据",
+    "再等一个信号",
+    "别被情绪带着走",
+    "认真可以，焦虑不必",
+    "这会是一个不错的开始",
+    "答案偏向肯定",
+    "答案偏向否定",
+    "现在还不是最佳时机",
+    "大胆一点，问题不大",
+    "先和重要的人确认一下",
+    "今天适合收尾，不适合开新坑",
+    "把手机放下，答案会清楚些",
+    "去启真湖边走走再决定",
+    "图书馆会给你一点方向",
+    "先吃饭，别空腹做决定",
+    "这件事需要睡醒后再判断",
+    "保持节奏，不用冲刺",
+    "少想一点，多验证一点",
+    "它会比预期顺利",
+    "留给明天也可以",
+    "先处理最确定的部分",
+    "不要为了快而绕远路",
+    "接受不确定，然后继续",
+    "这不是终点，只是一次迭代",
+    "问问自己真正想要什么",
+    "答案藏在长期收益里",
+    "可以拒绝，不必内耗",
+    "选让你更平静的那个",
+    "先把桌面整理干净",
+    "把仿真跑起来再说",
+    "今天适合做减法",
+    "慢一点，结果会更稳",
+    "你需要的是开始，不是答案",
+    "别急着证明自己",
+    "这件事值得再坚持一下",
+    "方向没错，只是需要调整",
+    "让数据说话",
+    "先别承诺太满",
+    "好消息会晚一点到",
+    "给自己十分钟缓冲",
+    "选择更可持续的方案",
+    "可以，但要设边界",
+    "暂时不要",
+    "试试看",
+    "先把风险列出来",
+    "答案在下一次尝试里",
+    "别把小事想成大事",
+    "这次先相信自己",
+    "慢慢来，比较快",
+    "不要急着给结论",
+    "先问清楚问题本身",
+    "这条路可以继续走",
+    "换个环境会有答案",
+    "少一点完美主义",
+    "从最简单的地方开始",
+    "这不是坏事",
+    "今天适合整理思路",
+    "把它交给时间一点点",
+    "答案会偏向温柔",
+    "先保护好自己的节奏",
+    "不要同时做太多决定",
+    "它需要一个备选方案",
+    "先和现实对齐",
+    "不要忽略身体的提醒",
+    "可以先小范围试验",
+    "这件事不用马上答复",
+    "把期待调低一点",
+    "你需要更多信息",
+    "这个选择会带来成长",
+    "先停下，再出发",
+    "保持简单就好",
+    "答案比你想的朴素",
+    "别让拖延伪装成思考",
+    "这次可以主动一点",
+    "别急，先喝口水",
+    "今晚适合早点收工",
+    "选择更清醒的那个",
+    "让明天的你再看一次",
+    "它值得一个认真开始",
+    "先把边界说清楚"
+};
+
+void answer_book_show_random_answer(void)
+{
+    const uint32_t count = (uint32_t)(sizeof(answer_book_answers) / sizeof(answer_book_answers[0]));
+    uint32_t index = lv_rand(0, count - 1);
+    lv_label_set_text(guider_ui.screen_getanswer_btn_answer_label, answer_book_answers[index]);
+}
+
 /* ========== 用户可改参数 ========== */
 #define DELAY_MS         1500          // 延时多久后切屏
 /* ================================= */
@@ -356,6 +471,13 @@ void clear_focus_box(lv_obj_t * obj) {
     lv_obj_set_style_shadow_width(obj, 0, LV_STATE_FOCUSED);
 }
 
+void clear_edge_box(lv_obj_t * obj) {
+    // 1. 彻底关掉外轮廓 (这是最常见的蓝框来源)
+    lv_obj_set_style_outline_width(obj, 0, LV_STATE_FOCUSED);
+    lv_obj_set_style_outline_width(obj, 0, LV_STATE_FOCUS_KEY); // 针对键盘聚焦
+}
+
+
 void screen_todolist_buttion_add(){
     if(g == NULL) {
         g = lv_group_create();
@@ -384,6 +506,9 @@ void screen_todolist_buttion_add(){
     clear_focus_box(guider_ui.screen_todolist_btn_todo2);
     clear_focus_box(guider_ui.screen_todolist_btn_todo3);
     clear_focus_box(guider_ui.screen_todolist_btn_todo4);
+    clear_edge_box(guider_ui.screen_todolist_btn_lastpage);
+    clear_edge_box(guider_ui.screen_todolist_btn_nxtpage);
+    clear_edge_box(guider_ui.screen_todolist_btn_back);
 
 }
 //buttion add function screen_main
@@ -467,6 +592,16 @@ void screen_pomodoro_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_plus);
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_complete);
     lv_group_add_obj(g, guider_ui.screen_pomodoro_btn_continue);
+    clear_edge_box(guider_ui.screen_pomodoro_btn_start);
+    clear_edge_box(guider_ui.screen_pomodoro_btn_reset);
+    clear_edge_box(guider_ui.screen_pomodoro_btn_back);
+    clear_edge_box(guider_ui.screen_pomodoro_btn_stopwatch);
+    clear_edge_box(guider_ui.screen_pomodoro_btn_countdown);
+    clear_edge_box(guider_ui.screen_pomodoro_btn_minus);
+    clear_edge_box(guider_ui.screen_pomodoro_btn_addnum);
+    clear_edge_box(guider_ui.screen_pomodoro_btn_plus);
+    clear_edge_box(guider_ui.screen_pomodoro_btn_complete);
+    clear_edge_box(guider_ui.screen_pomodoro_btn_continue);
 
 }
 //buttion add function screen_wordmeun
@@ -489,6 +624,9 @@ void screen_wordmenu_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_learn); 
     lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_review); 
     lv_group_add_obj(g, guider_ui.screen_wordmeun_btn_back); 
+    clear_edge_box(guider_ui.screen_wordmeun_btn_learn);
+    clear_edge_box(guider_ui.screen_wordmeun_btn_review);
+    clear_edge_box(guider_ui.screen_wordmeun_btn_back);
     
 }
 
@@ -511,6 +649,9 @@ void screen_wordcard_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_wordcard_btn_dui);  
     lv_group_add_obj(g, guider_ui.screen_wordcard_btn_cuo);  
     lv_group_add_obj(g, guider_ui.screen_wordcard_btn_back);
+    clear_edge_box(guider_ui.screen_wordcard_btn_dui);
+    clear_edge_box(guider_ui.screen_wordcard_btn_cuo);
+    clear_edge_box(guider_ui.screen_wordcard_btn_back);
 
     wordcard_session_start = 1;
     wordcard_change = 1;
@@ -534,6 +675,8 @@ void screen_reviewcard_buttion_add(){
     }  
     lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_dui);   
     lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_back); 
+    clear_edge_box(guider_ui.screen_reviewcard_btn_dui);
+    clear_edge_box(guider_ui.screen_reviewcard_btn_back);
 
     reviewcard_session_start = 1;
     reviewcard_change = 1;
@@ -557,11 +700,16 @@ void screen_setting_buttion_add(){
     }
     lv_group_add_obj(g, guider_ui.screen_setting_btn_wifi);  
     lv_group_add_obj(g, guider_ui.screen_setting_btn_ble);
-    lv_group_add_obj(g, guider_ui.screen_setting_btn_data);
-    lv_group_add_obj(g, guider_ui.screen_setting_btn_todo);
-    lv_group_add_obj(g, guider_ui.screen_setting_btn_vocab);
+    lv_group_add_obj(g, guider_ui.screen_setting_btn_volume);
+    lv_group_add_obj(g, guider_ui.screen_setting_btn_update);
     lv_group_add_obj(g, guider_ui.screen_setting_btn_general);
     lv_group_add_obj(g, guider_ui.screen_setting_btn_back);  
+    clear_edge_box(guider_ui.screen_setting_btn_wifi);
+    clear_edge_box(guider_ui.screen_setting_btn_ble);
+    clear_edge_box(guider_ui.screen_setting_btn_volume);
+    clear_edge_box(guider_ui.screen_setting_btn_update);
+    clear_edge_box(guider_ui.screen_setting_btn_general);
+    clear_edge_box(guider_ui.screen_setting_btn_back);
 }
 
 //buttion add function screen_wificfg
@@ -591,7 +739,16 @@ void screen_wificfg_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_wificfg_btn_cancel);  
     lv_group_add_obj(g, guider_ui.screen_wificfg_btn_connect); 
     lv_group_add_obj(g, guider_ui.screen_wificfg_btn_back);  
-
+    clear_edge_box(guider_ui.screen_wificfg_list_1_item0);
+    clear_edge_box(guider_ui.screen_wificfg_list_1_item1);
+    clear_edge_box(guider_ui.screen_wificfg_list_1_item2);
+    clear_edge_box(guider_ui.screen_wificfg_list_1_item3);
+    clear_edge_box(guider_ui.screen_wificfg_list_1_item4);
+    clear_edge_box(guider_ui.screen_wificfg_btn_scan);
+    clear_edge_box(guider_ui.screen_wificfg_btn_disconnect);
+    clear_edge_box(guider_ui.screen_wificfg_btn_cancel);
+    clear_edge_box(guider_ui.screen_wificfg_btn_connect);
+    clear_edge_box(guider_ui.screen_wificfg_btn_back);
 } 
 
 //buttion add function screen_todosel
@@ -613,6 +770,9 @@ void screen_todosel_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_todosel_btn_complete);  
     lv_group_add_obj(g, guider_ui.screen_todosel_btn_focus); 
     lv_group_add_obj(g, guider_ui.screen_todosel_btn_cancel); 
+    clear_edge_box(guider_ui.screen_todosel_btn_complete);
+    clear_edge_box(guider_ui.screen_todosel_btn_focus);
+    clear_edge_box(guider_ui.screen_todosel_btn_cancel);
 }
 
 //buttion add function screen_todosel
@@ -636,7 +796,11 @@ void screen_ai_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_ai_btn_cat); 
     lv_group_add_obj(g, guider_ui.screen_ai_btn_sum); 
     lv_group_add_obj(g, guider_ui.screen_ai_btn_back);  
-
+    clear_edge_box(guider_ui.screen_ai_btn_day);
+    clear_edge_box(guider_ui.screen_ai_btn_week);
+    clear_edge_box(guider_ui.screen_ai_btn_cat);
+    clear_edge_box(guider_ui.screen_ai_btn_sum);
+    clear_edge_box(guider_ui.screen_ai_btn_back);
 }
 //buttion add function screen_donelist
 void screen_donelist_buttion_add(){
@@ -658,6 +822,10 @@ void screen_donelist_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_donelist_btn_nxtpage); 
     lv_group_add_obj(g, guider_ui.screen_donelist_btn_back); 
     lv_group_add_obj(g, guider_ui.screen_donelist_btn_save);
+    clear_edge_box(guider_ui.screen_donelist_btn_lastpage);
+    clear_edge_box(guider_ui.screen_donelist_btn_nxtpage);
+    clear_edge_box(guider_ui.screen_donelist_btn_back);
+    clear_edge_box(guider_ui.screen_donelist_btn_save);
 }
 //buttion add function screen_todooback
 void screen_todoback_buttion_add(){
@@ -677,6 +845,8 @@ void screen_todoback_buttion_add(){
     }
     lv_group_add_obj(g, guider_ui.screen_todoback_btn_recover);  
     lv_group_add_obj(g, guider_ui.screen_todoback_btn_cancel); 
+    clear_edge_box(guider_ui.screen_todoback_btn_recover);
+    clear_edge_box(guider_ui.screen_todoback_btn_cancel);
 }
 
 
@@ -718,6 +888,7 @@ void screen_getanswer_buttion_add(){
     }
     lv_group_add_obj(g, guider_ui.screen_getanswer_btn_answer); 
     clear_focus_box(guider_ui.screen_getanswer_btn_answer);
+    answer_book_show_random_answer();
 }
 void custom_init(lv_ui *ui)
 {

@@ -52,6 +52,8 @@ typedef struct
 	lv_obj_t *screen_main_img_point_icon;
 	lv_obj_t *screen_main_label_chosen;
 	lv_obj_t *screen_main_arc_battery;
+	lv_obj_t *screen_main_img_select_timing;
+	lv_obj_t *screen_main_img_select;
 	lv_obj_t *screen_todolist;
 	bool screen_todolist_del;
 	lv_obj_t *screen_todolist_btn_back;
@@ -167,32 +169,25 @@ typedef struct
 	lv_obj_t *screen_pomodoro_img_stopwatch;
 	lv_obj_t *screen_setting;
 	bool screen_setting_del;
-	lv_obj_t *screen_setting_cont_menu;
-	lv_obj_t *screen_setting_btn_wifi;
-	lv_obj_t *screen_setting_btn_wifi_label;
-	lv_obj_t *screen_setting_btn_ble;
-	lv_obj_t *screen_setting_btn_ble_label;
-	lv_obj_t *screen_setting_btn_data;
-	lv_obj_t *screen_setting_btn_data_label;
-	lv_obj_t *screen_setting_btn_todo;
-	lv_obj_t *screen_setting_btn_todo_label;
-	lv_obj_t *screen_setting_btn_vocab;
-	lv_obj_t *screen_setting_btn_vocab_label;
-	lv_obj_t *screen_setting_btn_general;
-	lv_obj_t *screen_setting_btn_general_label;
-	lv_obj_t *screen_setting_label_settings;
 	lv_obj_t *screen_setting_btn_back;
 	lv_obj_t *screen_setting_btn_back_label;
-	lv_obj_t *screen_setting_circular_down;
-	lv_obj_t *screen_setting_circular_up;
-	lv_obj_t *screen_setting_img_point8;
-	lv_obj_t *screen_setting_img_point3;
-	lv_obj_t *screen_setting_img_point7;
-	lv_obj_t *screen_setting_img_point1;
-	lv_obj_t *screen_setting_img_point2;
-	lv_obj_t *screen_setting_img_point5;
-	lv_obj_t *screen_setting_img_point4;
-	lv_obj_t *screen_setting_img_point6;
+	lv_obj_t *screen_setting_btn_general;
+	lv_obj_t *screen_setting_btn_general_label;
+	lv_obj_t *screen_setting_btn_update;
+	lv_obj_t *screen_setting_btn_update_label;
+	lv_obj_t *screen_setting_btn_volume;
+	lv_obj_t *screen_setting_btn_volume_label;
+	lv_obj_t *screen_setting_btn_ble;
+	lv_obj_t *screen_setting_btn_ble_label;
+	lv_obj_t *screen_setting_btn_wifi;
+	lv_obj_t *screen_setting_btn_wifi_label;
+	lv_obj_t *screen_setting_img_volume_open;
+	lv_obj_t *screen_setting_img_volume_close;
+	lv_obj_t *screen_setting_img_wifi_open;
+	lv_obj_t *screen_setting_img_wifi_close;
+	lv_obj_t *screen_setting_img_ble;
+	lv_obj_t *screen_setting_img_ble_dis;
+	lv_obj_t *screen_setting_img_update;
 	lv_obj_t *screen_wificfg;
 	bool screen_wificfg_del;
 	lv_obj_t *screen_wificfg_img_network;
@@ -367,33 +362,33 @@ LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_23);
 
 LV_IMG_DECLARE(_AAA_main_bg_320x170);
 
-LV_IMG_DECLARE(_AAA_main_todolist2_34x49);
+LV_IMG_DECLARE(_AAA_main_todolist2_39x54);
 
-LV_IMG_DECLARE(_AAA_main_todolist2_34x49);
+LV_IMG_DECLARE(_AAA_main_todolist2_39x54);
 
-LV_IMG_DECLARE(_AAA_main_donelist2_40x49);
+LV_IMG_DECLARE(_AAA_main_donelist2_45x54);
 
-LV_IMG_DECLARE(_AAA_main_donelist2_40x49);
+LV_IMG_DECLARE(_AAA_main_donelist2_45x54);
 
-LV_IMG_DECLARE(_AAA_main_book2_63x47);
+LV_IMG_DECLARE(_AAA_main_book_icon_37x55);
 
-LV_IMG_DECLARE(_AAA_main_book2_63x47);
+LV_IMG_DECLARE(_AAA_main_book_icon_37x55);
 
-LV_IMG_DECLARE(_AAA_main_time2_38x50);
+LV_IMG_DECLARE(_AAA_main_time2_43x55);
 
-LV_IMG_DECLARE(_AAA_main_time2_38x50);
+LV_IMG_DECLARE(_AAA_main_time2_43x55);
 
-LV_IMG_DECLARE(_AAA_main_ai2_44x49);
+LV_IMG_DECLARE(_AAA_main_ai2_49x54);
 
-LV_IMG_DECLARE(_AAA_main_ai2_44x49);
+LV_IMG_DECLARE(_AAA_main_ai2_49x54);
 
-LV_IMG_DECLARE(_AAA_main_fun2_50x49);
+LV_IMG_DECLARE(_AAA_main_fun2_55x54);
 
-LV_IMG_DECLARE(_AAA_main_fun2_50x49);
+LV_IMG_DECLARE(_AAA_main_fun2_55x54);
 
-LV_IMG_DECLARE(_AAA_main_setting2_41x49);
+LV_IMG_DECLARE(_AAA_main_setting2_46x54);
 
-LV_IMG_DECLARE(_AAA_main_setting2_41x49);
+LV_IMG_DECLARE(_AAA_main_setting2_46x54);
 LV_IMG_DECLARE(_AAA_small_todo_alpha_16x15);
 LV_IMG_DECLARE(_AAA_smallfun_alpha_19x18);
 LV_IMG_DECLARE(_AAA_small_setting_alpha_16x16);
@@ -402,6 +397,8 @@ LV_IMG_DECLARE(_AAA_small_timer_alpha_15x15);
 LV_IMG_DECLARE(_AAA_small_words_alpha_17x15);
 LV_IMG_DECLARE(_AAA_small_Done_alpha_15x15);
 LV_IMG_DECLARE(_AAA_main_dian_alpha_6x6);
+LV_IMG_DECLARE(_AAA_select_alpha_46x14);
+LV_IMG_DECLARE(_AAA_select_alpha_56x23);
 
 LV_IMG_DECLARE(_AAA_todolist_bg_320x170);
 
@@ -426,43 +423,14 @@ LV_IMG_DECLARE(_AAA_fanqie_xiangling_alpha_288x146);
 LV_IMG_DECLARE(_AAA_daojishi_alpha_15x15);
 LV_IMG_DECLARE(_AAA_miaobiao_alpha_15x15);
 
-LV_IMG_DECLARE(_screen_setting_bg2_320x170);
-
-LV_IMG_DECLARE(_wifi_icon_65x65);
-
-LV_IMG_DECLARE(_wifi_icon_65x65);
-
-LV_IMG_DECLARE(_wifi_icon_65x65);
-
-LV_IMG_DECLARE(_ble_icon_65x65);
-
-LV_IMG_DECLARE(_ble_icon_65x65);
-
-LV_IMG_DECLARE(_data_icon_65x65);
-
-LV_IMG_DECLARE(_data_icon_65x65);
-
-LV_IMG_DECLARE(_todo_icon_65x65);
-
-LV_IMG_DECLARE(_todo_icon_65x65);
-
-LV_IMG_DECLARE(_vocab_icon_65x65);
-
-LV_IMG_DECLARE(_vocab_icon_65x65);
-
-LV_IMG_DECLARE(_general_icon_65x65);
-
-LV_IMG_DECLARE(_general_icon_65x65);
-LV_IMG_DECLARE(_Subtract_alpha_220x25);
-LV_IMG_DECLARE(_Subtract1_alpha_220x25);
-LV_IMG_DECLARE(_Ellipse_alpha_25x25);
-LV_IMG_DECLARE(_Ellipse_alpha_25x25);
-LV_IMG_DECLARE(_Ellipse_alpha_25x25);
-LV_IMG_DECLARE(_Ellipse_alpha_25x25);
-LV_IMG_DECLARE(_Ellipse_alpha_25x25);
-LV_IMG_DECLARE(_Ellipse_alpha_25x25);
-LV_IMG_DECLARE(_Ellipse_alpha_25x25);
-LV_IMG_DECLARE(_Ellipse_alpha_25x25);
+LV_IMG_DECLARE(_AAA_reppo_setting_bg_320x170);
+LV_IMG_DECLARE(_AAA_reppo_volume_kai_icon_alpha_93x75);
+LV_IMG_DECLARE(_AAA_reppo_volume_guan_icon_alpha_93x75);
+LV_IMG_DECLARE(_AAA_clock_wifi_icon_alpha_100x100);
+LV_IMG_DECLARE(_AAA_clock_wifiduan_icon_alpha_100x100);
+LV_IMG_DECLARE(_AAA_reppo_bluetooth_icon_alpha_57x92);
+LV_IMG_DECLARE(_AAA_reppo_ble_dis_alpha_100x100);
+LV_IMG_DECLARE(_AAA_reppo_update_alpha_100x100);
 
 LV_IMG_DECLARE(_AAA_wifi_lianjie_320x170);
 LV_IMG_DECLARE(_pomorect_alpha_160x125);
@@ -501,10 +469,9 @@ LV_FONT_DECLARE(lv_font_Acme_Regular_14)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_52)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_17)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_12)
-LV_FONT_DECLARE(lv_font_Acme_Regular_30)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_28)
 LV_FONT_DECLARE(lv_font_arial_14)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)
-LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_28)
 LV_FONT_DECLARE(lv_font_Abel_regular_30)
 LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_14)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_13)

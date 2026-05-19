@@ -18,9 +18,7 @@
 #include "custom.h"
 lv_obj_t *main_cont;
 
-int8_t wordbook_totalnum = 3;
 int tmp_review_num = 0;
-lv_obj_t* menu_cont;
 bool is_week = 0;
 static void loading_anim_done_cb(lv_anim_t * a)
 {
@@ -81,6 +79,8 @@ static void screen_main_event_handler (lv_event_t *e)
         lv_obj_set_style_pad_column(main_cont, 45, 0); // 设置图标间距
         lv_obj_scroll_to_view(lv_obj_get_child(main_cont, 0), LV_ANIM_ON);
 
+        lv_obj_add_flag(guider_ui.screen_main_img_select_timing, LV_OBJ_FLAG_HIDDEN);
+
 
         break;
     }
@@ -95,12 +95,12 @@ static void screen_main_btn_todolist_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_main_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_main_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"TODO");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Todo");
         lv_obj_clear_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -110,12 +110,14 @@ static void screen_main_btn_todolist_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 83, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_todolist, -5, LV_STATE_FOCUSED);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_todolist, -8, LV_STATE_FOCUSED);
+        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
         lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
         break;
     }
     default:
@@ -129,12 +131,12 @@ static void screen_main_btn_done_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_donelist, guider_ui.screen_donelist_del, &guider_ui.screen_main_del, setup_scr_screen_donelist, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_donelist, guider_ui.screen_donelist_del, &guider_ui.screen_main_del, setup_scr_screen_donelist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"DONE");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Done");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -144,13 +146,15 @@ static void screen_main_btn_done_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 108, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_done, -5, LV_STATE_FOCUSED);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_done, -8, LV_STATE_FOCUSED);
+        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
 
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
         lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
         break;
     }
     default:
@@ -164,12 +168,12 @@ static void screen_main_btn_word_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_main_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_main_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"WORD");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Word");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -179,7 +183,8 @@ static void screen_main_btn_word_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 134, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_word, -5, LV_STATE_FOCUSED);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_word, -8, LV_STATE_FOCUSED);
+        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
 
 
         break;
@@ -187,6 +192,7 @@ static void screen_main_btn_word_event_handler (lv_event_t *e)
     case LV_EVENT_DEFOCUSED:
     {
         lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
         break;
     }
     default:
@@ -200,12 +206,12 @@ static void screen_main_btn_timer_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_pomodoro, guider_ui.screen_pomodoro_del, &guider_ui.screen_main_del, setup_scr_screen_pomodoro, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_pomodoro, guider_ui.screen_pomodoro_del, &guider_ui.screen_main_del, setup_scr_screen_pomodoro, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"POMODORO");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Pomodoro");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -215,13 +221,14 @@ static void screen_main_btn_timer_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 159, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_timer, -5, LV_STATE_FOCUSED);
-
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_timer, -8, LV_STATE_FOCUSED);
+        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
         lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
         break;
     }
     default:
@@ -235,12 +242,12 @@ static void screen_main_btn_ai_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_ai, guider_ui.screen_ai_del, &guider_ui.screen_main_del, setup_scr_screen_ai, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_ai, guider_ui.screen_ai_del, &guider_ui.screen_main_del, setup_scr_screen_ai, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"AI SUMMARY");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"AI Summary");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -250,13 +257,14 @@ static void screen_main_btn_ai_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 186, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_ai, -5, LV_STATE_FOCUSED);
-
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_ai, -8, LV_STATE_FOCUSED);
+        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
         lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
         break;
     }
     default:
@@ -270,12 +278,12 @@ static void screen_main_btn_fun_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_answer, guider_ui.screen_answer_del, &guider_ui.screen_main_del, setup_scr_screen_answer, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_answer, guider_ui.screen_answer_del, &guider_ui.screen_main_del, setup_scr_screen_answer, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"FUN");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Book of Answer");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -285,13 +293,14 @@ static void screen_main_btn_fun_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(guider_ui.screen_main_img_point_icon,213, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_fun, -5, LV_STATE_FOCUSED);
-
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_fun, -8, LV_STATE_FOCUSED);
+        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
         lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
         break;
     }
     default:
@@ -305,12 +314,12 @@ static void screen_main_btn_setting_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_setting, guider_ui.screen_setting_del, &guider_ui.screen_main_del, setup_scr_screen_setting, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_setting, guider_ui.screen_setting_del, &guider_ui.screen_main_del, setup_scr_screen_setting, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"SETTING");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Setting");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -320,13 +329,14 @@ static void screen_main_btn_setting_event_handler (lv_event_t *e)
         lv_obj_clear_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 238, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_setting, -5, LV_STATE_FOCUSED);
-
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_setting, -8, LV_STATE_FOCUSED);
+        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
         lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
         break;
     }
     default:
@@ -340,7 +350,31 @@ static void screen_main_btn_realtime_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_timing, guider_ui.screen_timing_del, &guider_ui.screen_main_del, setup_scr_screen_timing, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_timing, guider_ui.screen_timing_del, &guider_ui.screen_main_del, setup_scr_screen_timing, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Real Time");
+        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_select_timing, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_select, LV_OBJ_FLAG_HIDDEN);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+
+
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_add_flag(guider_ui.screen_main_img_select_timing, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_select, LV_OBJ_FLAG_HIDDEN);
         break;
     }
     default:
@@ -474,7 +508,7 @@ static void screen_todolist_btn_back_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_todolist_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_todolist_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         todo_back_label = 1;
         lv_obj_t * act_scr = lv_scr_act();
         lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
@@ -494,10 +528,10 @@ static void screen_todolist_btn_todo1_event_handler (lv_event_t *e)
 
         todo_index = 0;
         if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
-            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
             break;
         } else {
-            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
             break;
         }
         break;
@@ -525,9 +559,9 @@ static void screen_todolist_btn_todo2_event_handler (lv_event_t *e)
     {
         todo_index = 1;
         if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
-            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         } else {
-            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         }
 
         break;
@@ -555,9 +589,9 @@ static void screen_todolist_btn_todo3_event_handler (lv_event_t *e)
     {
         todo_index = 2;
         if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
-            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         } else {
-            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         }
 
         break;
@@ -585,9 +619,9 @@ static void screen_todolist_btn_todo4_event_handler (lv_event_t *e)
     {
         todo_index = 3;
         if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
-            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todosel, guider_ui.screen_todosel_del, &guider_ui.screen_todolist_del, setup_scr_screen_todosel, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         } else {
-            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, false, false);
+            ui_load_scr_animation(&guider_ui, &guider_ui.screen_todoback, guider_ui.screen_todoback_del, &guider_ui.screen_todolist_del, setup_scr_screen_todoback, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, false, false);
         }
 
         break;
@@ -955,7 +989,7 @@ static void screen_todoback_btn_cancel_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todoback_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todoback_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         todosel_back = 1;
         break;
     }
@@ -970,7 +1004,7 @@ static void screen_todoback_btn_recover_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todoback_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_todolist, guider_ui.screen_todolist_del, &guider_ui.screen_todoback_del, setup_scr_screen_todolist, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         //task done or not label change
         if(ui_todo_list.items[(page_cur-1)*4 + todo_index].done == 0) {
             ui_todo_list.items[(page_cur-1)*4 + todo_index].done = 1;
@@ -1006,6 +1040,8 @@ static void screen_timing_event_handler (lv_event_t *e)
         // screen buttion add
         screen_timing_buttion_add();
 
+        lv_obj_add_flag(guider_ui.screen_timing_img_wificonnect,LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_timing_img_wifidis,LV_OBJ_FLAG_HIDDEN);
         //---------//
         task_real_time_en = 1;
         break;
@@ -1021,7 +1057,7 @@ static void screen_timing_btn_main_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_timing_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_timing_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         task_real_time_en = 0;
         timing_back_en = 1;
         lv_obj_t * act_scr = lv_scr_act();
@@ -1048,8 +1084,8 @@ static void screen_wordmeun_event_handler (lv_event_t *e)
         //screen buttion add
         screen_wordmenu_buttion_add();
         //-----------------//
-        int process_percent = learned_cards_num / total_cards_num;
-        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_reviewnum,"%d%%",process_percent);
+        int process_percent = (learned_cards_num*100) / total_cards_num;
+        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordpercent,"%d%%",process_percent);
         lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_reviewnum,"Review: %d",review_cards_num);
         lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,process_percent,LV_ANIM_ON);
         break;
@@ -1065,7 +1101,7 @@ static void screen_wordmeun_btn_learn_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordcard, guider_ui.screen_wordcard_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_wordcard, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordcard, guider_ui.screen_wordcard_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_wordcard, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -1079,7 +1115,7 @@ static void screen_wordmeun_btn_review_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_reviewcard, guider_ui.screen_reviewcard_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_reviewcard, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_reviewcard, guider_ui.screen_reviewcard_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_reviewcard, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -1093,7 +1129,7 @@ static void screen_wordmeun_btn_back_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_wordmeun_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -1188,7 +1224,7 @@ static void screen_wordcard_btn_back_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_wordcard_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_wordcard_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -1268,7 +1304,7 @@ static void screen_reviewcard_btn_back_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_reviewcard_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_reviewcard_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -1372,7 +1408,7 @@ static void screen_pomodoro_btn_back_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_pomodoro_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_pomodoro_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         if(pomodoro_timer != NULL) {
             lv_timer_del(pomodoro_timer);
             pomodoro_timer = NULL;
@@ -1651,164 +1687,13 @@ static void screen_setting_event_handler (lv_event_t *e)
     {
         //screen buttion add
         screen_setting_buttion_add();
-        //container configure flex
-        menu_cont = guider_ui.screen_setting_cont_menu;
-        lv_obj_set_style_clip_corner(menu_cont, false, 0);
-        lv_obj_set_flex_flow(menu_cont, LV_FLEX_FLOW_ROW);
-        lv_obj_set_scroll_dir(menu_cont, LV_DIR_HOR);
-        lv_obj_set_flex_align(menu_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-        lv_obj_set_scroll_snap_x(menu_cont, LV_SCROLL_SNAP_CENTER);
-        lv_obj_set_style_pad_column(menu_cont, 35, 0); // 设置图标间距
-        lv_obj_scroll_to_view(lv_obj_get_child(menu_cont, 0), LV_ANIM_ON);
-        break;
-    }
-    default:
-        break;
-    }
-}
 
-static void screen_setting_btn_wifi_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_FOCUSED:
-    {
-        lv_label_set_text(guider_ui.screen_setting_label_settings, "Wifi Configuration");
-        ui_animation(guider_ui.screen_setting_label_settings, 0, 0, lv_obj_get_y(guider_ui.screen_setting_label_settings), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_clear_flag(guider_ui.screen_setting_img_point1, LV_OBJ_FLAG_HIDDEN);
-        break;
-    }
-    case LV_EVENT_DEFOCUSED:
-    {
-        lv_obj_add_flag(guider_ui.screen_setting_img_point1, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_y(guider_ui.screen_setting_label_settings, 8);
-        break;
-    }
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wificfg, guider_ui.screen_wificfg_del, &guider_ui.screen_setting_del, setup_scr_screen_wificfg, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        lv_obj_t * act_scr = lv_scr_act();
-        lv_obj_clear_flag(act_scr, LV_OBJ_FLAG_CLICKABLE);
-        break;
-    }
-    default:
-        break;
-    }
-}
 
-static void screen_setting_btn_ble_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_FOCUSED:
-    {
-        lv_label_set_text(guider_ui.screen_setting_label_settings, "BlueTooth");
-        ui_animation(guider_ui.screen_setting_label_settings, 0, 0, lv_obj_get_y(guider_ui.screen_setting_label_settings), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_clear_flag(guider_ui.screen_setting_img_point5, LV_OBJ_FLAG_HIDDEN);
-        break;
-    }
-    case LV_EVENT_DEFOCUSED:
-    {
-        lv_obj_add_flag(guider_ui.screen_setting_img_point5, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_y(guider_ui.screen_setting_label_settings, 8);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_setting_btn_data_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_FOCUSED:
-    {
-        lv_label_set_text(guider_ui.screen_setting_label_settings, "AI Summary");
-        ui_animation(guider_ui.screen_setting_label_settings, 0, 0, lv_obj_get_y(guider_ui.screen_setting_label_settings), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_clear_flag(guider_ui.screen_setting_img_point7, LV_OBJ_FLAG_HIDDEN);
-        break;
-    }
-    case LV_EVENT_DEFOCUSED:
-    {
-        lv_obj_add_flag(guider_ui.screen_setting_img_point7, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_y(guider_ui.screen_setting_label_settings, 8);
-        break;
-    }
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_ai, guider_ui.screen_ai_del, &guider_ui.screen_setting_del, setup_scr_screen_ai, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_setting_btn_todo_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_FOCUSED:
-    {
-        lv_label_set_text(guider_ui.screen_setting_label_settings, "Tasks Import");
-        ui_animation(guider_ui.screen_setting_label_settings, 0, 0, lv_obj_get_y(guider_ui.screen_setting_label_settings), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_clear_flag(guider_ui.screen_setting_img_point8, LV_OBJ_FLAG_HIDDEN);
-        break;
-    }
-    case LV_EVENT_DEFOCUSED:
-    {
-        lv_obj_add_flag(guider_ui.screen_setting_img_point8, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_y(guider_ui.screen_setting_label_settings, 8);
-        break;
-    }
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_donelist, guider_ui.screen_donelist_del, &guider_ui.screen_setting_del, setup_scr_screen_donelist, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_setting_btn_vocab_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_FOCUSED:
-    {
-        lv_label_set_text(guider_ui.screen_setting_label_settings, "Vocab Import");
-        ui_animation(guider_ui.screen_setting_label_settings, 0, 0, lv_obj_get_y(guider_ui.screen_setting_label_settings), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_clear_flag(guider_ui.screen_setting_img_point2, LV_OBJ_FLAG_HIDDEN);
-        break;
-    }
-    case LV_EVENT_DEFOCUSED:
-    {
-        lv_obj_add_flag(guider_ui.screen_setting_img_point2, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_y(guider_ui.screen_setting_label_settings, 8);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_setting_btn_general_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_FOCUSED:
-    {
-        lv_label_set_text(guider_ui.screen_setting_label_settings, "General Info");
-        ui_animation(guider_ui.screen_setting_label_settings, 0, 0, lv_obj_get_y(guider_ui.screen_setting_label_settings), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_clear_flag(guider_ui.screen_setting_img_point6, LV_OBJ_FLAG_HIDDEN);
-        break;
-    }
-    case LV_EVENT_DEFOCUSED:
-    {
-        lv_obj_add_flag(guider_ui.screen_setting_img_point6, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_y(guider_ui.screen_setting_label_settings, 8);
+        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_volume_close, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_volume_open, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
         break;
     }
     default:
@@ -1832,16 +1717,133 @@ static void screen_setting_btn_back_event_handler (lv_event_t *e)
     }
 }
 
+static void screen_setting_btn_general_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_FOCUSED:
+    {
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_setting_btn_update_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_FOCUSED:
+    {
+        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_volume_close, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_volume_open, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_setting_btn_volume_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_FOCUSED:
+    {
+        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
+        if(volume_en) {
+            lv_obj_add_flag(guider_ui.screen_setting_img_volume_close, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_setting_img_volume_open, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_clear_flag(guider_ui.screen_setting_img_volume_close, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(guider_ui.screen_setting_img_volume_open, LV_OBJ_FLAG_HIDDEN);
+        }
+        lv_obj_add_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_setting_btn_ble_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_FOCUSED:
+    {
+        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_volume_close, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_volume_open, LV_OBJ_FLAG_HIDDEN);
+        if(ble_success) {
+            lv_obj_clear_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(guider_ui.screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
+        }
+
+        lv_obj_add_flag(guider_ui.screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_setting_btn_wifi_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wificfg, guider_ui.screen_wificfg_del, &guider_ui.screen_setting_del, setup_scr_screen_wificfg, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        if(wifi_success) {
+            lv_obj_clear_flag(guider_ui.screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(guider_ui.screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(guider_ui.screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
+        }
+        lv_obj_add_flag(guider_ui.screen_setting_img_volume_close, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_volume_open, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void events_init_screen_setting (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_setting, screen_setting_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_setting_btn_wifi, screen_setting_btn_wifi_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_setting_btn_ble, screen_setting_btn_ble_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_setting_btn_data, screen_setting_btn_data_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_setting_btn_todo, screen_setting_btn_todo_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_setting_btn_vocab, screen_setting_btn_vocab_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_setting_btn_general, screen_setting_btn_general_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_setting_btn_back, screen_setting_btn_back_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_setting_btn_general, screen_setting_btn_general_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_setting_btn_update, screen_setting_btn_update_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_setting_btn_volume, screen_setting_btn_volume_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_setting_btn_ble, screen_setting_btn_ble_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_setting_btn_wifi, screen_setting_btn_wifi_event_handler, LV_EVENT_ALL, ui);
 }
 
 static void screen_wificfg_event_handler (lv_event_t *e)
@@ -1875,7 +1877,7 @@ static void screen_wificfg_btn_back_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_setting, guider_ui.screen_setting_del, &guider_ui.screen_wificfg_del, setup_scr_screen_setting, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_setting, guider_ui.screen_setting_del, &guider_ui.screen_wificfg_del, setup_scr_screen_setting, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -2215,7 +2217,7 @@ static void screen_ai_btn_back_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_ai_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_ai_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -2508,7 +2510,7 @@ static void screen_donelist_btn_back_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_donelist_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_donelist_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -2525,13 +2527,27 @@ void events_init_screen_donelist (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_donelist_btn_back, screen_donelist_btn_back_event_handler, LV_EVENT_ALL, ui);
 }
 
+static void screen_answer_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_SCREEN_LOAD_START:
+    {
+        screen_answer_buttion_add();
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 static void screen_answer_btn_start_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_loading, guider_ui.screen_loading_del, &guider_ui.screen_answer_del, setup_scr_screen_loading, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_loading, guider_ui.screen_loading_del, &guider_ui.screen_answer_del, setup_scr_screen_loading, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -2541,6 +2557,7 @@ static void screen_answer_btn_start_event_handler (lv_event_t *e)
 
 void events_init_screen_answer (lv_ui *ui)
 {
+    lv_obj_add_event_cb(ui->screen_answer, screen_answer_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_answer_btn_start, screen_answer_btn_start_event_handler, LV_EVENT_ALL, ui);
 }
 
@@ -2565,13 +2582,28 @@ void events_init_screen_loading (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_loading, screen_loading_event_handler, LV_EVENT_ALL, ui);
 }
 
+static void screen_getanswer_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_SCREEN_LOAD_START:
+    {
+        screen_getanswer_buttion_add();
+        answer_book_show_random_answer();
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 static void screen_getanswer_btn_answer_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_getanswer_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 200, 200, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_getanswer_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -2581,6 +2613,7 @@ static void screen_getanswer_btn_answer_event_handler (lv_event_t *e)
 
 void events_init_screen_getanswer (lv_ui *ui)
 {
+    lv_obj_add_event_cb(ui->screen_getanswer, screen_getanswer_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_getanswer_btn_answer, screen_getanswer_btn_answer_event_handler, LV_EVENT_ALL, ui);
 }
 

@@ -51,8 +51,39 @@ TaskHandle_t ai_wait_light_task_handle = NULL;
 
 static int s_last_review_cards_num = 0;
 
+/* 复查 timing 屏当前是否仍是活动屏且未被销毁，避免在快速切屏时访问悬空指针 */
+static inline bool timing_screen_is_alive(void)
+{
+    return guider_ui.screen_timing != NULL
+        && lv_obj_is_valid(guider_ui.screen_timing)
+        && lv_scr_act() == guider_ui.screen_timing;
+}
+
+/* 复查 wordcard / reviewcard 屏是否仍是当前屏，避免快速切屏访问悬空对象 */
+static inline bool wordcard_screen_is_alive(void)
+{
+    return guider_ui.screen_wordcard != NULL
+        && lv_obj_is_valid(guider_ui.screen_wordcard)
+        && lv_scr_act() == guider_ui.screen_wordcard;
+}
+
+static inline bool reviewcard_screen_is_alive(void)
+{
+    return guider_ui.screen_reviewcard != NULL
+        && lv_obj_is_valid(guider_ui.screen_reviewcard)
+        && lv_scr_act() == guider_ui.screen_reviewcard;
+}
+
+static inline bool wificfg_screen_is_alive(void)
+{
+    return guider_ui.screen_wificfg != NULL
+        && lv_obj_is_valid(guider_ui.screen_wificfg)
+        && lv_scr_act() == guider_ui.screen_wificfg;
+}
+
 static void wordcard_render(const word_session_state_t *st)
 {
+    if (!wordcard_screen_is_alive()) return;
     if (st->finished || !st->valid) return;
     lv_obj_clear_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
     lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
@@ -63,6 +94,7 @@ static void wordcard_render(const word_session_state_t *st)
 
 static void reviewcard_render(const word_session_state_t *st)
 {
+    if (!reviewcard_screen_is_alive()) return;
     if (st->finished || !st->valid) {
         lv_label_set_text(guider_ui.screen_reviewcard_label_index, "0/0");
         lv_label_set_text(guider_ui.screen_reviewcard_label_spelling, "Good Job!");
@@ -135,13 +167,47 @@ static void ai_result_light_show(bool success,uint8_t retry_count)
     }
     set_flow_light(0, 0, 0);         // off
 }
+
+static void screen_timing_status_update(bool wifi_connected)
+{
+    /* timing 屏可能尚未创建 / 已被销毁，所有子对象指针逐个校验，避免悬空指针 */
+    if (!timing_screen_is_alive()) return;
+
+    lv_obj_t *img_on  = guider_ui.screen_timing_img_wificonnect;
+    lv_obj_t *img_off = guider_ui.screen_timing_img_wifidis;
+    lv_obj_t *bar     = guider_ui.screen_timing_bar_battery;
+
+    if (img_on != NULL && lv_obj_is_valid(img_on) &&
+        img_off != NULL && lv_obj_is_valid(img_off)) {
+        if (wifi_connected) {
+            lv_obj_clear_flag(img_on,  LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag  (img_off, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag  (img_on,  LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(img_off, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+
+    if (bar != NULL && lv_obj_is_valid(bar)) {
+        int bat = get_battery_percentage();
+        if (bat < 0) bat = 0;
+        if (bat > 100) bat = 100;
+        lv_bar_set_value(bar, bat, LV_ANIM_ON);
+    }
+}
+
 //------------lvgl timer to battery show----------//
 void my_battery_update_cb(lv_timer_t * timer) {
-    if (lv_scr_act() != guider_ui.screen_main) return;
-    lv_obj_t * arc = guider_ui.screen_main_arc_battery;
-    if(arc != NULL && lv_obj_is_valid(arc)) {
-        int bat = get_battery_percentage();
-        lv_arc_set_value(arc, bat);
+    lv_obj_t * act_scr = lv_scr_act();
+    if (act_scr == NULL) return;
+    if (guider_ui.screen_main != NULL && act_scr == guider_ui.screen_main) {
+        lv_obj_t * arc = guider_ui.screen_main_arc_battery;
+        if(arc != NULL && lv_obj_is_valid(arc)) {
+            int bat = get_battery_percentage();
+            lv_arc_set_value(arc, bat);
+        }
+    } else if (guider_ui.screen_timing != NULL && act_scr == guider_ui.screen_timing) {
+        screen_timing_status_update(is_wifi_connected());
     }
 }
 //------------lvgl timer to realtime clock show----//
@@ -256,11 +322,14 @@ void wifi_time_thread(void *arg)
                         timeinfo.tm_min);
                 
                 if(xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) == pdTRUE){
-                    //show time in lvgl
-                    if(timeinfo.tm_year+1900 >= 2026){
-                        lv_label_set_text(guider_ui.screen_timing_label_date,date_str);
-                        lv_label_set_text(guider_ui.screen_timing_label_realtime,time_str);
-                        lv_label_set_text(guider_ui.screen_timing_label_day,week_days[timeinfo.tm_wday]);
+                    /* 拿到锁后复查：用户可能已经离开页面，对象已被销毁 */
+                    if (timing_screen_is_alive()) {
+                        if(timeinfo.tm_year+1900 >= 2026){
+                            lv_label_set_text(guider_ui.screen_timing_label_date,date_str);
+                            lv_label_set_text(guider_ui.screen_timing_label_realtime,time_str);
+                            lv_label_set_text(guider_ui.screen_timing_label_day,week_days[timeinfo.tm_wday]);
+                        }
+                        screen_timing_status_update(true);
                     }
                     xSemaphoreGive(lvgl_mutex);
                 }
@@ -274,8 +343,8 @@ void wifi_time_thread(void *arg)
                 }
                 vTaskDelay(990);
             }else{
-                ds3231_time_t now;
-                ds3231_get_time(I2C_NUM_0, &now);
+                ds3231_time_t now = {0};
+                esp_err_t rtc_err = ds3231_get_time(I2C_NUM_0, &now);
                 char date_str[30];
                 char time_str[20];
                 snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d",
@@ -285,10 +354,16 @@ void wifi_time_thread(void *arg)
                 snprintf(time_str, sizeof(time_str), "%02d:%02d",
                         now.hour,
                         now.minute);
+                int wday = (rtc_err == ESP_OK && now.day < 7) ? now.day : 0;
                 if(xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) == pdTRUE){
-                    lv_label_set_text(guider_ui.screen_timing_label_date,date_str);
-                    lv_label_set_text(guider_ui.screen_timing_label_realtime,time_str);
-                    lv_label_set_text(guider_ui.screen_timing_label_day,week_days[now.day]); 
+                    if (timing_screen_is_alive()) {
+                        if (rtc_err == ESP_OK) {
+                            lv_label_set_text(guider_ui.screen_timing_label_date,date_str);
+                            lv_label_set_text(guider_ui.screen_timing_label_realtime,time_str);
+                            lv_label_set_text(guider_ui.screen_timing_label_day,week_days[wday]);
+                        }
+                        screen_timing_status_update(false);
+                    }
                     xSemaphoreGive(lvgl_mutex);
                 }
                 vTaskDelay(990);
@@ -298,12 +373,17 @@ void wifi_time_thread(void *arg)
             wifi_scan_top_5();
             // wifi item btn label modify from wifi scan info
             if(xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE){
-                for(int i = 0; i < g_scan_ap_num ; i++){
-                    lv_obj_t * list_btn = lv_obj_get_child(guider_ui.screen_wificfg_list_1, i);
-                    lv_obj_t * label = lv_obj_get_child(list_btn, -1);    
-                    if(label != NULL && lv_obj_is_valid(label)) {
-                        lv_label_set_text(label,g_scan_results[i].ssid);
-                    }            
+                if (wificfg_screen_is_alive() &&
+                    guider_ui.screen_wificfg_list_1 != NULL &&
+                    lv_obj_is_valid(guider_ui.screen_wificfg_list_1)) {
+                    for(int i = 0; i < g_scan_ap_num ; i++){
+                        lv_obj_t * list_btn = lv_obj_get_child(guider_ui.screen_wificfg_list_1, i);
+                        if (list_btn == NULL || !lv_obj_is_valid(list_btn)) continue;
+                        lv_obj_t * label = lv_obj_get_child(list_btn, -1);
+                        if(label != NULL && lv_obj_is_valid(label)) {
+                            lv_label_set_text(label,g_scan_results[i].ssid);
+                        }
+                    }
                 }
                 xSemaphoreGive(lvgl_mutex);
             }
@@ -450,17 +530,20 @@ void app_main(void)
             memcpy(dst, src, sizeof(ui_ai_result_t));
             ai_result_t *r = src;
             if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-                lv_label_set_text(guider_ui.screen_ai_label_cat1, r->cat1_name);
-                lv_label_set_text(guider_ui.screen_ai_label_cat2, r->cat2_name);
-                lv_label_set_text(guider_ui.screen_ai_label_cat3, r->cat3_name);
-                lv_label_set_text_fmt(guider_ui.screen_ai_label_cat1_num, "%d%%", r->cat1_percent);
-                lv_label_set_text_fmt(guider_ui.screen_ai_label_cat2_num, "%d%%", r->cat2_percent);
-                lv_label_set_text_fmt(guider_ui.screen_ai_label_cat3_num, "%d%%", r->cat3_percent);
-                lv_arc_set_value(guider_ui.screen_ai_arc_1, r->cat1_percent);
-                lv_arc_set_value(guider_ui.screen_ai_arc_2, r->cat2_percent);
-                lv_arc_set_value(guider_ui.screen_ai_arc_3, r->cat3_percent);
-                lv_label_set_text(guider_ui.screen_ai_label_sum, r->summary);
-                lv_label_set_text(guider_ui.screen_ai_label_quote, r->quote);
+                if (guider_ui.screen_ai != NULL && lv_obj_is_valid(guider_ui.screen_ai) &&
+                    lv_scr_act() == guider_ui.screen_ai) {
+                    lv_label_set_text(guider_ui.screen_ai_label_cat1, r->cat1_name);
+                    lv_label_set_text(guider_ui.screen_ai_label_cat2, r->cat2_name);
+                    lv_label_set_text(guider_ui.screen_ai_label_cat3, r->cat3_name);
+                    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat1_num, "%d%%", r->cat1_percent);
+                    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat2_num, "%d%%", r->cat2_percent);
+                    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat3_num, "%d%%", r->cat3_percent);
+                    lv_arc_set_value(guider_ui.screen_ai_arc_1, r->cat1_percent);
+                    lv_arc_set_value(guider_ui.screen_ai_arc_2, r->cat2_percent);
+                    lv_arc_set_value(guider_ui.screen_ai_arc_3, r->cat3_percent);
+                    lv_label_set_text(guider_ui.screen_ai_label_sum, r->summary);
+                    lv_label_set_text(guider_ui.screen_ai_label_quote, r->quote);
+                }
                 xSemaphoreGive(lvgl_mutex);
             }
             if (ai_request_pending) {
@@ -480,7 +563,9 @@ void app_main(void)
         if (donelist_load_label) {
             donelist_load_label = 0;
             if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
-                if (lv_scr_act() == guider_ui.screen_donelist) {
+                if (guider_ui.screen_donelist != NULL &&
+                    lv_obj_is_valid(guider_ui.screen_donelist) &&
+                    lv_scr_act() == guider_ui.screen_donelist) {
                     done_total_tasks = ui_done_list.count;
                     donelist_page_num = done_total_tasks / 4;
                     if ((done_total_tasks % 4 != 0) || (done_total_tasks == 0)) donelist_page_num += 1;
