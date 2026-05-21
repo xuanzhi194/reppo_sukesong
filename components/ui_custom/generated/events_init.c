@@ -538,7 +538,7 @@ static void screen_todolist_btn_todo1_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        ui_animation(guider_ui.screen_todolist_btn_todo1, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo1), 45, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        ui_animation(guider_ui.screen_todolist_btn_todo1, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo1), 40, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
@@ -568,7 +568,7 @@ static void screen_todolist_btn_todo2_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        ui_animation(guider_ui.screen_todolist_btn_todo2, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo2), 45, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        ui_animation(guider_ui.screen_todolist_btn_todo2, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo2), 40, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
@@ -598,7 +598,7 @@ static void screen_todolist_btn_todo3_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        ui_animation(guider_ui.screen_todolist_btn_todo3, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo3), 98, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        ui_animation(guider_ui.screen_todolist_btn_todo3, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo3), 93, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
@@ -628,7 +628,7 @@ static void screen_todolist_btn_todo4_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        ui_animation(guider_ui.screen_todolist_btn_todo4, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo4), 98, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        ui_animation(guider_ui.screen_todolist_btn_todo4, 0, 0, lv_obj_get_y(guider_ui.screen_todolist_btn_todo4), 93, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         break;
     }
     case LV_EVENT_DEFOCUSED:
@@ -1688,12 +1688,28 @@ static void screen_setting_event_handler (lv_event_t *e)
         //screen buttion add
         screen_setting_buttion_add();
 
-
-        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
+        if(wifi_success) {
+            lv_obj_clear_flag(guider_ui.screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(guider_ui.screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(guider_ui.screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
+        }
         lv_obj_add_flag(guider_ui.screen_setting_img_volume_close, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_setting_img_volume_open, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+
+        lv_obj_add_flag(guider_ui.screen_setting_label_txt1, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_txt2, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_txt3, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_txt4, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_info1, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_info2, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_info3, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_info4, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_about, LV_OBJ_FLAG_HIDDEN);
         break;
     }
     default:
@@ -1723,10 +1739,39 @@ static void screen_setting_btn_general_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_FOCUSED:
     {
+        ui_animation(guider_ui.screen_setting_btn_general, 100, 0, lv_obj_get_y(guider_ui.screen_setting_btn_general), 130, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+
+        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_volume_close, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_volume_open, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+
+        lv_obj_clear_flag(guider_ui.screen_setting_label_txt1, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_setting_label_txt2, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_setting_label_txt3, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_setting_label_txt4, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_setting_label_info1, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_setting_label_info2, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_setting_label_info3, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_setting_label_info4, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_setting_label_about, LV_OBJ_FLAG_HIDDEN);
         break;
     }
     case LV_EVENT_DEFOCUSED:
     {
+        lv_obj_set_y(guider_ui.screen_setting_btn_general, 135);
+        lv_obj_add_flag(guider_ui.screen_setting_label_txt1, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_txt2, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_txt3, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_txt4, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_info1, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_info2, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_info3, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_info4, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_setting_label_about, LV_OBJ_FLAG_HIDDEN);
         break;
     }
     default:
@@ -1747,6 +1792,12 @@ static void screen_setting_btn_update_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(guider_ui.screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+        ui_animation(guider_ui.screen_setting_btn_update, 100, 0, lv_obj_get_y(guider_ui.screen_setting_btn_update), 105, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_setting_btn_update, 110);
         break;
     }
     default:
@@ -1772,6 +1823,27 @@ static void screen_setting_btn_volume_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+        ui_animation(guider_ui.screen_setting_btn_volume, 100, 0, lv_obj_get_y(guider_ui.screen_setting_btn_volume), 80, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_setting_btn_volume, 85);
+        break;
+    }
+    case LV_EVENT_CLICKED:
+    {
+        if(volume_en) {
+            //volume close
+            volume_en = 0;
+            lv_obj_clear_flag(guider_ui.screen_setting_img_volume_close,LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(guider_ui.screen_setting_img_volume_open,LV_OBJ_FLAG_HIDDEN);
+        } else {
+            //volume open
+            volume_en = 1;
+            lv_obj_add_flag(guider_ui.screen_setting_img_volume_close,LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(guider_ui.screen_setting_img_volume_open,LV_OBJ_FLAG_HIDDEN);
+        }
         break;
     }
     default:
@@ -1798,6 +1870,12 @@ static void screen_setting_btn_ble_event_handler (lv_event_t *e)
         }
 
         lv_obj_add_flag(guider_ui.screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+        ui_animation(guider_ui.screen_setting_btn_ble, 100, 0, lv_obj_get_y(guider_ui.screen_setting_btn_ble), 55, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_setting_btn_ble, 60);
         break;
     }
     default:
@@ -1828,6 +1906,12 @@ static void screen_setting_btn_wifi_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+        ui_animation(guider_ui.screen_setting_btn_wifi, 100, 0, lv_obj_get_y(guider_ui.screen_setting_btn_wifi), 30, &lv_anim_path_linear, 0, 0, 99, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_setting_btn_wifi, 35);
         break;
     }
     default:
@@ -2547,6 +2631,7 @@ static void screen_answer_btn_start_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
+        answer_book_rand_req = 1;
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_loading, guider_ui.screen_loading_del, &guider_ui.screen_answer_del, setup_scr_screen_loading, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }

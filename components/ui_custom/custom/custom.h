@@ -106,6 +106,9 @@ extern int  max_focus_time;
 extern int  focus_level_hour[10];
 extern bool volume_en;
 extern bool ble_success;
+/* 答案之书：custom 置位请求，main 写入 answer_book_rand */
+extern bool answer_book_rand_req;
+extern unsigned int answer_book_rand;
 /* done_list 结构体，用于 screen_donelist 展示 task_done.csv */
 #define DONE_MAX_ITEMS  100
 typedef struct {

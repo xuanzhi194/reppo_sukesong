@@ -242,6 +242,7 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_img_set_angle(ui->screen_setting_img_volume_open, 0);
     lv_obj_set_pos(ui->screen_setting_img_volume_open, 173, 56);
     lv_obj_set_size(ui->screen_setting_img_volume_open, 93, 75);
+    lv_obj_add_flag(ui->screen_setting_img_volume_open, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_setting_img_volume_open, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_setting_img_volume_open, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -257,6 +258,7 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_img_set_angle(ui->screen_setting_img_volume_close, 0);
     lv_obj_set_pos(ui->screen_setting_img_volume_close, 173, 56);
     lv_obj_set_size(ui->screen_setting_img_volume_close, 93, 75);
+    lv_obj_add_flag(ui->screen_setting_img_volume_close, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_setting_img_volume_close, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_setting_img_volume_close, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -272,6 +274,7 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_img_set_angle(ui->screen_setting_img_wifi_open, 0);
     lv_obj_set_pos(ui->screen_setting_img_wifi_open, 173, 44);
     lv_obj_set_size(ui->screen_setting_img_wifi_open, 100, 100);
+    lv_obj_add_flag(ui->screen_setting_img_wifi_open, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_setting_img_wifi_open, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_setting_img_wifi_open, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -287,6 +290,7 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_img_set_angle(ui->screen_setting_img_wifi_close, 0);
     lv_obj_set_pos(ui->screen_setting_img_wifi_close, 173, 41);
     lv_obj_set_size(ui->screen_setting_img_wifi_close, 100, 100);
+    lv_obj_add_flag(ui->screen_setting_img_wifi_close, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_setting_img_wifi_close, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_setting_img_wifi_close, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -302,6 +306,7 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_img_set_angle(ui->screen_setting_img_ble, 0);
     lv_obj_set_pos(ui->screen_setting_img_ble, 191, 44);
     lv_obj_set_size(ui->screen_setting_img_ble, 57, 92);
+    lv_obj_add_flag(ui->screen_setting_img_ble, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_setting_img_ble, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_setting_img_ble, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -317,6 +322,7 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_img_set_angle(ui->screen_setting_img_ble_dis, 0);
     lv_obj_set_pos(ui->screen_setting_img_ble_dis, 173, 41);
     lv_obj_set_size(ui->screen_setting_img_ble_dis, 100, 100);
+    lv_obj_add_flag(ui->screen_setting_img_ble_dis, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_setting_img_ble_dis, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_setting_img_ble_dis, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -332,12 +338,220 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_img_set_angle(ui->screen_setting_img_update, 0);
     lv_obj_set_pos(ui->screen_setting_img_update, 173, 41);
     lv_obj_set_size(ui->screen_setting_img_update, 100, 100);
+    lv_obj_add_flag(ui->screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_setting_img_update, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_setting_img_update, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_img_opa(ui->screen_setting_img_update, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_setting_img_update, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_clip_corner(ui->screen_setting_img_update, true, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_setting_label_about
+    ui->screen_setting_label_about = lv_label_create(ui->screen_setting);
+    lv_label_set_text(ui->screen_setting_label_about, "关于Reppo");
+    lv_label_set_long_mode(ui->screen_setting_label_about, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_setting_label_about, 167, 35);
+    lv_obj_set_size(ui->screen_setting_label_about, 109, 18);
+
+    //Write style for screen_setting_label_about, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_setting_label_about, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_label_about, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_setting_label_about, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_about, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_setting_label_about, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_setting_label_about, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_setting_label_about, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_setting_label_about, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_setting_label_about, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_setting_label_about, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_setting_label_about, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_setting_label_about, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_setting_label_about, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_setting_label_about, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_setting_label_txt1
+    ui->screen_setting_label_txt1 = lv_label_create(ui->screen_setting);
+    lv_label_set_text(ui->screen_setting_label_txt1, "设备名称");
+    lv_label_set_long_mode(ui->screen_setting_label_txt1, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_setting_label_txt1, 139, 60);
+    lv_obj_set_size(ui->screen_setting_label_txt1, 60, 16);
+
+    //Write style for screen_setting_label_txt1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_setting_label_txt1, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_txt1, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_setting_label_txt1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_setting_label_txt1, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_setting_label_txt2
+    ui->screen_setting_label_txt2 = lv_label_create(ui->screen_setting);
+    lv_label_set_text(ui->screen_setting_label_txt2, "型号名称");
+    lv_label_set_long_mode(ui->screen_setting_label_txt2, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_setting_label_txt2, 139, 85);
+    lv_obj_set_size(ui->screen_setting_label_txt2, 60, 16);
+
+    //Write style for screen_setting_label_txt2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_setting_label_txt2, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_txt2, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_setting_label_txt2, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_setting_label_txt2, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_setting_label_txt3
+    ui->screen_setting_label_txt3 = lv_label_create(ui->screen_setting);
+    lv_label_set_text(ui->screen_setting_label_txt3, "Reppo OS");
+    lv_label_set_long_mode(ui->screen_setting_label_txt3, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_setting_label_txt3, 139, 110);
+    lv_obj_set_size(ui->screen_setting_label_txt3, 72, 16);
+
+    //Write style for screen_setting_label_txt3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_setting_label_txt3, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_txt3, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_setting_label_txt3, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_setting_label_txt3, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_setting_label_txt4
+    ui->screen_setting_label_txt4 = lv_label_create(ui->screen_setting);
+    lv_label_set_text(ui->screen_setting_label_txt4, "硬件版本");
+    lv_label_set_long_mode(ui->screen_setting_label_txt4, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_setting_label_txt4, 139, 135);
+    lv_obj_set_size(ui->screen_setting_label_txt4, 60, 16);
+
+    //Write style for screen_setting_label_txt4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_setting_label_txt4, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_txt4, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_setting_label_txt4, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_setting_label_txt4, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_setting_label_info1
+    ui->screen_setting_label_info1 = lv_label_create(ui->screen_setting);
+    lv_label_set_text(ui->screen_setting_label_info1, "Reppo");
+    lv_label_set_long_mode(ui->screen_setting_label_info1, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_setting_label_info1, 232, 60);
+    lv_obj_set_size(ui->screen_setting_label_info1, 70, 16);
+
+    //Write style for screen_setting_label_info1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_setting_label_info1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_label_info1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_setting_label_info1, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_info1, &lv_font_SourceHanSansSC_Medium_12, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_setting_label_info1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_setting_label_info1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_setting_label_info1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_setting_label_info1, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_setting_label_info1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_setting_label_info1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_setting_label_info1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_setting_label_info1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_setting_label_info1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_setting_label_info1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_setting_label_info2
+    ui->screen_setting_label_info2 = lv_label_create(ui->screen_setting);
+    lv_label_set_text(ui->screen_setting_label_info2, "Reppo R1");
+    lv_label_set_long_mode(ui->screen_setting_label_info2, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_setting_label_info2, 232, 85);
+    lv_obj_set_size(ui->screen_setting_label_info2, 70, 16);
+
+    //Write style for screen_setting_label_info2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_setting_label_info2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_label_info2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_setting_label_info2, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_info2, &lv_font_SourceHanSansSC_Medium_12, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_setting_label_info2, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_setting_label_info2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_setting_label_info2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_setting_label_info2, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_setting_label_info2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_setting_label_info2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_setting_label_info2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_setting_label_info2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_setting_label_info2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_setting_label_info2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_setting_label_info3
+    ui->screen_setting_label_info3 = lv_label_create(ui->screen_setting);
+    lv_label_set_text(ui->screen_setting_label_info3, "1.0");
+    lv_label_set_long_mode(ui->screen_setting_label_info3, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_setting_label_info3, 232, 110);
+    lv_obj_set_size(ui->screen_setting_label_info3, 70, 16);
+
+    //Write style for screen_setting_label_info3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_setting_label_info3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_label_info3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_setting_label_info3, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_info3, &lv_font_SourceHanSansSC_Medium_12, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_setting_label_info3, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_setting_label_info3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_setting_label_info3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_setting_label_info3, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_setting_label_info3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_setting_label_info3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_setting_label_info3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_setting_label_info3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_setting_label_info3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_setting_label_info3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_setting_label_info4
+    ui->screen_setting_label_info4 = lv_label_create(ui->screen_setting);
+    lv_label_set_text(ui->screen_setting_label_info4, "3.5");
+    lv_label_set_long_mode(ui->screen_setting_label_info4, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_setting_label_info4, 232, 135);
+    lv_obj_set_size(ui->screen_setting_label_info4, 70, 16);
+
+    //Write style for screen_setting_label_info4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_setting_label_info4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_label_info4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_setting_label_info4, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_info4, &lv_font_SourceHanSansSC_Medium_12, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_setting_label_info4, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_setting_label_info4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_setting_label_info4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_setting_label_info4, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_setting_label_info4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_setting_label_info4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_setting_label_info4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_setting_label_info4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_setting_label_info4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_setting_label_info4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //The custom code of screen_setting.
 

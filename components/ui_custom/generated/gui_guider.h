@@ -188,6 +188,15 @@ typedef struct
 	lv_obj_t *screen_setting_img_ble;
 	lv_obj_t *screen_setting_img_ble_dis;
 	lv_obj_t *screen_setting_img_update;
+	lv_obj_t *screen_setting_label_about;
+	lv_obj_t *screen_setting_label_txt1;
+	lv_obj_t *screen_setting_label_txt2;
+	lv_obj_t *screen_setting_label_txt3;
+	lv_obj_t *screen_setting_label_txt4;
+	lv_obj_t *screen_setting_label_info1;
+	lv_obj_t *screen_setting_label_info2;
+	lv_obj_t *screen_setting_label_info3;
+	lv_obj_t *screen_setting_label_info4;
 	lv_obj_t *screen_wificfg;
 	bool screen_wificfg_del;
 	lv_obj_t *screen_wificfg_img_network;

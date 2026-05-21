@@ -59,7 +59,7 @@ bool stopwatch_start_label = 0;
 bool stopwatch_process_label = 0;
 bool countdown_timeout_pending = 0;
 int  current_task_index = 0;
-//timing variables
+//timing variablesreview_card
 bool task_real_time_en = 0;
 bool timing_back_en = 0;
 int16_t timing_year = 0;
@@ -104,7 +104,9 @@ int     max_focus_time = 30000;
 ui_ai_result_t g_ui_daily_result  = {0};
 ui_ai_result_t g_ui_weekly_result = {0};
 
-/* 答案之书：字符串放 rodata；随机用 LVGL 的 lv_rand，不依赖 esp_random */
+bool answer_book_rand_req = 0;
+unsigned int answer_book_rand = 0;
+
 static const char * const answer_book_answers[] = {
     "先别急，答案会自己浮现",
     "可以试试，但别用力过猛",
@@ -211,7 +213,7 @@ static const char * const answer_book_answers[] = {
 void answer_book_show_random_answer(void)
 {
     const uint32_t count = (uint32_t)(sizeof(answer_book_answers) / sizeof(answer_book_answers[0]));
-    uint32_t index = lv_rand(0, count - 1);
+    uint32_t index = answer_book_rand % count;
     lv_label_set_text(guider_ui.screen_getanswer_btn_answer_label, answer_book_answers[index]);
 }
 
@@ -888,7 +890,6 @@ void screen_getanswer_buttion_add(){
     }
     lv_group_add_obj(g, guider_ui.screen_getanswer_btn_answer); 
     clear_focus_box(guider_ui.screen_getanswer_btn_answer);
-    answer_book_show_random_answer();
 }
 void custom_init(lv_ui *ui)
 {

@@ -27,6 +27,7 @@
 #include "bsp_ble.h"
 #include "ai_demo_task.h"
 #include "ai_chat_secrets.h"
+#include "esp_random.h"
 
 const char *week_days[7] = {
     "Sunday",   // 0
@@ -424,11 +425,9 @@ void wifi_time_thread(void *arg)
 //-------------main loop-------------------------//
 void app_main(void)
 {
-    //-----------RGB FLOW LIGHT INIT------------//
+    //-----------RGB boot flow light (non-blocking)---//
     init_led_strip();
-    set_flow_light(51,64,69); //blue
-    set_flow_light(10,24,49);
-    set_flow_light(20,20,20);
+    start_boot_led_blink();
     //-----------encoder init-------------------//
     init_encoder_direction();
     //-----------buzzer init--------------------//
@@ -490,6 +489,12 @@ void app_main(void)
     //--------------main loop task-----------------//
     while (1) 
     {
+        //------------答案之书随机数----------------//
+        if (answer_book_rand_req) {
+            answer_book_rand_req = 0;
+            answer_book_rand = esp_random();
+        }
+
         //------------buzzer timeout alarm trigger----------------//
         if(countdown_timeout_pending && !buzzer_timeout_task_running){
             countdown_timeout_pending = 0;

@@ -1,4 +1,6 @@
 #include "ws2812b.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 // Define GPIO15 according to the schematic [cite: 197]
 #define LED_STRIP_GPIO_PIN  17
@@ -35,12 +37,25 @@ void init_led_strip() {
  */
 void set_flow_light(uint32_t r, uint32_t g, uint32_t b) {
     for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
-        // Set individual pixel color [cite: 531]
         led_strip_set_pixel(led_strip, i, r, g, b);
-        // Refresh the hardware to show the color
         led_strip_refresh(led_strip);
         vTaskDelay(pdMS_TO_TICKS(50));
-        // Clear before next step for flow animation
         led_strip_clear(led_strip);
     }
+}
+
+static void boot_led_blink_task(void *param)
+{
+    (void)param;
+    set_flow_light(51, 64, 69);
+    set_flow_light(10, 24, 49);
+    set_flow_light(20, 20, 20);
+    led_strip_clear(led_strip);
+    led_strip_refresh(led_strip);
+    vTaskDelete(NULL);
+}
+
+void start_boot_led_blink(void)
+{
+    xTaskCreatePinnedToCore(boot_led_blink_task, "boot_led", 2048, NULL, 5, NULL, 0);
 }
