@@ -17,6 +17,7 @@
 #include "lvgl.h"
 #include "custom.h"
 #include "widgets_init.h"
+#include <stdlib.h>
 
 //lv group define
 lv_group_t *g = NULL;
@@ -47,6 +48,13 @@ bool main_load_label = 0;
 char current_task_name[128] = {0};
 bool volume_en = 0;
 bool ble_success = 0;
+bool ble_enabled = 0;
+bool ble_toggle_on_req = 0;
+bool ble_toggle_off_req = 0;
+bool ble_disconnect_req = 0;
+bool ble_flow_led_en = 0;
+bool ble_ui_refresh_req = 0;
+bool todo_ble_ui_refresh_label = 0;
 //timer variables
 int16_t timer_all_num = 25; //minutes
 uint32_t timer_all_seconds = 0;
@@ -313,6 +321,63 @@ void stopwatch_start(){
 }
 
 //-----------------------wifi_status show----------------------//
+/**
+ * @param password          NULL = 清空密码框；非 NULL = 填入（可为 "" 表示无密码热点）
+ * @param focus_connect_btn true 焦点到 Connect；false 焦点到密码框
+ */
+void wificfg_show_connect_ui(lv_obj_t *list_btn, const char *password, bool focus_connect_btn)
+{
+    if (list_btn == NULL || guider_ui.screen_wificfg_list_1 == NULL) {
+        return;
+    }
+
+    const char *txt = lv_list_get_btn_text(guider_ui.screen_wificfg_list_1, list_btn);
+    if (txt == NULL || txt[0] == '\0') {
+        return;
+    }
+
+    lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(guider_ui.screen_wificfg_img_wifiicon, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(guider_ui.screen_wificfg_label_status2, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(guider_ui.screen_wificfg_btn_cancel, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(guider_ui.screen_wificfg_btn_connect, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(guider_ui.screen_wificfg_img_passicon, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(guider_ui.screen_wificfg_ta_password, LV_OBJ_FLAG_HIDDEN);
+
+    lv_label_set_text_fmt(guider_ui.screen_wificfg_label_status, "Connect to %s", txt);
+
+    if (wifi_ssid != NULL) {
+        free(wifi_ssid);
+    }
+    wifi_ssid = strdup(txt);
+
+    if (password != NULL) {
+        lv_textarea_set_text(guider_ui.screen_wificfg_ta_password, password);
+    } else {
+        lv_textarea_set_text(guider_ui.screen_wificfg_ta_password, "");
+    }
+
+    if (focus_connect_btn) {
+        lv_group_focus_obj(guider_ui.screen_wificfg_btn_connect);
+    } else {
+        lv_group_focus_obj(guider_ui.screen_wificfg_ta_password);
+    }
+
+    lv_refr_now(NULL);
+    ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0,
+                 lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80,
+                 &lv_anim_path_linear, 1, 0, 0, 0,
+                 (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
+}
+
+/**
+ * 默认实现：供 GUI Guider 模拟器链接；固件中由 main/wificfg_bridge.c 强符号覆盖（NVS 读密码）。
+ */
+__attribute__((weak)) void wificfg_on_list_item_clicked(lv_obj_t *list_item)
+{
+    wificfg_show_connect_ui(list_item, NULL, false);
+}
+
 void wifi_connect_show(){
 
     lv_obj_add_flag(guider_ui.screen_wificfg_spinner_connect,LV_OBJ_FLAG_HIDDEN);
@@ -682,6 +747,56 @@ void screen_reviewcard_buttion_add(){
 
     reviewcard_session_start = 1;
     reviewcard_change = 1;
+}
+
+void todo_ble_sync_ui_refresh(void)
+{
+    done_sum = 0;
+    for (uint8_t i = 0; i < ui_todo_list.count; i++) {
+        if (ui_todo_list.items[i].done) {
+            done_sum++;
+        }
+    }
+    todo_sum = ui_todo_list.count - done_sum;
+
+    if (guider_ui.screen_main_label_todonum != NULL &&
+        lv_obj_is_valid(guider_ui.screen_main_label_todonum)) {
+        lv_label_set_text_fmt(guider_ui.screen_main_label_todonum, "%d", todo_sum);
+    }
+
+    if (ui_todo_list.count > 0 &&
+        guider_ui.screen_todolist != NULL &&
+        lv_obj_is_valid(guider_ui.screen_todolist) &&
+        lv_scr_act() == guider_ui.screen_todolist &&
+        guider_ui.screen_todolist_btn_todo1_label != NULL &&
+        lv_obj_is_valid(guider_ui.screen_todolist_btn_todo1_label)) {
+        page_cur = 1;
+        lv_event_send(guider_ui.screen_todolist, LV_EVENT_SCREEN_LOAD_START, NULL);
+    }
+}
+
+void screen_setting_ble_refresh_icons(void)
+{
+    lv_obj_t *img_on = guider_ui.screen_setting_img_ble;
+    lv_obj_t *img_dis = guider_ui.screen_setting_img_ble_dis;
+
+    if (guider_ui.screen_setting == NULL || !lv_obj_is_valid(guider_ui.screen_setting)) {
+        return;
+    }
+    if (lv_scr_act() != guider_ui.screen_setting) {
+        return;
+    }
+    if (img_on == NULL || img_dis == NULL ||
+        !lv_obj_is_valid(img_on) || !lv_obj_is_valid(img_dis)) {
+        return;
+    }
+    if (ble_success) {
+        lv_obj_clear_flag(img_on, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(img_dis, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(img_on, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(img_dis, LV_OBJ_FLAG_HIDDEN);
+    }
 }
 
 //buttion add function screen_setting

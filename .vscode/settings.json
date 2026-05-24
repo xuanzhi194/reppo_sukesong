@@ -30,5 +30,6 @@
     "functional": "c"
   },
   "idf.espIdfPath": "E:/esp32idf/Espressif/frameworks/esp-idf-v5.3.1",
-  "idf.currentSetup": "E:/esp32idf/Espressif/frameworks/esp-idf-v5.3.1/"
+  "idf.currentSetup": "/Users/sean/.espressif/v5.3.5/esp-idf",
+  "idf.port": "/dev/tty.usbserial-130"
 }

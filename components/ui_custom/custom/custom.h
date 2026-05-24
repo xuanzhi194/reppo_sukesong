@@ -106,6 +106,15 @@ extern int  max_focus_time;
 extern int  focus_level_hour[10];
 extern bool volume_en;
 extern bool ble_success;
+extern bool ble_enabled;
+extern bool ble_toggle_on_req;
+extern bool ble_toggle_off_req;
+extern bool ble_disconnect_req;
+extern bool ble_flow_led_en;
+extern bool ble_ui_refresh_req;
+extern bool todo_ble_ui_refresh_label;
+void screen_setting_ble_refresh_icons(void);
+void todo_ble_sync_ui_refresh(void);
 /* 答案之书：custom 置位请求，main 写入 answer_book_rand */
 extern bool answer_book_rand_req;
 extern unsigned int answer_book_rand;
@@ -134,6 +143,9 @@ void countdown_start(int16_t minutes);
 void stopwatch_start();
 extern void wifi_connect_show();
 extern void wifi_disconnect_show();
+void wificfg_show_connect_ui(lv_obj_t *list_btn, const char *password, bool focus_connect_btn);
+/* 模拟器用 custom.c 弱符号默认实现；ESP32 固件由 main/wificfg_bridge.c 强符号覆盖 */
+void wificfg_on_list_item_clicked(lv_obj_t *list_item);
 extern void screen_ai_load_nvs_data(bool day_or_week);//0 -> day 1->week
 //screens buttion add
 extern lv_group_t *g;

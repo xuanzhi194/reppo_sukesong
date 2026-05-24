@@ -7,6 +7,7 @@
  */
 
 #include "todo_storage.h"
+#include "cJSON.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -180,6 +181,219 @@ esp_err_t todo_storage_save_list(void)
         _nvs_save_done();
     }
     return ret;
+}
+
+static uint16_t _parse_duration_min(const char *s)
+{
+    unsigned v = 0;
+    if (s == NULL || s[0] == '\0') {
+        return 0;
+    }
+    sscanf(s, "%u", &v);
+    return (uint16_t)v;
+}
+
+esp_err_t todo_storage_apply_ble_json(const char *json)
+{
+    if (json == NULL || json[0] == '\0') {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    cJSON *root = cJSON_Parse(json);
+    if (root == NULL) {
+        ESP_LOGE(TAG, "BLE JSON parse failed");
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!cJSON_IsArray(root)) {
+        ESP_LOGE(TAG, "BLE JSON root is not an array");
+        cJSON_Delete(root);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memset(&g_todo_list, 0, sizeof(g_todo_list));
+
+    const int n = cJSON_GetArraySize(root);
+    for (int i = 0; i < n && g_todo_list.count < TODO_MAX_ITEMS; i++) {
+        cJSON *obj = cJSON_GetArrayItem(root, i);
+        cJSON *content = cJSON_GetObjectItem(obj, "content");
+        cJSON *duration_str = cJSON_GetObjectItem(obj, "durationStr");
+        cJSON *done_item = cJSON_GetObjectItem(obj, "done");
+
+        if (!cJSON_IsObject(obj) || !cJSON_IsString(content)) {
+            continue;
+        }
+
+        todo_item_t *dst = &g_todo_list.items[g_todo_list.count];
+        strncpy(dst->name, content->valuestring, TODO_NAME_LEN - 1);
+        dst->name[TODO_NAME_LEN - 1] = '\0';
+        dst->duration_min = cJSON_IsString(duration_str)
+                                 ? _parse_duration_min(duration_str->valuestring)
+                                 : 0;
+        dst->done = cJSON_IsBool(done_item) ? (cJSON_IsTrue(done_item) ? 1 : 0) : 0;
+        dst->finish_date[0] = '\0';
+        g_todo_list.count++;
+    }
+
+    cJSON_Delete(root);
+
+    esp_err_t ret = _write_csv();
+    if (ret == ESP_OK) {
+        _nvs_save_done();
+        ESP_LOGI(TAG, "BLE sync: overwrote todo.csv with %u task(s)", g_todo_list.count);
+    }
+    return ret;
+}
+
+esp_err_t todo_storage_reload_from_flash(void)
+{
+    esp_err_t ret = _read_csv();
+    if (ret == ESP_OK) {
+        _nvs_load_done();
+    }
+    return ret;
+}
+
+static cJSON *todo_storage_build_todo_json_array(void)
+{
+    cJSON *arr = cJSON_CreateArray();
+    if (arr == NULL) {
+        return NULL;
+    }
+
+    for (uint8_t i = 0; i < g_todo_list.count; i++) {
+        cJSON *obj = cJSON_CreateObject();
+        char dur[20];
+        if (obj == NULL) {
+            cJSON_Delete(arr);
+            return NULL;
+        }
+        snprintf(dur, sizeof(dur), "%uMIN", (unsigned)g_todo_list.items[i].duration_min);
+        cJSON_AddStringToObject(obj, "content", g_todo_list.items[i].name);
+        cJSON_AddStringToObject(obj, "durationStr", dur);
+        cJSON_AddBoolToObject(obj, "done", g_todo_list.items[i].done != 0);
+        cJSON_AddItemToArray(arr, obj);
+    }
+    return arr;
+}
+
+static cJSON *todo_storage_build_task_done_json_array(void)
+{
+    FILE *f = fopen(TASK_DONE_CSV_PATH, "r");
+    cJSON *arr = cJSON_CreateArray();
+    char line[200];
+
+    if (arr == NULL) {
+        if (f) {
+            fclose(f);
+        }
+        return NULL;
+    }
+    if (f == NULL) {
+        return arr;
+    }
+
+    while (fgets(line, sizeof(line), f)) {
+        size_t len = strlen(line);
+        while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
+            line[--len] = '\0';
+        }
+        if (len == 0) {
+            continue;
+        }
+
+        char *p_name = strtok(line, ",");
+        char *p_date = strtok(NULL, ",");
+        char *p_dur  = strtok(NULL, ",");
+        if (p_name == NULL || p_date == NULL) {
+            continue;
+        }
+
+        cJSON *obj = cJSON_CreateObject();
+        char dur[20];
+        if (obj == NULL) {
+            cJSON_Delete(arr);
+            fclose(f);
+            return NULL;
+        }
+        snprintf(dur, sizeof(dur), "%uMIN", (unsigned)(p_dur ? atoi(p_dur) : 0));
+        cJSON_AddStringToObject(obj, "content", p_name);
+        cJSON_AddStringToObject(obj, "date", p_date);
+        cJSON_AddStringToObject(obj, "durationStr", dur);
+        cJSON_AddItemToArray(arr, obj);
+    }
+    fclose(f);
+    return arr;
+}
+
+static esp_err_t todo_storage_print_json_to_buf(cJSON *root, char *out, size_t out_size)
+{
+    char *printed = cJSON_PrintUnformatted(root);
+    if (printed == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    size_t need = strlen(printed) + 1;
+    if (need > out_size) {
+        cJSON_free(printed);
+        return ESP_ERR_INVALID_SIZE;
+    }
+    memcpy(out, printed, need);
+    cJSON_free(printed);
+    return ESP_OK;
+}
+
+esp_err_t todo_storage_export_ble_json(char *out, size_t out_size)
+{
+    if (out == NULL || out_size < 3) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    cJSON *arr = todo_storage_build_todo_json_array();
+    if (arr == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    esp_err_t ret = todo_storage_print_json_to_buf(arr, out, out_size);
+    cJSON_Delete(arr);
+    return ret;
+}
+
+esp_err_t todo_storage_export_ble_read_bundle(char *out, size_t out_size)
+{
+    cJSON *root;
+    cJSON *todo_arr;
+    cJSON *done_arr;
+    esp_err_t ret;
+
+    if (out == NULL || out_size < 16) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (todo_storage_reload_from_flash() != ESP_OK) {
+        ESP_LOGW(TAG, "todo reload failed for BLE bundle");
+    }
+
+    root = cJSON_CreateObject();
+    todo_arr = todo_storage_build_todo_json_array();
+    done_arr = todo_storage_build_task_done_json_array();
+    if (root == NULL || todo_arr == NULL || done_arr == NULL) {
+        cJSON_Delete(root);
+        cJSON_Delete(todo_arr);
+        cJSON_Delete(done_arr);
+        return ESP_ERR_NO_MEM;
+    }
+
+    cJSON_AddItemToObject(root, "todo", todo_arr);
+    cJSON_AddItemToObject(root, "taskDone", done_arr);
+
+    {
+        unsigned done_count = (unsigned)cJSON_GetArraySize(done_arr);
+        ret = todo_storage_print_json_to_buf(root, out, out_size);
+        cJSON_Delete(root);
+        if (ret == ESP_OK) {
+            ESP_LOGI(TAG, "BLE read bundle: todo=%u taskDone=%u",
+                     (unsigned)g_todo_list.count, done_count);
+        }
+        return ret;
+    }
 }
 
 uint8_t todo_storage_get_done_count(void)

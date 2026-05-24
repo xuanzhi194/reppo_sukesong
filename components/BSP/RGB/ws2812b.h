@@ -6,5 +6,7 @@
 void init_led_strip();
 void set_flow_light(uint32_t r, uint32_t g, uint32_t b);
 void start_boot_led_blink(void);
+void start_ble_flow_light(void);
+void stop_ble_flow_light(void);
 
 #endif

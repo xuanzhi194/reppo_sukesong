@@ -253,6 +253,17 @@ void nvs_thread(void *param){
         }else if(led_red_en){
             led_red_en = 0;
             set_flow_light(80, 32, 33);
+        }else if(ble_toggle_on_req){
+            ble_toggle_on_req = 0;
+            bsp_ble_init();
+            start_ble_flow_light();
+        }else if(ble_toggle_off_req){
+            ble_toggle_off_req = 0;
+            stop_ble_flow_light();
+            bsp_ble_deinit();
+        }else if(ble_disconnect_req){
+            ble_disconnect_req = 0;
+            bsp_ble_disconnect();
         }
 
         if(wordcard_change || reviewcard_change){
@@ -564,6 +575,23 @@ void app_main(void)
             ai_request_pending = 0;
         }
         
+        if (ble_ui_refresh_req) {
+            ble_ui_refresh_req = 0;
+            if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                screen_setting_ble_refresh_icons();
+                xSemaphoreGive(lvgl_mutex);
+            }
+        }
+
+        if (todo_ble_ui_refresh_label) {
+            todo_ble_ui_refresh_label = 0;
+            ui_todo_list = g_todo_list;
+            if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                todo_ble_sync_ui_refresh();
+                xSemaphoreGive(lvgl_mutex);
+            }
+        }
+
         /* donelist 异步刷新：归档完成后重新渲染当前页 */
         if (donelist_load_label) {
             donelist_load_label = 0;

@@ -36,6 +36,26 @@ esp_err_t todo_storage_init(void);
  */
 esp_err_t todo_storage_save_list(void);
 
+/**
+ * @brief 解析蓝牙 JSON 任务数组，清空并覆盖 /spiffs/todo.csv（name,duration_min,done）。
+ * @param json 形如 [{"content":"..","durationStr":"60MIN","done":false}, ...]
+ */
+esp_err_t todo_storage_apply_ble_json(const char *json);
+
+/** @brief 从 SPIFFS 重新加载 todo.csv + NVS done 到 g_todo_list */
+esp_err_t todo_storage_reload_from_flash(void);
+
+/**
+ * @brief 将 g_todo_list 导出为微信小程序 JSON 数组格式。
+ * @return ESP_OK 成功；ESP_ERR_INVALID_SIZE 缓冲区不足
+ */
+esp_err_t todo_storage_export_ble_json(char *out, size_t out_size);
+
+/**
+ * @brief READ 同步包：区分待办与已完成归档。
+ * @param out JSON 形如 {"todo":[...],"taskDone":[...]}
+ */
+esp_err_t todo_storage_export_ble_read_bundle(char *out, size_t out_size);
 
 /** @brief 返回已完成任务数 */
 uint8_t todo_storage_get_done_count(void);

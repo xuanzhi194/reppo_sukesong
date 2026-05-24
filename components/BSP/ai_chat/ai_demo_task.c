@@ -301,6 +301,9 @@ static void ai_demo_task(void *param)
     printf("[AI Demo] 最终使用 %d 条任务数据\r\n", task_count);
 
     const char *period_str = (stype == AI_SUMMARY_DAILY) ? "今日" : "近一周";
+    const char *summary_guide = (stype == AI_SUMMARY_DAILY)
+        ? "写一段今日复盘:必须点名至少1个上方CSV里的真实任务名或用时细节,语气像损友聊天,可幽默调侃拖延/摸鱼/突然高效,别空泛鸡汤,别哲学说教"
+        : "写一段近一周复盘:必须结合上方多条真实任务名与用时做对比,语气生动有画面感,可幽默调侃这周节奏,点出亮点与槽点各一处,别空泛鸡汤";
     snprintf(prompt, prompt_size,
              "以下是用户%s完成的 %d 条 todolist 任务"
              "(CSV 格式，字段：任务名称、完成日期、用时分钟):\n\n"
@@ -309,11 +312,12 @@ static void ai_demo_task(void *param)
              "CAT1|<分类名称>|<占比整数%%>\n"
              "CAT2|<分类名称>|<占比整数%%>\n"
              "CAT3|<分类名称>|<占比整数%%>\n"
-             "SUMMARY|<一句话%s总结,哲学激励风格,可结合用时数据给出建议,40中文字左右,严格要求summary里面的标点符号只能出现半角逗号或句号>\n"
-             "QUOTE|<英文励志名言,富有哲理,与众不同,不超过10个英文单词>\n"
+             "SUMMARY|<%s,45到55个中文字,标点仅用半角逗号或句号>\n"
+             "QUOTE|<英文短句,轻松俏皮或自嘲口吻,与SUMMARY呼应,不超过12个英文单词>\n"
              "END\n"
-             "规则：占比按任务数量计算,三个整数之和必须等于100;分类名称不超过4个汉字;只返回这6行;严格要求summary里面的标点符号只能出现半角逗号或句号;输出summary的字数在45中文字左右",
-             period_str, task_count, filtered, period_str);
+             "规则：占比按任务数量计算,三个整数之和必须等于100;分类名称不超过4个汉字;只返回这6行;"
+             "SUMMARY必须让读者看出你读过CSV里的具体任务",
+             period_str, task_count, filtered, summary_guide);
 
     free(filtered);
     filtered = NULL;

@@ -2,6 +2,7 @@
 #include "lcdfont.h"
 #include "spi.h"
 #include "driver/gpio.h"
+#include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -9,7 +10,7 @@
 #define TFT_HEGIHT  170
 #define TFT_x_OFFSET  0
 #define TFT_y_OFFSET  35
-uint8_t lcd_buf[TFT_WIDTH*TFT_HEGIHT*2];
+EXT_RAM_BSS_ATTR static uint8_t lcd_buf[TFT_WIDTH * TFT_HEGIHT * 2];
 
 void lcd_write_cmd(uint8_t cmd)
 {

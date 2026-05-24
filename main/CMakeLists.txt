@@ -17,6 +17,7 @@ set(priv_requires
  
 idf_component_register(
                         SRCS "main.c"
+                               "wificfg_bridge.c"
                         INCLUDE_DIRS ${include_dirs} 
                         PRIV_REQUIRES ${priv_requires}
                         EMBED_FILES  ${embed_files}

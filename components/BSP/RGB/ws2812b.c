@@ -2,6 +2,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+extern bool ble_flow_led_en;
+
 // Define GPIO15 according to the schematic [cite: 197]
 #define LED_STRIP_GPIO_PIN  17
 // 10 LEDs cascaded in series [cite: 51, 94]
@@ -58,4 +60,53 @@ static void boot_led_blink_task(void *param)
 void start_boot_led_blink(void)
 {
     xTaskCreatePinnedToCore(boot_led_blink_task, "boot_led", 2048, NULL, 5, NULL, 0);
+}
+
+static TaskHandle_t s_ble_flow_task = NULL;
+
+static void ble_flow_light_once(uint32_t r, uint32_t g, uint32_t b)
+{
+    for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
+        if (!ble_flow_led_en) {
+            return;
+        }
+        led_strip_set_pixel(led_strip, i, r, g, b);
+        led_strip_refresh(led_strip);
+        vTaskDelay(pdMS_TO_TICKS(50));
+        if (!ble_flow_led_en) {
+            return;
+        }
+        led_strip_clear(led_strip);
+    }
+}
+
+static void ble_flow_led_task(void *param)
+{
+    (void)param;
+    /* Short pairing hint; stops when BLE advertising is ready */
+    ble_flow_light_once(51, 64, 69);
+    if (ble_flow_led_en) {
+        ble_flow_light_once(10, 24, 49);
+    }
+    if (ble_flow_led_en) {
+        ble_flow_light_once(20, 20, 20);
+    }
+    led_strip_clear(led_strip);
+    led_strip_refresh(led_strip);
+    s_ble_flow_task = NULL;
+    vTaskDelete(NULL);
+}
+
+void start_ble_flow_light(void)
+{
+    if (s_ble_flow_task != NULL) {
+        return;
+    }
+    ble_flow_led_en = true;
+    xTaskCreatePinnedToCore(ble_flow_led_task, "ble_flow_led", 2048, NULL, 5, &s_ble_flow_task, 0);
+}
+
+void stop_ble_flow_light(void)
+{
+    ble_flow_led_en = false;
 }

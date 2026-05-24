@@ -9,5 +9,4 @@ idf_component_register(
                   generated/images
      REQUIRES lvgl
               lv_port
-              BSP
 )

@@ -10,7 +10,7 @@ set(src_dirs
             ds3231
             RGB
             encoder
-            ble
+            bsp_ble
             ai_chat
  
 )
@@ -27,7 +27,7 @@ set(include_dirs
             ds3231
             RGB
             encoder
-            ble
+            bsp_ble
             ai_chat
 )
  

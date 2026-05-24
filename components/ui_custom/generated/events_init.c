@@ -16,6 +16,7 @@
 #endif
 
 #include "custom.h"
+
 lv_obj_t *main_cont;
 
 int tmp_review_num = 0;
@@ -1878,6 +1879,17 @@ static void screen_setting_btn_ble_event_handler (lv_event_t *e)
         lv_obj_set_y(guider_ui.screen_setting_btn_ble, 60);
         break;
     }
+    case LV_EVENT_CLICKED:
+    {
+        if (ble_success) {
+            ble_disconnect_req = 1;
+        } else if (!ble_enabled) {
+            ble_toggle_on_req = 1;
+        } else {
+            ble_toggle_off_req = 1;
+        }
+        break;
+    }
     default:
         break;
     }
@@ -1975,25 +1987,7 @@ static void screen_wificfg_list_1_item0_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
-        //add and clear some flag -> hidden
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wifiicon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_label_status2, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_btn_cancel, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_btn_connect, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_img_passicon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_ta_password, LV_OBJ_FLAG_HIDDEN);
-        // // get label from btn_wifi1
-        const char * txt = lv_list_get_btn_text(guider_ui.screen_wificfg_list_1, guider_ui.screen_wificfg_list_1_item0);
-        lv_label_set_text_fmt(guider_ui.screen_wificfg_label_status,"Connect to %s",txt);
-        // If wifi_ssid already points to something, free it first to avoid memory leaks
-        if(wifi_ssid != NULL) free(wifi_ssid);
-        // Allocate new memory and copy the string
-        wifi_ssid = strdup(txt);
-        // //focus state edit
-        lv_group_focus_obj(guider_ui.screen_wificfg_ta_password);
-
+        wificfg_on_list_item_clicked(guider_ui.screen_wificfg_list_1_item0);
         break;
     }
     default:
@@ -2007,26 +2001,7 @@ static void screen_wificfg_list_1_item1_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        //add and clear some flag -> hidden
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wifiicon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_label_status2, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_btn_cancel, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_btn_connect, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_img_passicon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_ta_password, LV_OBJ_FLAG_HIDDEN);
-        // get label from btn_wifi1
-        const char * txt = lv_list_get_btn_text(guider_ui.screen_wificfg_list_1, guider_ui.screen_wificfg_list_1_item1);
-        lv_label_set_text_fmt(guider_ui.screen_wificfg_label_status,"Connect to %s",txt);
-        // If wifi_ssid already points to something, free it first to avoid memory leaks
-        if(wifi_ssid != NULL) free(wifi_ssid);
-        // Allocate new memory and copy the string
-        wifi_ssid = strdup(txt);
-        //focus state edit
-        lv_group_focus_obj(guider_ui.screen_wificfg_ta_password);
-        lv_refr_now(NULL);
-        ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
+        wificfg_on_list_item_clicked(guider_ui.screen_wificfg_list_1_item1);
         break;
     }
     default:
@@ -2040,26 +2015,7 @@ static void screen_wificfg_list_1_item2_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        //add and clear some flag -> hidden
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wifiicon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_label_status2, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_btn_cancel, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_btn_connect, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_img_passicon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_ta_password, LV_OBJ_FLAG_HIDDEN);
-        // get label from btn_wifi1
-        const char * txt = lv_list_get_btn_text(guider_ui.screen_wificfg_list_1, guider_ui.screen_wificfg_list_1_item2);
-        lv_label_set_text_fmt(guider_ui.screen_wificfg_label_status,"Connect to %s",txt);
-        // If wifi_ssid already points to something, free it first to avoid memory leaks
-        if(wifi_ssid != NULL) free(wifi_ssid);
-        // Allocate new memory and copy the string
-        wifi_ssid = strdup(txt);
-        //focus state edit
-        lv_group_focus_obj(guider_ui.screen_wificfg_ta_password);
-        lv_refr_now(NULL);
-        ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80, &lv_anim_path_linear, 1, 0, 0, -1, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
+        wificfg_on_list_item_clicked(guider_ui.screen_wificfg_list_1_item2);
         break;
     }
     default:
@@ -2073,26 +2029,7 @@ static void screen_wificfg_list_1_item3_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        //add and clear some flag -> hidden
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wifiicon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_label_status2, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_btn_cancel, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_btn_connect, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_img_passicon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_ta_password, LV_OBJ_FLAG_HIDDEN);
-        // get label from btn_wifi1
-        const char * txt = lv_list_get_btn_text(guider_ui.screen_wificfg_list_1, guider_ui.screen_wificfg_list_1_item3);
-        lv_label_set_text_fmt(guider_ui.screen_wificfg_label_status,"Connect to %s",txt);
-        // If wifi_ssid already points to something, free it first to avoid memory leaks
-        if(wifi_ssid != NULL) free(wifi_ssid);
-        // Allocate new memory and copy the string
-        wifi_ssid = strdup(txt);
-        //focus state edit
-        lv_group_focus_obj(guider_ui.screen_wificfg_ta_password);
-        lv_refr_now(NULL);
-        ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
+        wificfg_on_list_item_clicked(guider_ui.screen_wificfg_list_1_item3);
         break;
     }
     default:
@@ -2106,26 +2043,7 @@ static void screen_wificfg_list_1_item4_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        //add and clear some flag -> hidden
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wifiicon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_label_status2, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_btn_cancel, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_btn_connect, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_img_passicon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_wificfg_ta_password, LV_OBJ_FLAG_HIDDEN);
-        // get label from btn_wifi1
-        const char * txt = lv_list_get_btn_text(guider_ui.screen_wificfg_list_1, guider_ui.screen_wificfg_list_1_item4);
-        lv_label_set_text_fmt(guider_ui.screen_wificfg_label_status,"Connect to %s",txt);
-        // If wifi_ssid already points to something, free it first to avoid memory leaks
-        if(wifi_ssid != NULL) free(wifi_ssid);
-        // Allocate new memory and copy the string
-        wifi_ssid = strdup(txt);
-        //focus state edit
-        lv_group_focus_obj(guider_ui.screen_wificfg_ta_password);
-        lv_refr_now(NULL);
-        ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
+        wificfg_on_list_item_clicked(guider_ui.screen_wificfg_list_1_item4);
         break;
     }
     default:
