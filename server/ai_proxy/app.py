@@ -5,6 +5,25 @@ import os
 import httpx
 from flask import Flask, request, jsonify
 
+
+def _load_dotenv(path=".env"):
+    """简单读取 .env（不依赖 python-dotenv）"""
+    if not os.path.isfile(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, val = line.split("=", 1)
+            key = key.strip()
+            val = val.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = val
+
+
+_load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+
 app = Flask(__name__)
 
 DEEPSEEK_URL = os.environ.get(
