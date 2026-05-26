@@ -6,18 +6,24 @@ import httpx
 from flask import Flask, request, jsonify
 
 
+def _clean_env(val):
+    if val is None:
+        return ""
+    return val.strip().strip("\r\n").strip('"').strip("'")
+
+
 def _load_dotenv(path=".env"):
     """简单读取 .env（不依赖 python-dotenv）"""
     if not os.path.isfile(path):
         return
     with open(path, encoding="utf-8") as f:
         for line in f:
-            line = line.strip()
+            line = line.strip().strip("\r")
             if not line or line.startswith("#") or "=" not in line:
                 continue
             key, val = line.split("=", 1)
-            key = key.strip()
-            val = val.strip().strip('"').strip("'")
+            key = _clean_env(key).lstrip("\ufeff")
+            val = _clean_env(val)
             if key and key not in os.environ:
                 os.environ[key] = val
 
@@ -29,20 +35,27 @@ app = Flask(__name__)
 DEEPSEEK_URL = os.environ.get(
     "DEEPSEEK_URL", "https://api.deepseek.com/chat/completions"
 )
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
-DEVICE_TOKEN = os.environ.get("DEVICE_TOKEN", "reppo-dev-token-change-me")
-DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro")
+DEEPSEEK_API_KEY = _clean_env(os.environ.get("DEEPSEEK_API_KEY", ""))
+DEVICE_TOKEN = _clean_env(os.environ.get("DEVICE_TOKEN", "reppo-dev-token-change-me"))
+DEEPSEEK_MODEL = _clean_env(os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro")) or "deepseek-v4-pro"
 MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "800"))
 
 
 def _auth_ok() -> bool:
-    auth = request.headers.get("Authorization", "")
-    return auth == f"Bearer {DEVICE_TOKEN}"
+    auth = (request.headers.get("Authorization") or "").strip()
+    if not auth.lower().startswith("bearer "):
+        return False
+    token = auth[7:].strip()
+    return token == DEVICE_TOKEN
 
 
 @app.get("/health")
 def health():
-    return jsonify({"ok": True})
+    return jsonify({
+        "ok": True,
+        "device_token_len": len(DEVICE_TOKEN),
+        "deepseek_key_set": bool(DEEPSEEK_API_KEY),
+    })
 
 
 @app.post("/v1/ai/summary")
