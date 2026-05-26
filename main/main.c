@@ -530,7 +530,11 @@ void app_main(void)
             ai_request_pending = 1;
             ai_request_deadline = xTaskGetTickCount() + pdMS_TO_TICKS(AI_ANALYSIS_TIMEOUT_MS);
             ai_wait_light_start();
+#if AI_CHAT_USE_PROXY
+            start_ai_summary(AI_SUMMARY_DAILY, &init_ntp, AI_DEVICE_TOKEN);
+#else
             start_ai_summary(AI_SUMMARY_DAILY, &init_ntp, AI_CHAT_API_KEY);
+#endif
             }
         }
         if (ai_week_start) {
@@ -541,7 +545,11 @@ void app_main(void)
             ai_request_pending = 1;
             ai_request_deadline = xTaskGetTickCount() + pdMS_TO_TICKS(AI_ANALYSIS_TIMEOUT_MS);
             ai_wait_light_start();
+#if AI_CHAT_USE_PROXY
+            start_ai_summary(AI_SUMMARY_WEEKLY, &init_ntp, AI_DEVICE_TOKEN);
+#else
             start_ai_summary(AI_SUMMARY_WEEKLY, &init_ntp, AI_CHAT_API_KEY);
+#endif
             }
         }
         // ------------ AI 结果就绪，刷新 UI ----------//

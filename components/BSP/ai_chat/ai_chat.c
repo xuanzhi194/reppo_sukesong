@@ -16,9 +16,10 @@ static const char *TAG = "AI_CHAT";
 
 
 
-static char s_api_url[128];
+static char s_api_url[192];
 static char s_api_key[128];
 static char s_model[64];
+static bool s_use_proxy;
 
 static void normalize_api_url(const char *in_url, char *out_url, size_t out_len)
 {
@@ -70,12 +71,19 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt)
 
 esp_err_t ai_chat_init(const char *api_url, const char *api_key, const char *model)
 {
-    normalize_api_url(api_url, s_api_url, sizeof(s_api_url));
+    s_use_proxy = (api_url && (strncmp(api_url, "http://", 7) == 0 ||
+                               strstr(api_url, "/v1/ai/summary") != NULL));
+    if (s_use_proxy) {
+        strncpy(s_api_url, api_url, sizeof(s_api_url) - 1);
+        s_api_url[sizeof(s_api_url) - 1] = '\0';
+    } else {
+        normalize_api_url(api_url, s_api_url, sizeof(s_api_url));
+    }
     strncpy(s_api_key, api_key  ? api_key  : "",               sizeof(s_api_key)  - 1);
     strncpy(s_model,   model    ? model    : AI_DEFAULT_MODEL,  sizeof(s_model)    - 1);
     s_api_key[sizeof(s_api_key) - 1] = '\0';
     s_model[sizeof(s_model) - 1]     = '\0';
-    ESP_LOGI(TAG, "Initialized. URL=%s  Model=%s", s_api_url, s_model);
+    ESP_LOGI(TAG, "Initialized. proxy=%d URL=%s Model=%s", (int)s_use_proxy, s_api_url, s_model);
     return ESP_OK;
 }
 
@@ -109,13 +117,104 @@ static bool extract_message_text(cJSON *message, char *out, size_t out_len)
     return false;
 }
 
+static esp_err_t ai_chat_send_proxy(const char *user_message, char *response_buf, size_t buf_len)
+{
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "prompt", user_message);
+    cJSON_AddStringToObject(root, "model", s_model);
+
+    char *req_body = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!req_body) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    char *http_buf = (char *)heap_caps_malloc(AI_RESPONSE_BUF_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!http_buf) {
+        http_buf = (char *)malloc(AI_RESPONSE_BUF_SIZE);
+    }
+    if (!http_buf) {
+        free(req_body);
+        return ESP_ERR_NO_MEM;
+    }
+    memset(http_buf, 0, AI_RESPONSE_BUF_SIZE);
+
+    http_resp_t resp = {
+        .buf     = http_buf,
+        .len     = 0,
+        .max_len = AI_RESPONSE_BUF_SIZE,
+    };
+
+    char auth_header[160];
+    snprintf(auth_header, sizeof(auth_header), "Bearer %s", s_api_key);
+
+    esp_http_client_config_t config = {
+        .url            = s_api_url,
+        .method         = HTTP_METHOD_POST,
+        .transport_type = HTTP_TRANSPORT_OVER_TCP,
+        .event_handler  = http_event_handler,
+        .user_data      = &resp,
+        .timeout_ms     = AI_API_TIMEOUT_MS,
+        .buffer_size    = 2048,
+        .buffer_size_tx = 1536,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_set_header(client, "Authorization", auth_header);
+    esp_http_client_set_post_field(client, req_body, (int)strlen(req_body));
+
+    esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK) {
+        int status = esp_http_client_get_status_code(client);
+        ESP_LOGI(TAG, "HTTP status=%d, body_len=%d", status, resp.len);
+        if (status == 200) {
+            cJSON *json = cJSON_Parse(http_buf);
+            if (json) {
+                cJSON *content = cJSON_GetObjectItem(json, "content");
+                cJSON *error   = cJSON_GetObjectItem(json, "error");
+                if (cJSON_IsString(content) && content->valuestring[0] != '\0') {
+                    strncpy(response_buf, content->valuestring, buf_len - 1);
+                    response_buf[buf_len - 1] = '\0';
+                    err = ESP_OK;
+                } else if (cJSON_IsString(error)) {
+                    snprintf(response_buf, buf_len, "Proxy error: %s", error->valuestring);
+                    err = ESP_FAIL;
+                } else {
+                    snprintf(response_buf, buf_len, "[Proxy parse error]");
+                    err = ESP_FAIL;
+                }
+                cJSON_Delete(json);
+            } else {
+                snprintf(response_buf, buf_len, "[JSON parse failed]");
+                err = ESP_FAIL;
+            }
+        } else {
+            snprintf(response_buf, buf_len, "HTTP error %d:\n%.200s", status, http_buf);
+            err = ESP_FAIL;
+        }
+    } else {
+        ESP_LOGE(TAG, "HTTP perform failed: %s", esp_err_to_name(err));
+        snprintf(response_buf, buf_len, "Network error:\n%s", esp_err_to_name(err));
+    }
+
+    esp_http_client_cleanup(client);
+    free(req_body);
+    free(http_buf);
+    return err;
+}
+
 esp_err_t ai_chat_send(const char *user_message, char *response_buf, size_t buf_len)
 {
     if (!user_message || !response_buf || buf_len == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    /* 构造请求 JSON body */
+    if (s_use_proxy) {
+        return ai_chat_send_proxy(user_message, response_buf, buf_len);
+    }
+
+    /* 构造请求 JSON body — 直连 DeepSeek */
     cJSON *root     = cJSON_CreateObject();
     cJSON *messages = cJSON_AddArrayToObject(root, "messages");
     cJSON *msg      = cJSON_CreateObject();

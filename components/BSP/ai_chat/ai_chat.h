@@ -17,8 +17,8 @@
 
 /**
  * @brief 初始化 AI 聊天模块
- * @param api_url  API 端点 URL（传 NULL 使用默认 DeepSeek URL）
- * @param api_key  您的 API 密钥
+ * @param api_url  代理模式下为完整 URL；直连模式下为 API 端点（NULL 用默认）
+ * @param api_key  代理模式下为 device token；直连模式下为 API 密钥
  * @param model    模型名称（传 NULL 使用默认模型）
  * @return ESP_OK on success
  */

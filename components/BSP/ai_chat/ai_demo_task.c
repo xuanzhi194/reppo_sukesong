@@ -1,4 +1,5 @@
 #include "ai_demo_task.h"
+#include "ai_chat_secrets.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -172,13 +173,17 @@ static void ai_demo_task(void *param)
     char *response = NULL;
 
     if (!api_key || api_key[0] == '\0') {
-        printf("[AI Demo] 未配置 API Key,请检查 ai_chat_secrets.h\r\n");
+        printf("[AI Demo] 未配置认证信息,请检查 ai_chat_secrets.h\r\n");
         free(args);
         vTaskDelete(NULL);
         return;
     }
 
+#if AI_CHAT_USE_PROXY
+    ai_chat_init(AI_PROXY_URL, api_key, NULL);
+#else
     ai_chat_init(NULL, api_key, NULL);
+#endif
 
     file_content = (char *)heap_caps_malloc(file_content_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     prompt = (char *)heap_caps_malloc(prompt_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
