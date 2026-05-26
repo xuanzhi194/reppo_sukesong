@@ -16,6 +16,7 @@
 #include "events_init.h"
 #include "keypad.h"
 #include "wifi.h"
+#include "wifi_cred_storage.h"
 #include "nvs_flash.h"
 #include "buzzer.h"
 #include "word_storage.h"
@@ -414,6 +415,12 @@ void wifi_time_thread(void *arg)
             wifi_success = is_wifi_connected();
             if(xSemaphoreTake(lvgl_mutex, portMAX_DELAY) == pdTRUE){
                 if(wifi_success){
+                    if (wifi_ssid != NULL && wifi_ssid[0] != '\0') {
+                        esp_err_t cred_err = wifi_cred_save(wifi_ssid, wifi_pw_buf);
+                        if (cred_err != ESP_OK) {
+                            ESP_LOGW("WIFI", "Failed to save WiFi credential: %d", (int)cred_err);
+                        }
+                    }
                     wifi_connect_show();
                     if(init_ntp == 0){
                         initialize_sntp();
@@ -450,6 +457,7 @@ void app_main(void)
     //--------------NVS init--------------------//
     //initialize nvs flash
     nvs_flash_init();
+    wifi_cred_storage_init();
     // 加载上次 AI 分析结果（掉电保存），供 UI 显示
     ai_daily_result_load();
     ai_weekly_result_load();

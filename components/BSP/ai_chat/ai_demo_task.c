@@ -337,10 +337,13 @@ static void ai_demo_task(void *param)
         ai_result_t *dest = (stype == AI_SUMMARY_DAILY) ? &g_ai_daily_result : &g_ai_weekly_result;
         ai_result_parse(response, dest);
         strncpy(dest->summary_date, date_from_s, sizeof(dest->summary_date) - 1);
-        ai_result_save(stype, dest);
-        /* 通知主循环 UI 可以刷新 */
-        if (stype == AI_SUMMARY_DAILY)  g_ai_daily_result_ready  = true;
-        else                            g_ai_weekly_result_ready = true;
+        if (dest->valid) {
+            ai_result_save(stype, dest);
+            if (stype == AI_SUMMARY_DAILY)  g_ai_daily_result_ready  = true;
+            else                            g_ai_weekly_result_ready = true;
+        } else {
+            printf("[AI Demo] 解析失败：响应未包含有效 CAT1/CAT2/CAT3 行\r\n");
+        }
     } else {
         printf("[AI Demo] 请求失败 (%d ms): %s\r\n", elapsed_ms, response);
     }

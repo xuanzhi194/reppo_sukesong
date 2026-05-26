@@ -123,7 +123,7 @@ void setup_scr_screen_wificfg(lv_ui *ui)
     lv_img_set_src(ui->screen_wificfg_img_wifiicon, &_AAA_wifi_icons_alpha_110x110);
     lv_img_set_pivot(ui->screen_wificfg_img_wifiicon, 50,50);
     lv_img_set_angle(ui->screen_wificfg_img_wifiicon, 0);
-    lv_obj_set_pos(ui->screen_wificfg_img_wifiicon, 30, 43);
+    lv_obj_set_pos(ui->screen_wificfg_img_wifiicon, 29, 43);
     lv_obj_set_size(ui->screen_wificfg_img_wifiicon, 110, 110);
 
     //Write style for screen_wificfg_img_wifiicon, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.

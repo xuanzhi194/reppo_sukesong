@@ -59,7 +59,7 @@ void setup_scr_screen_ai(lv_ui *ui)
     lv_arc_set_rotation(ui->screen_ai_arc_1, 0);
     lv_obj_set_style_arc_rounded(ui->screen_ai_arc_1, 0,  LV_PART_INDICATOR|LV_STATE_DEFAULT);
     lv_obj_set_style_arc_rounded(ui->screen_ai_arc_1, 0, LV_STATE_DEFAULT);
-    lv_obj_set_pos(ui->screen_ai_arc_1, 5, 207);
+    lv_obj_set_pos(ui->screen_ai_arc_1, 3, 210);
     lv_obj_set_size(ui->screen_ai_arc_1, 110, 122);
 
     //Write style for screen_ai_arc_1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -95,7 +95,7 @@ void setup_scr_screen_ai(lv_ui *ui)
     lv_arc_set_rotation(ui->screen_ai_arc_2, 0);
     lv_obj_set_style_arc_rounded(ui->screen_ai_arc_2, 0,  LV_PART_INDICATOR|LV_STATE_DEFAULT);
     lv_obj_set_style_arc_rounded(ui->screen_ai_arc_2, 0, LV_STATE_DEFAULT);
-    lv_obj_set_pos(ui->screen_ai_arc_2, 106, 207);
+    lv_obj_set_pos(ui->screen_ai_arc_2, 106, 210);
     lv_obj_set_size(ui->screen_ai_arc_2, 110, 122);
 
     //Write style for screen_ai_arc_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -131,7 +131,7 @@ void setup_scr_screen_ai(lv_ui *ui)
     lv_arc_set_rotation(ui->screen_ai_arc_3, 0);
     lv_obj_set_style_arc_rounded(ui->screen_ai_arc_3, 0,  LV_PART_INDICATOR|LV_STATE_DEFAULT);
     lv_obj_set_style_arc_rounded(ui->screen_ai_arc_3, 0, LV_STATE_DEFAULT);
-    lv_obj_set_pos(ui->screen_ai_arc_3, 204, 207);
+    lv_obj_set_pos(ui->screen_ai_arc_3, 204, 210);
     lv_obj_set_size(ui->screen_ai_arc_3, 110, 122);
 
     //Write style for screen_ai_arc_3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -277,7 +277,7 @@ void setup_scr_screen_ai(lv_ui *ui)
     ui->screen_ai_label_cat1_num = lv_label_create(ui->screen_ai_ai_cont);
     lv_label_set_text(ui->screen_ai_label_cat1_num, "60%");
     lv_label_set_long_mode(ui->screen_ai_label_cat1_num, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_ai_label_cat1_num, 28, 290);
+    lv_obj_set_pos(ui->screen_ai_label_cat1_num, 25, 290);
     lv_obj_set_size(ui->screen_ai_label_cat1_num, 69, 15);
 
     //Write style for screen_ai_label_cat1_num, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -326,7 +326,7 @@ void setup_scr_screen_ai(lv_ui *ui)
     ui->screen_ai_label_quote = lv_label_create(ui->screen_ai_ai_cont);
     lv_label_set_text(ui->screen_ai_label_quote, "Action conquers fear.");
     lv_label_set_long_mode(ui->screen_ai_label_quote, LV_LABEL_LONG_SCROLL);
-    lv_obj_set_pos(ui->screen_ai_label_quote, 72, 459);
+    lv_obj_set_pos(ui->screen_ai_label_quote, 72, 474);
     lv_obj_set_size(ui->screen_ai_label_quote, 231, 19);
 
     //Write style for screen_ai_label_quote, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -349,8 +349,8 @@ void setup_scr_screen_ai(lv_ui *ui)
     ui->screen_ai_label_sum = lv_label_create(ui->screen_ai_ai_cont);
     lv_label_set_text(ui->screen_ai_label_sum, "专注当下,每一步都塑造未来.建议优先完成临近截止的实验室整理与代码编写,为后续腾出空间.");
     lv_label_set_long_mode(ui->screen_ai_label_sum, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_ai_label_sum, 14, 399);
-    lv_obj_set_size(ui->screen_ai_label_sum, 294, 60);
+    lv_obj_set_pos(ui->screen_ai_label_sum, 15, 399);
+    lv_obj_set_size(ui->screen_ai_label_sum, 292, 71);
 
     //Write style for screen_ai_label_sum, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_ai_label_sum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -367,41 +367,6 @@ void setup_scr_screen_ai(lv_ui *ui)
     lv_obj_set_style_pad_bottom(ui->screen_ai_label_sum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(ui->screen_ai_label_sum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_ai_label_sum, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_ai_btn_back
-    ui->screen_ai_btn_back = lv_btn_create(ui->screen_ai_ai_cont);
-    ui->screen_ai_btn_back_label = lv_label_create(ui->screen_ai_btn_back);
-    lv_label_set_text(ui->screen_ai_btn_back_label, "<");
-    lv_label_set_long_mode(ui->screen_ai_btn_back_label, LV_LABEL_LONG_WRAP);
-    lv_obj_align(ui->screen_ai_btn_back_label, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_set_style_pad_all(ui->screen_ai_btn_back, 0, LV_STATE_DEFAULT);
-    lv_obj_set_width(ui->screen_ai_btn_back_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_ai_btn_back, 3, 2);
-    lv_obj_set_size(ui->screen_ai_btn_back, 16, 15);
-
-    //Write style for screen_ai_btn_back, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_bg_opa(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_ai_btn_back, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_ai_btn_back, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_ai_btn_back, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_ai_btn_back, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_ai_btn_back, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write style for screen_ai_btn_back, Part: LV_PART_MAIN, State: LV_STATE_FOCUSED.
-    lv_obj_set_style_bg_opa(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_border_width(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_radius(ui->screen_ai_btn_back, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_width(ui->screen_ai_btn_back, 6, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_ai_btn_back, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_opa(ui->screen_ai_btn_back, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_spread(ui->screen_ai_btn_back, 2, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_ofs_x(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_ofs_y(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_color(ui->screen_ai_btn_back, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_font(ui->screen_ai_btn_back, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_opa(ui->screen_ai_btn_back, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
 
     //Write codes screen_ai_btn_sum
     ui->screen_ai_btn_sum = lv_btn_create(ui->screen_ai_ai_cont);
@@ -791,6 +756,41 @@ void setup_scr_screen_ai(lv_ui *ui)
     lv_obj_set_style_pad_bottom(ui->screen_ai_label_duration, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(ui->screen_ai_label_duration, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_ai_label_duration, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_ai_btn_back
+    ui->screen_ai_btn_back = lv_btn_create(ui->screen_ai);
+    ui->screen_ai_btn_back_label = lv_label_create(ui->screen_ai_btn_back);
+    lv_label_set_text(ui->screen_ai_btn_back_label, "<");
+    lv_label_set_long_mode(ui->screen_ai_btn_back_label, LV_LABEL_LONG_WRAP);
+    lv_obj_align(ui->screen_ai_btn_back_label, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_pad_all(ui->screen_ai_btn_back, 0, LV_STATE_DEFAULT);
+    lv_obj_set_width(ui->screen_ai_btn_back_label, LV_PCT(100));
+    lv_obj_set_pos(ui->screen_ai_btn_back, 3, 2);
+    lv_obj_set_size(ui->screen_ai_btn_back, 16, 15);
+
+    //Write style for screen_ai_btn_back, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_bg_opa(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_ai_btn_back, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_ai_btn_back, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_ai_btn_back, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_ai_btn_back, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_ai_btn_back, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write style for screen_ai_btn_back, Part: LV_PART_MAIN, State: LV_STATE_FOCUSED.
+    lv_obj_set_style_bg_opa(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_border_width(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_radius(ui->screen_ai_btn_back, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_width(ui->screen_ai_btn_back, 6, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_ai_btn_back, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_opa(ui->screen_ai_btn_back, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_spread(ui->screen_ai_btn_back, 2, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_ofs_x(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_ofs_y(ui->screen_ai_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_color(ui->screen_ai_btn_back, lv_color_hex(0x2f67a4), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_font(ui->screen_ai_btn_back, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_opa(ui->screen_ai_btn_back, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
 
     //The custom code of screen_ai.
 

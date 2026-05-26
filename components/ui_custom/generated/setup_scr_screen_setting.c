@@ -56,7 +56,7 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_setting_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_radius(ui->screen_setting_btn_back, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_width(ui->screen_setting_btn_back, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_color(ui->screen_setting_btn_back, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_color(ui->screen_setting_btn_back, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui->screen_setting_btn_back, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_spread(ui->screen_setting_btn_back, 1, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_ofs_x(ui->screen_setting_btn_back, 0, LV_PART_MAIN|LV_STATE_FOCUSED);

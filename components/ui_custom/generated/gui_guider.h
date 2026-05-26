@@ -240,8 +240,6 @@ typedef struct
 	lv_obj_t *screen_ai_line_2;
 	lv_obj_t *screen_ai_label_quote;
 	lv_obj_t *screen_ai_label_sum;
-	lv_obj_t *screen_ai_btn_back;
-	lv_obj_t *screen_ai_btn_back_label;
 	lv_obj_t *screen_ai_btn_sum;
 	lv_obj_t *screen_ai_btn_sum_label;
 	lv_obj_t *screen_ai_btn_cat;
@@ -262,6 +260,8 @@ typedef struct
 	lv_obj_t *screen_ai_btn_day_label;
 	lv_obj_t *screen_ai_bar_focus;
 	lv_obj_t *screen_ai_label_duration;
+	lv_obj_t *screen_ai_btn_back;
+	lv_obj_t *screen_ai_btn_back_label;
 	lv_obj_t *screen_donelist;
 	bool screen_donelist_del;
 	lv_obj_t *screen_donelist_line_4;
@@ -371,33 +371,33 @@ LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_23);
 
 LV_IMG_DECLARE(_AAA_main_bg_320x170);
 
-LV_IMG_DECLARE(_AAA_main_todolist2_39x54);
+LV_IMG_DECLARE(_AAA_main_todolist_39x54);
 
-LV_IMG_DECLARE(_AAA_main_todolist2_39x54);
+LV_IMG_DECLARE(_AAA_main_todolist_39x54);
 
-LV_IMG_DECLARE(_AAA_main_donelist2_45x54);
+LV_IMG_DECLARE(_AAA_main_donelist_45x54);
 
-LV_IMG_DECLARE(_AAA_main_donelist2_45x54);
+LV_IMG_DECLARE(_AAA_main_donelist_45x54);
 
-LV_IMG_DECLARE(_AAA_main_book_icon_37x55);
+LV_IMG_DECLARE(_AAA_main_book_37x55);
 
-LV_IMG_DECLARE(_AAA_main_book_icon_37x55);
+LV_IMG_DECLARE(_AAA_main_book_37x55);
 
-LV_IMG_DECLARE(_AAA_main_time2_43x55);
+LV_IMG_DECLARE(_AAA_main_time_43x55);
 
-LV_IMG_DECLARE(_AAA_main_time2_43x55);
+LV_IMG_DECLARE(_AAA_main_time_43x55);
 
-LV_IMG_DECLARE(_AAA_main_ai2_49x54);
+LV_IMG_DECLARE(_AAA_main_ai_49x54);
 
-LV_IMG_DECLARE(_AAA_main_ai2_49x54);
+LV_IMG_DECLARE(_AAA_main_ai_49x54);
 
-LV_IMG_DECLARE(_AAA_main_fun2_55x54);
+LV_IMG_DECLARE(_AAA_main_fun_55x54);
 
-LV_IMG_DECLARE(_AAA_main_fun2_55x54);
+LV_IMG_DECLARE(_AAA_main_fun_55x54);
 
-LV_IMG_DECLARE(_AAA_main_setting2_46x54);
+LV_IMG_DECLARE(_AAA_main_setting_46x54);
 
-LV_IMG_DECLARE(_AAA_main_setting2_46x54);
+LV_IMG_DECLARE(_AAA_main_setting_46x54);
 LV_IMG_DECLARE(_AAA_small_todo_alpha_16x15);
 LV_IMG_DECLARE(_AAA_smallfun_alpha_19x18);
 LV_IMG_DECLARE(_AAA_small_setting_alpha_16x16);

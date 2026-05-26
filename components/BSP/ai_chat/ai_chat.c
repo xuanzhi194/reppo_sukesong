@@ -79,6 +79,36 @@ esp_err_t ai_chat_init(const char *api_url, const char *api_key, const char *mod
     return ESP_OK;
 }
 
+/* 从 chat/completions 响应 message 中提取可读文本 */
+static bool extract_message_text(cJSON *message, char *out, size_t out_len)
+{
+    if (!message || !out || out_len == 0) {
+        return false;
+    }
+
+    cJSON *content = cJSON_GetObjectItem(message, "content");
+    if (cJSON_IsString(content) && content->valuestring[0] != '\0') {
+        strncpy(out, content->valuestring, out_len - 1);
+        out[out_len - 1] = '\0';
+        return true;
+    }
+
+    /* deepseek-v4 thinking 模式可能把正文放在 reasoning_content，content 为空 */
+    cJSON *reasoning = cJSON_GetObjectItem(message, "reasoning_content");
+    if (cJSON_IsString(reasoning) && reasoning->valuestring[0] != '\0') {
+        strncpy(out, reasoning->valuestring, out_len - 1);
+        out[out_len - 1] = '\0';
+        return true;
+    }
+
+    if (cJSON_IsString(content)) {
+        out[0] = '\0';
+        return false;
+    }
+
+    return false;
+}
+
 esp_err_t ai_chat_send(const char *user_message, char *response_buf, size_t buf_len)
 {
     if (!user_message || !response_buf || buf_len == 0) {
@@ -95,6 +125,11 @@ esp_err_t ai_chat_send(const char *user_message, char *response_buf, size_t buf_
     cJSON_AddStringToObject(root, "model",      s_model);
     cJSON_AddNumberToObject(root, "max_tokens", AI_DEFAULT_MAX_TOKENS);
     cJSON_AddFalseToObject(root, "stream");
+    /* deepseek-v4 默认 thinking 会导致 content 为空，分类结果无法解析 */
+    {
+        cJSON *thinking = cJSON_AddObjectToObject(root, "thinking");
+        cJSON_AddStringToObject(thinking, "type", "disabled");
+    }
 
     char *req_body = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
@@ -163,13 +198,11 @@ esp_err_t ai_chat_send(const char *user_message, char *response_buf, size_t buf_
                 if (cJSON_IsArray(choices)) {
                     cJSON *choice0  = cJSON_GetArrayItem(choices, 0);
                     cJSON *message  = choice0  ? cJSON_GetObjectItem(choice0,  "message") : NULL;
-                    cJSON *content  = message  ? cJSON_GetObjectItem(message,  "content") : NULL;
-                    if (cJSON_IsString(content)) {
-                        strncpy(response_buf, content->valuestring, buf_len - 1);
-                        response_buf[buf_len - 1] = '\0';
+                    if (extract_message_text(message, response_buf, buf_len)) {
                         err = ESP_OK;
                     } else {
-                        snprintf(response_buf, buf_len, "[Parse error: no content field]");
+                        snprintf(response_buf, buf_len, "[Parse error: empty AI message]");
+                        ESP_LOGW(TAG, "Empty content/reasoning in response (first 200): %.200s", http_buf);
                         err = ESP_FAIL;
                     }
                 } else {

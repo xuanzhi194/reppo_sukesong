@@ -79,10 +79,10 @@ void setup_scr_screen_reviewcard(lv_ui *ui)
 
     //Write codes screen_reviewcard_label_phonetic
     ui->screen_reviewcard_label_phonetic = lv_label_create(ui->screen_reviewcard);
-    lv_label_set_text(ui->screen_reviewcard_label_phonetic, "[ə'bændən]");
+    lv_label_set_text(ui->screen_reviewcard_label_phonetic, "ɑ ɒ ɔ ə ɛ ɜ ɪ ʊ ʌ æ e ɪ a ɪ ɔ ɪ a ʊ ə ʊ ɪ ə e ə ʊ ə p t k f θ s ʃ h tʃ tr ts b d v ð z ʒ r dʒ dr dz m n ŋ l j w ˈ ˌ ː . [ ] / ( ) ɡ ，。ɚ ɝ̃");
     lv_label_set_long_mode(ui->screen_reviewcard_label_phonetic, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_reviewcard_label_phonetic, 32, 66);
-    lv_obj_set_size(ui->screen_reviewcard_label_phonetic, 258, 18);
+    lv_obj_set_size(ui->screen_reviewcard_label_phonetic, 282, 15);
 
     //Write style for screen_reviewcard_label_phonetic, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_reviewcard_label_phonetic, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

@@ -16,7 +16,6 @@
 #endif
 
 #include "custom.h"
-
 lv_obj_t *main_cont;
 
 int tmp_review_num = 0;
@@ -1954,7 +1953,7 @@ static void screen_wificfg_event_handler (lv_event_t *e)
             lv_obj_add_flag(guider_ui.screen_wificfg_img_wififalse,LV_OBJ_FLAG_HIDDEN);
             lv_label_set_text(guider_ui.screen_wificfg_label_status, "Connection Status");
             lv_label_set_text(guider_ui.screen_wificfg_label_status2, "Connected");
-            lv_obj_set_style_text_color(guider_ui.screen_wificfg_label_status2, lv_color_hex(0xB7F0B8), 0);
+            lv_obj_set_style_text_color(guider_ui.screen_wificfg_label_status2, lv_color_hex(0x274a6e), 0);
         }
         screen_wificfg_buttion_add();
 
@@ -1987,6 +1986,7 @@ static void screen_wificfg_list_1_item0_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
+        ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
         wificfg_on_list_item_clicked(guider_ui.screen_wificfg_list_1_item0);
         break;
     }
@@ -2002,6 +2002,7 @@ static void screen_wificfg_list_1_item1_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         wificfg_on_list_item_clicked(guider_ui.screen_wificfg_list_1_item1);
+        ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
         break;
     }
     default:
@@ -2016,6 +2017,7 @@ static void screen_wificfg_list_1_item2_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         wificfg_on_list_item_clicked(guider_ui.screen_wificfg_list_1_item2);
+        ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80, &lv_anim_path_linear, 1, 0, 0, -1, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
         break;
     }
     default:
@@ -2030,6 +2032,7 @@ static void screen_wificfg_list_1_item3_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         wificfg_on_list_item_clicked(guider_ui.screen_wificfg_list_1_item3);
+        ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
         break;
     }
     default:
@@ -2044,6 +2047,7 @@ static void screen_wificfg_list_1_item4_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         wificfg_on_list_item_clicked(guider_ui.screen_wificfg_list_1_item4);
+        ui_animation(guider_ui.screen_wificfg_img_statusbg, 200, 0, lv_obj_get_height(guider_ui.screen_wificfg_img_statusbg), 80, &lv_anim_path_linear, 1, 0, 0, 0, (lv_anim_exec_xcb_t)lv_obj_set_height, NULL, NULL, NULL);
         break;
     }
     default:
@@ -2213,20 +2217,6 @@ static void screen_ai_event_handler (lv_event_t *e)
     }
 }
 
-static void screen_ai_btn_back_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_ai_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
 static void screen_ai_btn_week_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -2259,12 +2249,26 @@ static void screen_ai_btn_day_event_handler (lv_event_t *e)
     }
 }
 
+static void screen_ai_btn_back_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_ai_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void events_init_screen_ai (lv_ui *ui)
 {
     lv_obj_add_event_cb(ui->screen_ai, screen_ai_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_ai_btn_back, screen_ai_btn_back_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_ai_btn_week, screen_ai_btn_week_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_ai_btn_day, screen_ai_btn_day_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_ai_btn_back, screen_ai_btn_back_event_handler, LV_EVENT_ALL, ui);
 }
 
 static void screen_donelist_event_handler (lv_event_t *e)
@@ -2338,16 +2342,16 @@ static void screen_donelist_btn_save_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         todo_archive_label = 1;
-        donelist_load_label = 1;
+        donelist_load_label = 0;
         //the task_done.csv will change
         //reload screen_donelist ui info
         //pagecur start to 1
         donelist_page_cur = 1;
         done_total_tasks += done_sum;
-        donelist_page_num = done_total_tasks / 4;
-        if ((done_total_tasks % 4 != 0) || (done_total_tasks == 0)) {
-            donelist_page_num += 1;
-        }
+        // donelist_page_num = done_total_tasks / 4;
+        // if ((done_total_tasks % 4 != 0) || (done_total_tasks == 0)) {
+        //     donelist_page_num += 1;
+        // }
 
         //if this page task < 4 , the empty one btn can not be clicked
         if(done_total_tasks < donelist_page_cur * 4) {
@@ -2386,9 +2390,9 @@ static void screen_donelist_btn_save_event_handler (lv_event_t *e)
         }
 
         //show for the first time when loading todolist ui
-        lv_label_set_text_fmt(guider_ui.screen_donelist_label_donenum, "%d", done_total_tasks);
-        lv_label_set_text_fmt(guider_ui.screen_donelist_label_nosavenum, "%d", done_sum);
-        lv_label_set_text_fmt(guider_ui.screen_donelist_label_page, "%d/%d", donelist_page_cur,donelist_page_num);
+        // lv_label_set_text_fmt(guider_ui.screen_donelist_label_donenum, "%d", done_total_tasks);
+        // lv_label_set_text_fmt(guider_ui.screen_donelist_label_nosavenum, "%d", done_sum);
+        // lv_label_set_text_fmt(guider_ui.screen_donelist_label_page, "%d/%d", donelist_page_cur,donelist_page_num);
         break;
     }
     default:
@@ -2549,8 +2553,8 @@ static void screen_answer_btn_start_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        answer_book_rand_req = 1;
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_loading, guider_ui.screen_loading_del, &guider_ui.screen_answer_del, setup_scr_screen_loading, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        answer_book_rand_req =1;
         break;
     }
     default:

@@ -1,6 +1,8 @@
 #include "bsp_ble.h"
 #include "todo_storage.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <stdbool.h>
 #include <string.h>
 
@@ -15,16 +17,19 @@ extern bool ble_ui_refresh_req;
 #include "host/ble_hs.h"
 #include "host/ble_hs_mbuf.h"
 #include "host/ble_gatt.h"
+#include "host/ble_att.h"
 #include "host/ble_uuid.h"
 #include "services/gap/ble_svc_gap.h"
 
 void ble_store_config_init(void);
 
-static const char *TAG = "REPPO_BLE";
+static const char *TAG = "REPPO_BLE_Device";
 
 #define GATTS_SERVICE_UUID 0x00FF
 #define GATTS_CHAR_UUID    0xFF01
 #define JSON_BUFFER_SIZE   8192
+#define BLE_PREFERRED_MTU  512
+#define BLE_SYNC_NOTIFY_DELAY_MS 150
 
 #ifndef BLE_HS_CONN_HANDLE_NONE
 #define BLE_HS_CONN_HANDLE_NONE 0xffff
@@ -43,10 +48,12 @@ static char json_buffer[JSON_BUFFER_SIZE];
 static uint16_t json_len;
 static char stored_read_json[JSON_BUFFER_SIZE] = "{\"todo\":[],\"taskDone\":[]}";
 static uint16_t stored_read_len;
+static TaskHandle_t sync_notify_task_handle;
 
 static void ble_app_advertise(void);
 static int send_todo_json_via_notify(void);
 static bool ble_refresh_stored_read_bundle(void);
+static void schedule_sync_notify_delayed(void);
 
 static bool ble_refresh_stored_read_bundle(void)
 {
@@ -74,15 +81,25 @@ static int device_write_cb(uint16_t conn_handle,
             ESP_LOGE(TAG, "Sync bundle send via READ failed: prepare error");
             return BLE_ATT_ERR_UNLIKELY;
         }
-        int rc = os_mbuf_append(ctxt->om, stored_read_json, stored_read_len);
-        if (rc == 0) {
-            ESP_LOGI(TAG, "Sync bundle (todo+taskDone) sent to WeChat via READ ok (%u bytes)",
-                     (unsigned)stored_read_len);
-            ESP_LOGI(TAG, "READ JSON: %s", stored_read_json);
-            return 0;
+        if (ctxt->offset > stored_read_len) {
+            return BLE_ATT_ERR_INVALID_OFFSET;
         }
-        ESP_LOGE(TAG, "Sync bundle send via READ failed: mbuf rc=%d", rc);
-        return BLE_ATT_ERR_INSUFFICIENT_RES;
+        {
+            uint16_t remain = stored_read_len - ctxt->offset;
+            int rc = os_mbuf_append(ctxt->om, stored_read_json + ctxt->offset, remain);
+            if (rc == 0) {
+                ESP_LOGI(TAG,
+                         "Sync bundle sent via READ ok offset=%u chunk=%u total=%u",
+                         (unsigned)ctxt->offset, (unsigned)remain,
+                         (unsigned)stored_read_len);
+                if (ctxt->offset == 0) {
+                    ESP_LOGI(TAG, "READ JSON: %s", stored_read_json);
+                }
+                return 0;
+            }
+            ESP_LOGE(TAG, "Sync bundle send via READ failed: mbuf rc=%d", rc);
+            return BLE_ATT_ERR_INSUFFICIENT_RES;
+        }
     }
 
     if (ctxt->op != BLE_GATT_ACCESS_OP_WRITE_CHR) {
@@ -123,7 +140,7 @@ static int device_write_cb(uint16_t conn_handle,
         if (!ble_refresh_stored_read_bundle()) {
             ESP_LOGE(TAG, "Todo pull 0x06 failed: prepare error");
         } else if (notify_enabled) {
-            send_todo_json_via_notify();
+            schedule_sync_notify_delayed();
         }
         /* notify 未开时由小程序 read 触发发送，成功日志在 READ 回调里打 */
     } else if (cmd == 0x03) {
@@ -208,10 +225,12 @@ static int bsp_ble_gap_event(struct ble_gap_event *event, void *arg)
             gatt_chr_val_handle == 0) {
             notify_enabled = event->subscribe.cur_notify;
             ESP_LOGI(TAG, "Todo notify %s", notify_enabled ? "enabled" : "disabled");
-            if (notify_enabled) {
-                send_todo_json_via_notify();
-            }
+            /* 不在 subscribe 回调里主动推送：等小程序完成监听/MTU 后再由 0x06 或 READ 拉取 */
         }
+        break;
+    case BLE_GAP_EVENT_MTU:
+        ESP_LOGI(TAG, "MTU updated conn=%u mtu=%u",
+                 event->mtu.conn_handle, event->mtu.value);
         break;
     case BLE_GAP_EVENT_ADV_COMPLETE:
         ESP_LOGI(TAG, "BLE GAP EVENT ADV COMPLETE");
@@ -293,6 +312,38 @@ static int send_todo_json_via_notify(void)
     return 0;
 }
 
+static void sync_notify_delayed_task(void *arg)
+{
+    vTaskDelay(pdMS_TO_TICKS(BLE_SYNC_NOTIFY_DELAY_MS));
+    sync_notify_task_handle = NULL;
+
+    if (!notify_enabled || active_conn_handle == BLE_HS_CONN_HANDLE_NONE) {
+        ESP_LOGW(TAG, "Todo pull 0x06: delayed send skipped (conn/notify not ready)");
+        vTaskDelete(NULL);
+        return;
+    }
+
+    ESP_LOGI(TAG, "Todo pull 0x06: delayed %ums, sending notify",
+             (unsigned)BLE_SYNC_NOTIFY_DELAY_MS);
+    send_todo_json_via_notify();
+    vTaskDelete(NULL);
+}
+
+static void schedule_sync_notify_delayed(void)
+{
+    if (sync_notify_task_handle != NULL) {
+        ESP_LOGW(TAG, "Todo pull 0x06: sync notify already scheduled");
+        return;
+    }
+
+    BaseType_t rc = xTaskCreate(sync_notify_delayed_task, "ble_sync_notify", 3072,
+                                NULL, 5, &sync_notify_task_handle);
+    if (rc != pdPASS) {
+        sync_notify_task_handle = NULL;
+        ESP_LOGE(TAG, "Todo pull 0x06: failed to schedule delayed notify");
+    }
+}
+
 static void ble_app_advertise(void)
 {
     struct ble_gap_adv_params adv_params;
@@ -303,11 +354,25 @@ static void ble_app_advertise(void)
         return;
     }
 
+    /*
+     * Primary advertisement payload (25 / 31 bytes):
+     *   Flags                  3 B  [02 01 06]
+     *   Complete UUID16 list   4 B  [03 03 FF 00]   ← WeChat scans by service UUID
+     *   Complete Local Name   18 B  [11 09 "REPPO_BLE_Device"]
+     *
+     * Full name is in the primary packet so Android/iOS both match it correctly.
+     * No scan response needed — saves stack resources and avoids active-scan dependency.
+     */
+    static const ble_uuid16_t adv_uuids16[] = { BLE_UUID16_INIT(GATTS_SERVICE_UUID) };
+
     memset(&fields, 0, sizeof(fields));
-    fields.flags = BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
-    fields.name = (uint8_t *)"REPPO_BLE_Device";
-    fields.name_len = strlen("REPPO_BLE_Device");
-    fields.name_is_complete = 1;
+    fields.flags               = BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
+    fields.uuids16             = adv_uuids16;
+    fields.num_uuids16         = 1;
+    fields.uuids16_is_complete = 1;
+    fields.name                = (uint8_t *)"REPPO_BLE_Device";
+    fields.name_len            = 16;
+    fields.name_is_complete    = 1;
 
     rc = ble_gap_adv_set_fields(&fields);
     if (rc != 0) {
@@ -323,7 +388,7 @@ static void ble_app_advertise(void)
     if (rc != 0) {
         ESP_LOGE(TAG, "Advertising start failed: %d", rc);
     } else {
-        ESP_LOGI(TAG, "BLE ready — scan \"REPPO_BLE_Device\"");
+        ESP_LOGI(TAG, "BLE ready — scan \"REPPO_BLE_Device\" (svc UUID 0x%04X)", GATTS_SERVICE_UUID);
     }
 }
 
@@ -404,6 +469,7 @@ void bsp_ble_init(void)
 
     ble_svc_gap_device_name_set("REPPO_BLE_Device");
     ble_store_config_init();
+    ble_att_set_preferred_mtu(BLE_PREFERRED_MTU);
 
     ble_refresh_stored_read_bundle();
     s_ble_active = true;
