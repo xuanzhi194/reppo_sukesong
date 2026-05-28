@@ -28,6 +28,7 @@
 #include "bsp_ble.h"
 #include "ai_demo_task.h"
 #include "ai_chat_secrets.h"
+#include "wificfg_bridge.h"
 #include "esp_random.h"
 
 const char *week_days[7] = {
@@ -458,6 +459,9 @@ void app_main(void)
     //initialize nvs flash
     nvs_flash_init();
     wifi_cred_storage_init();
+    /* Ensure WiFi credential bridge object is linked so strong
+     * wificfg_on_list_item_clicked() overrides the weak UI stub. */
+    wificfg_bridge_init();
     // 加载上次 AI 分析结果（掉电保存），供 UI 显示
     ai_daily_result_load();
     ai_weekly_result_load();
