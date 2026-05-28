@@ -14,12 +14,12 @@ static const char *TAG = "ENCODER";
 #define ENCODER_B_GPIO 2
 
 /* 每触发一次 NEXT/PREV 需要的硬件计数（越小越灵） */
-/* EC06 4X 解码：4 counts ≈ 1 物理档；当前阈值约 ≈1.75 档触发一次，比 5 略钝 */
-#define EC_STEP_CW   7
-#define EC_STEP_CCW  7
+/* EC06 4X 解码：4 counts ≈ 1 物理档；外圈半径变大后会更敏感，这里略增步进阈值 */
+#define EC_STEP_CW   8
+#define EC_STEP_CCW  8
 
 /* 连续两次 UI 步进间隔；过大会转很久才动，过小易连跳 */
-#define EC_EVENT_GAP_US    40000
+#define EC_EVENT_GAP_US    50000
 
 #define EC_IDLE_RESET_US   150000
 
@@ -34,6 +34,9 @@ static const char *TAG = "ENCODER";
  * 防止刚切完一次又被几个抖动带回去 */
 #define EC_DIR_LOCK_US        350000
 
+/* 触发前要求主方向“净优势”至少达到该计数，抑制慢速时偶发反向毛刺 */
+#define EC_DOMINANCE_MARGIN   2
+
 #define EC_GLITCH_FILTER_NS  12000
 
 #define EC_INVERT_DIRECTION  0
@@ -46,6 +49,7 @@ static int64_t last_motion_time = -1;
 static bool release_pending = false;
 static int8_t locked_dir = 0;        /* +1 / -1 / 0；emit 后短窗口内有效 */
 static int32_t reverse_budget = 0;   /* 当前已被丢弃的反向噪声累计量 */
+static int32_t dir_balance = 0;      /* 方向净计数：同向增加、反向减少 */
 
 static int ec_step_for_sign(int sign)
 {
@@ -77,6 +81,7 @@ static void encoder_reset_idle_state(void)
     release_pending = false;
     locked_dir = 0;
     reverse_budget = 0;
+    dir_balance = 0;
     if (pcnt_unit) {
         pcnt_unit_clear_count(pcnt_unit);
     }
@@ -147,6 +152,7 @@ uint8_t check_encoder_direction(void)
         last_emit_time = -1;
         locked_dir = 0;
         reverse_budget = 0;
+        dir_balance = 0;
         if (curr_hw_count == 0) {
             pcnt_unit_clear_count(pcnt_unit);
             return 0;
@@ -183,7 +189,9 @@ uint8_t check_encoder_direction(void)
                 accumulated_count = 0;
                 locked_dir = 0;
                 reverse_budget = 0;
+                dir_balance = 0;
                 accumulated_count += curr_hw_count;
+                dir_balance += curr_hw_count;
                 ec_cap_accum_to_one_step();
             }
         }
@@ -193,12 +201,18 @@ uint8_t check_encoder_direction(void)
             if (est_dir != 0 && new_sign != est_dir) {
                 accumulated_count = 0;
                 locked_dir = 0;
+                dir_balance = 0;
             }
             /* 真正的同向运动会清空噪声预算 */
             if (new_sign == est_dir || est_dir == 0) {
                 reverse_budget = 0;
             }
             accumulated_count += curr_hw_count;
+            dir_balance += curr_hw_count;
+            int active_step = ec_step_for_sign((dir_balance >= 0) ? 1 : -1);
+            /* 方向净计数只保留 1-step 范围，避免停转后残余影响下一次方向判定 */
+            if (dir_balance > active_step) dir_balance = active_step;
+            if (dir_balance < -active_step) dir_balance = -active_step;
             ec_cap_accum_to_one_step();
         }
 
@@ -220,6 +234,17 @@ uint8_t check_encoder_direction(void)
         return 0;
     }
 
+    /* 到达步进阈值后，再做一次主方向优势判定，避免右转夹杂少量反向毛刺触发 prev */
+    if (sign > 0) {
+        if (dir_balance < EC_DOMINANCE_MARGIN) {
+            return 0;
+        }
+    } else {
+        if (dir_balance > -EC_DOMINANCE_MARGIN) {
+            return 0;
+        }
+    }
+
     if (last_emit_time >= 0 && (now - last_emit_time) < EC_EVENT_GAP_US) {
         return 0;
     }
@@ -228,6 +253,7 @@ uint8_t check_encoder_direction(void)
     release_pending = true;
     accumulated_count = 0;
     reverse_budget = 0;
+    dir_balance = 0;
     locked_dir = sign;   /* 锁定本次方向，抑制紧随的反向抖动 */
 
     if (EC_INVERT_DIRECTION) {

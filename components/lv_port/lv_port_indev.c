@@ -261,32 +261,43 @@ static uint32_t keypad_get_key(void)
 static uint32_t keypad_get_encoder(void)
 {
     /*Your code comes here*/
-    /* ENTER 键去抖：避免双击造成快速连续切屏，从而引发动画/setup 叠加而崩溃。
-     * 一次按下只会触发一次，且距上次释放至少需 ENTER_DEBOUNCE_MS 才能再次触发。*/
-    #define ENTER_DEBOUNCE_MS 450u
-    static uint8_t  enter_last_raw   = 0;   /* 上一次采样到的物理电平 */
-    static uint8_t  enter_locked     = 0;   /* 当前是否处于“按下已被消费”状态 */
-    static uint32_t enter_release_ms = 0;   /* 最近一次释放的时间戳 */
+    /* ENTER 键优化：短时硬件去抖 + 最小触发间隔。
+     * 相比“长释放窗口”(450ms)手感更跟手，同时仍避免连续快速切屏。 */
+    #define ENTER_EDGE_DEBOUNCE_MS 35u
+    #define ENTER_MIN_INTERVAL_MS  180u
+    static uint8_t  enter_raw_last = 0;
+    static uint8_t  enter_stable   = 0;
+    static uint8_t  enter_consumed = 0;     /* 稳定按下后是否已上报本次点击 */
+    static uint8_t  enter_has_emit = 0;
+    static uint32_t enter_raw_ts   = 0;     /* 原始电平最近变化时间 */
+    static uint32_t enter_emit_ts  = 0;     /* 上一次有效点击时间 */
 
     uint8_t enter_raw = (keypad_get_key_value(5) == 1) ? 1 : 0;
     uint32_t now_ms = lv_tick_get();
 
-    if (enter_raw && !enter_last_raw) {
-        /* 上升沿：检查是否过了去抖窗口 */
-        if (!enter_locked && (uint32_t)(now_ms - enter_release_ms) >= ENTER_DEBOUNCE_MS) {
-            enter_locked   = 1;
-            enter_last_raw = 1;
+    if (enter_raw != enter_raw_last) {
+        enter_raw_last = enter_raw;
+        enter_raw_ts = now_ms;
+    }
+
+    /* 原始电平保持足够时间后才更新稳定态 */
+    if ((uint32_t)(now_ms - enter_raw_ts) >= ENTER_EDGE_DEBOUNCE_MS &&
+        enter_stable != enter_raw_last) {
+        enter_stable = enter_raw_last;
+        if (enter_stable == 0) {
+            enter_consumed = 0; /* 松开后允许下一次点击 */
+        }
+    }
+
+    if (enter_stable && !enter_consumed) {
+        if (!enter_has_emit || (uint32_t)(now_ms - enter_emit_ts) >= ENTER_MIN_INTERVAL_MS) {
+            enter_consumed = 1;
+            enter_has_emit = 1;
+            enter_emit_ts  = now_ms;
             return 5;
         }
-        /* 还在去抖窗口内：忽略这次按下 */
-        enter_last_raw = 1;
-    } else if (!enter_raw && enter_last_raw) {
-        /* 下降沿：记录释放时间，解除锁定 */
-        enter_release_ms = now_ms;
-        enter_locked     = 0;
-        enter_last_raw   = 0;
-    } else {
-        enter_last_raw = enter_raw;
+        /* 在最小间隔内，吞掉本次按下，等待先释放再接收下一次 */
+        enter_consumed = 1;
     }
 
     uint8_t encoder_value = check_encoder_direction();

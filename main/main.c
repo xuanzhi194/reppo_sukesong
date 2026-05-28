@@ -191,11 +191,13 @@ static void screen_timing_status_update(bool wifi_connected)
         }
     }
 
-    if (bar != NULL && lv_obj_is_valid(bar)) {
+    if (bar != NULL && lv_obj_is_valid(bar) &&
+        lv_obj_get_parent(bar) == guider_ui.screen_timing) {
         int bat = get_battery_percentage();
         if (bat < 0) bat = 0;
         if (bat > 100) bat = 100;
-        lv_bar_set_value(bar, bat, LV_ANIM_ON);
+        /* 定时刷新阶段禁用动画，避免切屏/对象重建边界上的动画回调访问悬空对象 */
+        lv_bar_set_value(bar, bat, LV_ANIM_OFF);
     }
 }
 
@@ -203,13 +205,17 @@ static void screen_timing_status_update(bool wifi_connected)
 void my_battery_update_cb(lv_timer_t * timer) {
     lv_obj_t * act_scr = lv_scr_act();
     if (act_scr == NULL) return;
-    if (guider_ui.screen_main != NULL && act_scr == guider_ui.screen_main) {
+    if (guider_ui.screen_main != NULL &&
+        lv_obj_is_valid(guider_ui.screen_main) &&
+        act_scr == guider_ui.screen_main) {
         lv_obj_t * arc = guider_ui.screen_main_arc_battery;
         if(arc != NULL && lv_obj_is_valid(arc)) {
             int bat = get_battery_percentage();
             lv_arc_set_value(arc, bat);
         }
-    } else if (guider_ui.screen_timing != NULL && act_scr == guider_ui.screen_timing) {
+    } else if (guider_ui.screen_timing != NULL &&
+               lv_obj_is_valid(guider_ui.screen_timing) &&
+               act_scr == guider_ui.screen_timing) {
         screen_timing_status_update(is_wifi_connected());
     }
 }
