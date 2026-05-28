@@ -47,7 +47,7 @@ pip install flask httpx
 cat > .env << 'EOF'
 DEEPSEEK_API_KEY=sk-你的deepseek密钥
 DEVICE_TOKEN=reppo-dev-token-change-me
-DEEPSEEK_MODEL=deepseek-v4-pro
+DEEPSEEK_MODEL=deepseek-v4-flash
 PORT=8080
 EOF
 vi .env   # 确认 Key 正确

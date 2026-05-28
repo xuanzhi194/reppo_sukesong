@@ -37,7 +37,7 @@ DEEPSEEK_URL = os.environ.get(
 )
 DEEPSEEK_API_KEY = _clean_env(os.environ.get("DEEPSEEK_API_KEY", ""))
 DEVICE_TOKEN = _clean_env(os.environ.get("DEVICE_TOKEN", "reppo-dev-token-change-me"))
-DEEPSEEK_MODEL = _clean_env(os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro")) or "deepseek-v4-pro"
+DEEPSEEK_MODEL = _clean_env(os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash")) or "deepseek-v4-flash"
 MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "800"))
 
 

@@ -9,7 +9,7 @@
 // 请将下方的 API Key 替换为您自己的密钥
 
 #define AI_DEFAULT_URL        "https://api.deepseek.com/chat/completions"
-#define AI_DEFAULT_MODEL      "deepseek-v4-pro"
+#define AI_DEFAULT_MODEL      "deepseek-v4-flash"
 #define AI_DEFAULT_MAX_TOKENS 800
 #define AI_RESPONSE_BUF_SIZE  4096
 #define AI_REQUEST_BUF_SIZE   2048
