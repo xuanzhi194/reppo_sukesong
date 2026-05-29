@@ -453,6 +453,7 @@ void app_main(void)
     //-----------RGB boot flow light (non-blocking)---//
     init_led_strip();
     start_boot_led_blink();
+    //xuanzhimodify lvgl 动画
     //-----------encoder init-------------------//
     init_encoder_direction();
     //-----------buzzer init--------------------//
