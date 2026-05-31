@@ -17,6 +17,13 @@ set(priv_requires
  
 idf_component_register(
                         SRCS "main.c"
+                               "app_globals.c"
+                               "app_init.c"
+                               "app_main_loop.c"
+                               "app_ui.c"
+                               "app_led.c"
+                               "app_nvs_worker.c"
+                               "app_wifi_worker.c"
                                "wificfg_bridge.c"
                         INCLUDE_DIRS ${include_dirs} 
                         PRIV_REQUIRES ${priv_requires}

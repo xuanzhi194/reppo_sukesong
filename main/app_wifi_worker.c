@@ -1,0 +1,205 @@
+/**
+ * @file app_wifi_worker.c
+ * @brief WiFi 与时间相关后台逻辑（与 LVGL 通过 lvgl_mutex 交互）
+ */
+#include "app_wifi_worker.h"
+#include "app_globals.h"
+#include "app_ui.h"
+#include "custom.h"
+#include "ds3231.h"
+#include "esp_log.h"
+#include "wifi.h"
+#include "wifi_cred_storage.h"
+#include "driver/i2c.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+
+static const char *TAG_REALTIME = "REAL_TIME";
+static const char *TAG_WIFI = "WIFI";
+
+/** 将 NTP 时间写入全局 timing_* 并刷新 timing 屏 */
+static void wifi_worker_timing_labels_from_tm(const struct tm *timeinfo)
+{
+    timing_year = timeinfo->tm_year + 1900;
+    timing_month = timeinfo->tm_mon + 1;
+    timing_day = timeinfo->tm_mday;
+    timing_weekday = timeinfo->tm_wday;
+
+    char date_str[30];
+    char time_str[20];
+    snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d",
+             timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday);
+    snprintf(time_str, sizeof(time_str), "%02d:%02d",
+             timeinfo->tm_hour, timeinfo->tm_min);
+
+    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
+        return;
+    }
+    if (app_ui_timing_screen_is_alive()) {
+        if (timeinfo->tm_year + 1900 >= 2026) {
+            lv_label_set_text(guider_ui.screen_timing_label_date, date_str);
+            lv_label_set_text(guider_ui.screen_timing_label_realtime, time_str);
+            lv_label_set_text(guider_ui.screen_timing_label_day,
+                              week_days[timeinfo->tm_wday]);
+        }
+        app_ui_timing_status_update(true);
+    }
+    xSemaphoreGive(lvgl_mutex);
+}
+
+/** NTP 校时到 DS3231 */
+static void wifi_worker_sync_rtc_from_tm(const struct tm *timeinfo)
+{
+    if (timeinfo->tm_year + 1900 < 2026) {
+        return;
+    }
+    ds3231_time_t set_time = {
+        .second = timeinfo->tm_sec,
+        .minute = timeinfo->tm_min,
+        .hour = timeinfo->tm_hour,
+        .day = timeinfo->tm_wday,
+        .date = timeinfo->tm_mday,
+        .month = timeinfo->tm_mon + 1,
+        .year = timeinfo->tm_year,
+    };
+    ds3231_set_time(I2C_NUM_0, &set_time);
+}
+
+/** WiFi 已连接：NTP 取时并刷新 UI */
+static void wifi_worker_handle_realtime_online(void)
+{
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    ESP_LOGI(TAG_REALTIME, "Current time: %04d-%02d-%02d %02d:%02d:%02d",
+             timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
+             timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+
+    wifi_worker_timing_labels_from_tm(&timeinfo);
+    wifi_worker_sync_rtc_from_tm(&timeinfo);
+    vTaskDelay(pdMS_TO_TICKS(990));
+}
+
+/** 无 WiFi：从 DS3231 读时间并刷新 UI */
+static void wifi_worker_handle_realtime_offline(void)
+{
+    ds3231_time_t now = {0};
+    esp_err_t rtc_err = ds3231_get_time(I2C_NUM_0, &now);
+    char date_str[30];
+    char time_str[20];
+    snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d",
+             now.year, now.month, now.date);
+    snprintf(time_str, sizeof(time_str), "%02d:%02d", now.hour, now.minute);
+    int wday = (rtc_err == ESP_OK && now.day < 7) ? now.day : 0;
+
+    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
+        return;
+    }
+    if (app_ui_timing_screen_is_alive()) {
+        if (rtc_err == ESP_OK) {
+            lv_label_set_text(guider_ui.screen_timing_label_date, date_str);
+            lv_label_set_text(guider_ui.screen_timing_label_realtime, time_str);
+            lv_label_set_text(guider_ui.screen_timing_label_day, week_days[wday]);
+        }
+        app_ui_timing_status_update(false);
+    }
+    xSemaphoreGive(lvgl_mutex);
+    vTaskDelay(pdMS_TO_TICKS(990));
+}
+
+/** 扫描 AP 并更新 wificfg 列表标签 */
+static void wifi_worker_handle_scan(void)
+{
+    wifi_scan_top_5();
+    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+        wifi_scan_en = 0;
+        return;
+    }
+    if (app_ui_wificfg_screen_is_alive() &&
+        guider_ui.screen_wificfg_list_1 != NULL &&
+        lv_obj_is_valid(guider_ui.screen_wificfg_list_1)) {
+        for (int i = 0; i < g_scan_ap_num; i++) {
+            lv_obj_t *list_btn = lv_obj_get_child(guider_ui.screen_wificfg_list_1, i);
+            if (list_btn == NULL || !lv_obj_is_valid(list_btn)) {
+                continue;
+            }
+            lv_obj_t *label = lv_obj_get_child(list_btn, -1);
+            if (label != NULL && lv_obj_is_valid(label)) {
+                lv_label_set_text(label, g_scan_results[i].ssid);
+            }
+        }
+    }
+    xSemaphoreGive(lvgl_mutex);
+    wifi_scan_en = 0;
+}
+
+/** 连接 WiFi、保存凭据、更新连接状态 UI */
+static void wifi_worker_handle_connect(void)
+{
+    char wifi_pw_buf[64] = {0};
+    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        const char *wifi_password =
+            lv_textarea_get_text(guider_ui.screen_wificfg_ta_password);
+        strncpy(wifi_pw_buf, wifi_password, sizeof(wifi_pw_buf) - 1);
+        xSemaphoreGive(lvgl_mutex);
+    }
+
+    wifi_connect_to_new_network(wifi_ssid, wifi_pw_buf);
+    vTaskDelay(pdMS_TO_TICKS(5000));
+    wifi_success = is_wifi_connected();
+
+    if (xSemaphoreTake(lvgl_mutex, portMAX_DELAY) != pdTRUE) {
+        wifi_connect_en = 0;
+        return;
+    }
+    if (wifi_success) {
+        if (wifi_ssid != NULL && wifi_ssid[0] != '\0') {
+            esp_err_t cred_err = wifi_cred_save(wifi_ssid, wifi_pw_buf);
+            if (cred_err != ESP_OK) {
+                ESP_LOGW(TAG_WIFI, "Failed to save WiFi credential: %d", (int)cred_err);
+            }
+        }
+        wifi_connect_show();
+        if (!init_ntp) {
+            initialize_sntp();
+            init_ntp = true;
+        }
+    } else {
+        wifi_disconnect_show();
+    }
+    xSemaphoreGive(lvgl_mutex);
+    wifi_connect_en = 0;
+}
+
+static void wifi_worker_handle_disconnect(void)
+{
+    esp_wifi_disconnect();
+    wifi_disconnect_en = 0;
+    wifi_success = 0;
+}
+
+void app_wifi_worker_task(void *arg)
+{
+    (void)arg;
+    while (1) {
+        if (task_real_time_en) {
+            if (is_wifi_connected()) {
+                wifi_worker_handle_realtime_online();
+            } else {
+                wifi_worker_handle_realtime_offline();
+            }
+        } else if (wifi_scan_en) {
+            wifi_worker_handle_scan();
+        } else if (wifi_connect_en) {
+            wifi_worker_handle_connect();
+        } else if (wifi_disconnect_en) {
+            wifi_worker_handle_disconnect();
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
