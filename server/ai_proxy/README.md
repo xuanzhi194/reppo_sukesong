@@ -134,12 +134,78 @@ vi /root/reppo-ai-proxy/.env             # 改 Key 后 restart
 
 ---
 
-## 六、备案完成后
+## 六、备案完成后：域名 reppo.top + HTTPS
 
-Nginx + HTTPS + 域名 `reppo.top`，固件改为：
+`app.py` **不用改**，仍监听本机 `127.0.0.1:8080`。对外由 **Nginx 443** 反代。
+
+### 6.1 域名解析（阿里云 DNS）
+
+| 记录类型 | 主机记录 | 记录值 |
+|----------|----------|--------|
+| A | `@` | ECS 公网 IP（如 47.96.132.214） |
+| A 或 CNAME | `www` | 同上或指向 `reppo.top` |
+
+等待解析生效（通常几分钟）：
+
+```bash
+ping reppo.top
+```
+
+### 6.2 安全组
+
+入方向新增（可保留 8080 仅本机，不再对公网开放）：
+
+| 协议 | 端口 | 说明 |
+|------|------|------|
+| TCP | 80 | HTTP，certbot 验证与跳转 HTTPS |
+| TCP | 443 | HTTPS，ESP32 / 浏览器访问 |
+
+### 6.3 ECS 安装 Nginx + 证书
+
+```bash
+dnf install -y nginx certbot python3-certbot-nginx
+
+# 复制仓库里的示例（或手写）
+cp nginx-reppo.top.conf /etc/nginx/conf.d/reppo.top.conf
+# 若仅有 HTTP，可先测通再申请证书：
+nginx -t && systemctl enable nginx && systemctl start nginx
+
+# 申请 Let's Encrypt（需域名已解析到本机、80 端口可达）
+certbot --nginx -d reppo.top -d www.reppo.top
+
+systemctl reload nginx
+```
+
+确认 `reppo-ai-proxy` 仍在跑：
+
+```bash
+systemctl status reppo-ai-proxy
+curl -s https://reppo.top/health
+```
+
+### 6.4 验证 AI 接口
+
+```bash
+curl -s -X POST https://reppo.top/v1/ai/summary \
+  -H "Authorization: Bearer 你的DEVICE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"只回复: OK"}'
+```
+
+### 6.5 固件修改（本仓库）
+
+`components/BSP/ai_chat/ai_chat_secrets.h`：
 
 ```c
 #define AI_PROXY_URL "https://reppo.top/v1/ai/summary"
 ```
 
-服务 `app.py` 与路径 `/v1/ai/summary` 可保持不变。
+重新编译烧录。串口应看到 `proxy=1 URL=https://reppo.top/...`。
+
+代理模式已支持 **HTTPS**（`ai_chat.c` 对 `https://` 使用 TLS + 证书校验）。
+
+### 6.6 可选加固
+
+- 安全组 **关闭公网 8080**，仅保留 80/443
+- `firewalld` 同样只放行 80、443
+- 定期续期：`certbot renew`（certbot 会装定时任务）

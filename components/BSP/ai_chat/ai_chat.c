@@ -72,6 +72,7 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt)
 esp_err_t ai_chat_init(const char *api_url, const char *api_key, const char *model)
 {
     s_use_proxy = (api_url && (strncmp(api_url, "http://", 7) == 0 ||
+                               strncmp(api_url, "https://", 8) == 0 ||
                                strstr(api_url, "/v1/ai/summary") != NULL));
     if (s_use_proxy) {
         strncpy(s_api_url, api_url, sizeof(s_api_url) - 1);
@@ -148,16 +149,26 @@ static esp_err_t ai_chat_send_proxy(const char *user_message, char *response_buf
     char auth_header[160];
     snprintf(auth_header, sizeof(auth_header), "Bearer %s", s_api_key);
 
+    bool use_tls = (strncmp(s_api_url, "https://", 8) == 0);
+
     esp_http_client_config_t config = {
         .url            = s_api_url,
         .method         = HTTP_METHOD_POST,
-        .transport_type = HTTP_TRANSPORT_OVER_TCP,
+        .transport_type = use_tls ? HTTP_TRANSPORT_OVER_SSL : HTTP_TRANSPORT_OVER_TCP,
         .event_handler  = http_event_handler,
         .user_data      = &resp,
         .timeout_ms     = AI_API_TIMEOUT_MS,
         .buffer_size    = 2048,
         .buffer_size_tx = 1536,
     };
+    if (use_tls) {
+        config.tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2;
+#if AI_CHAT_INSECURE_SKIP_TLS_VERIFY
+        config.skip_cert_common_name_check = true;
+#else
+        config.crt_bundle_attach = esp_crt_bundle_attach;
+#endif
+    }
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_http_client_set_header(client, "Content-Type", "application/json");
