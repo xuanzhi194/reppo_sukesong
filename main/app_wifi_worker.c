@@ -71,17 +71,23 @@ static void wifi_worker_sync_rtc_from_tm(const struct tm *timeinfo)
 /** WiFi 已连接：NTP 取时并刷新 UI */
 static void wifi_worker_handle_realtime_online(void)
 {
+    sntp_retry_if_needed();
+
     time_t now;
     struct tm timeinfo;
     time(&now);
     localtime_r(&now, &timeinfo);
 
-    ESP_LOGI(TAG_REALTIME, "Current time: %04d-%02d-%02d %02d:%02d:%02d",
-             timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
-             timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-
-    wifi_worker_timing_labels_from_tm(&timeinfo);
-    wifi_worker_sync_rtc_from_tm(&timeinfo);
+    if (is_system_time_valid()) {
+        ESP_LOGI(TAG_REALTIME, "Current time: %04d-%02d-%02d %02d:%02d:%02d",
+                 timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
+                 timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+        wifi_worker_timing_labels_from_tm(&timeinfo);
+        wifi_worker_sync_rtc_from_tm(&timeinfo);
+    } else {
+        ESP_LOGW(TAG_REALTIME, "NTP not synced yet (%04d), retrying...",
+                 timeinfo.tm_year + 1900);
+    }
     vTaskDelay(pdMS_TO_TICKS(990));
 }
 
@@ -165,10 +171,8 @@ static void wifi_worker_handle_connect(void)
             }
         }
         wifi_connect_show();
-        if (!init_ntp) {
-            initialize_sntp();
-            init_ntp = true;
-        }
+        ensure_sntp_started();
+        init_ntp = true;
     } else {
         wifi_disconnect_show();
     }
@@ -181,6 +185,8 @@ static void wifi_worker_handle_disconnect(void)
     esp_wifi_disconnect();
     wifi_disconnect_en = 0;
     wifi_success = 0;
+    init_ntp = false;
+    stop_sntp();
 }
 
 void app_wifi_worker_task(void *arg)

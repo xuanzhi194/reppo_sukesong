@@ -25,7 +25,12 @@ extern uint16_t g_scan_ap_num; // Actual number of APs found (up to 5)
 
  // Definitions of the global variables
 void init_wifi();
-void initialize_sntp();
+void initialize_sntp(void);
+void ensure_sntp_started(void);
+void sntp_retry_if_needed(void);
+void stop_sntp(void);
+bool is_system_time_valid(void);
+bool wait_system_time_sync(uint32_t timeout_ms);
 bool is_wifi_connected();
 void wifi_scan_top_5(void);
 void wifi_connect_to_new_network(const char *ssid, const char *password);

@@ -210,39 +210,29 @@ static void ai_demo_task(void *param)
         return;
     }
     printf("[AI Demo] WiFi 已连接,等待 NTP 时间同步...\r\n");
-    if (ntp_initialized && !(*ntp_initialized)) {
-        initialize_sntp();
+    ensure_sntp_started();
+    if (ntp_initialized) {
         *ntp_initialized = true;
-        printf("[AI Demo] 已初始化 NTP,正在等待时间同步...\r\n");
     }
 
-    bool time_synced = false;
-    while(1){
-        time_t now = 0;
-        struct tm timeinfo = {0};
-        time(&now);
-        localtime_r(&now, &timeinfo);
-        if (timeinfo.tm_year + 1900 >= 2025) {
-            printf("[AI Demo] 时间已同步: %04d-%02d-%02d %02d:%02d:%02d\r\n",
-                   timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
-                   timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-            time_synced = true;
-            break;
-        } else {
-            printf("[AI Demo] 当前时间未同步: %04d-%02d-%02d %02d:%02d:%02d\r\n",
-                   timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
-                   timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-        }
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    if (!time_synced) {
-        printf("[AI Demo] NTP 时间同步失败，无法进行 HTTPS 请求\r\n");
+    if (!wait_system_time_sync(90000)) {
+        printf("[AI Demo] NTP 时间同步失败（手机热点可能拦截 UDP 123），无法进行 HTTPS 请求\r\n");
         free(file_content);
         free(prompt);
         free(response);
         free(args);
         vTaskDelete(NULL);
         return;
+    }
+
+    {
+        time_t now = 0;
+        struct tm timeinfo = {0};
+        time(&now);
+        localtime_r(&now, &timeinfo);
+        printf("[AI Demo] 时间已同步: %04d-%02d-%02d %02d:%02d:%02d\r\n",
+               timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
+               timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     }
     printf("[AI Demo] 开始请求 AI...\r\n");
 
