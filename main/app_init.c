@@ -11,7 +11,7 @@
 #include "bat_percent.h"
 #include "buzzer.h"
 #include "custom.h"
-#include "ds3231.h"
+#include "rx8130.h"
 #include "ec06.h"
 #include "events_init.h"
 #include "lv_port_disp.h"
@@ -25,6 +25,7 @@
 #include "word_storage.h"
 #include "ws2812b.h"
 #include "driver/i2c.h"
+#include "esp_log.h"
 #include "lvgl.h"
 #include <string.h>
 
@@ -35,7 +36,17 @@ void app_init_hardware(void)
     init_encoder_direction();
     buzzer_init();
     battery_adc_init();
-    ds3231_init(I2C_NUM_0, 15, 16);
+    rx8130_init(I2C_NUM_0, 15, 16);
+    if (rx8130_probe(I2C_NUM_0) != ESP_OK) {
+        ESP_LOGW("RTC", "RX8130 probe failed (check I2C wiring)");
+    } else {
+        bool rtc_lost_power = false;
+        if (rx8130_startup(I2C_NUM_0, &rtc_lost_power) != ESP_OK) {
+            ESP_LOGW("RTC", "RX8130 startup failed");
+        } else if (rtc_lost_power) {
+            ESP_LOGW("RTC", "RX8130 lost power — sync time via WiFi/NTP when possible");
+        }
+    }
 }
 
 void app_init_storage_and_data(void)
@@ -72,6 +83,7 @@ void app_init_lvgl_ui(void)
     lv_port_disp_init();
     lv_port_indev_init();
     setup_ui(&guider_ui);
+    lv_refr_now(NULL);
     lv_indev_set_group(indev_keypad, g);
 
     bat_timer = lv_timer_create(app_ui_battery_timer_cb, 5000, NULL);

@@ -26,6 +26,6 @@ void app_main(void)
     while (1) {
         app_main_loop_once();
         app_main_loop_lvgl_tick();
-        vTaskDelay(pdMS_TO_TICKS(5));
+        vTaskDelay(pdMS_TO_TICKS(2));
     }
 }

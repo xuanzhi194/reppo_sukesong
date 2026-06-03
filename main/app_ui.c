@@ -6,7 +6,7 @@
 #include "app_globals.h"
 #include "bat_percent.h"
 #include "custom.h"
-#include "ds3231.h"
+#include "rx8130.h"
 #include "wifi.h"
 #include "word_storage.h"
 #include "driver/i2c.h"
@@ -193,8 +193,8 @@ void app_ui_realtime_clock_timer_cb(lv_timer_t *timer)
         !lv_obj_is_valid(guider_ui.screen_main_btn_realtime_label)) {
         return;
     }
-    ds3231_time_t now;
-    if (ds3231_get_time(I2C_NUM_0, &now) != ESP_OK) {
+    rx8130_time_t now;
+    if (rx8130_get_time(I2C_NUM_0, &now) != ESP_OK) {
         return;
     }
     lv_label_set_text_fmt(guider_ui.screen_main_btn_realtime_label,

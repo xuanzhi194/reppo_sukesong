@@ -15,7 +15,7 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 #include <time.h>
-#include "ds3231.h"
+#include "rx8130.h"
 #include "esp_heap_caps.h"
 
 #define TAG           "TODO_STORAGE"
@@ -408,10 +408,10 @@ uint8_t todo_storage_get_done_count(void)
 
 esp_err_t todo_storage_archive_done_tasks(void)
 {
-    // 1. 从 ds3231 芯片检查并获取当前绝对日期
-    ds3231_time_t ds_now;
-    if (ds3231_get_time(I2C_NUM_0, &ds_now) != ESP_OK) {
-        printf("[TODO Archive] Error reading from DS3231!\n");
+    // 1. 从 RX8130 芯片检查并获取当前绝对日期
+    rx8130_time_t ds_now;
+    if (rx8130_get_time(I2C_NUM_0, &ds_now) != ESP_OK) {
+        printf("[TODO Archive] Error reading from RX8130!\n");
         return ESP_FAIL;
     }
     

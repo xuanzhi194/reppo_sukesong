@@ -1,4 +1,6 @@
 #include "wifi.h"
+#include "rx8130.h"
+#include "driver/i2c.h"
 #include "esp_timer.h"
 #include "lwip/ip4_addr.h"
 
@@ -14,6 +16,10 @@ static void sntp_on_sync(struct timeval *tv)
 {
     (void)tv;
     ESP_LOGI(TAG, "NTP time synchronized");
+    /* 主屏时钟读 RTC; 必须在 NTP 成功时写入芯片, 不能只在 timing 屏才同步 */
+    if (rx8130_sync_from_system(I2C_NUM_0) != ESP_OK) {
+        ESP_LOGW(TAG, "RTC sync from NTP failed");
+    }
 }
 
 static bool system_time_valid_from_tm(const struct tm *timeinfo)

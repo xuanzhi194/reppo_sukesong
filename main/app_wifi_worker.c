@@ -6,7 +6,7 @@
 #include "app_globals.h"
 #include "app_ui.h"
 #include "custom.h"
-#include "ds3231.h"
+#include "rx8130.h"
 #include "esp_log.h"
 #include "wifi.h"
 #include "wifi_cred_storage.h"
@@ -50,22 +50,11 @@ static void wifi_worker_timing_labels_from_tm(const struct tm *timeinfo)
     xSemaphoreGive(lvgl_mutex);
 }
 
-/** NTP 校时到 DS3231 */
+/** NTP 校时到 RX8130 */
 static void wifi_worker_sync_rtc_from_tm(const struct tm *timeinfo)
 {
-    if (timeinfo->tm_year + 1900 < 2026) {
-        return;
-    }
-    ds3231_time_t set_time = {
-        .second = timeinfo->tm_sec,
-        .minute = timeinfo->tm_min,
-        .hour = timeinfo->tm_hour,
-        .day = timeinfo->tm_wday,
-        .date = timeinfo->tm_mday,
-        .month = timeinfo->tm_mon + 1,
-        .year = timeinfo->tm_year,
-    };
-    ds3231_set_time(I2C_NUM_0, &set_time);
+    (void)timeinfo;
+    rx8130_sync_from_system(I2C_NUM_0);
 }
 
 /** WiFi 已连接：NTP 取时并刷新 UI */
@@ -91,11 +80,11 @@ static void wifi_worker_handle_realtime_online(void)
     vTaskDelay(pdMS_TO_TICKS(990));
 }
 
-/** 无 WiFi：从 DS3231 读时间并刷新 UI */
+/** 无 WiFi：从 RX8130 读时间并刷新 UI */
 static void wifi_worker_handle_realtime_offline(void)
 {
-    ds3231_time_t now = {0};
-    esp_err_t rtc_err = ds3231_get_time(I2C_NUM_0, &now);
+    rx8130_time_t now = {0};
+    esp_err_t rtc_err = rx8130_get_time(I2C_NUM_0, &now);
     char date_str[30];
     char time_str[20];
     snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d",

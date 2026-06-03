@@ -1,5 +1,4 @@
 set(src_dirs         
-            SPI
             LCD
             keypad
             wifi
@@ -7,7 +6,7 @@ set(src_dirs
             todo_storage
             buzzer
             bat_percent
-            ds3231
+            RX8130
             RGB
             encoder
             bsp_ble
@@ -16,7 +15,6 @@ set(src_dirs
 )
  
 set(include_dirs            
-            SPI
             LCD
             keypad
             wifi
@@ -24,7 +22,7 @@ set(include_dirs
             todo_storage
             buzzer
             bat_percent
-            ds3231
+            RX8130
             RGB
             encoder
             bsp_ble
@@ -35,6 +33,7 @@ set(requires
             driver
             esp_timer
             esp_driver_ledc
+            esp_lcd
             esp_wifi 
             esp_event 
             esp_netif
