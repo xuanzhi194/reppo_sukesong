@@ -1,5 +1,6 @@
 #include "bsp_ble.h"
 #include "todo_storage.h"
+#include "esp_attr.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -44,9 +45,9 @@ static uint16_t gatt_chr_val_handle;
 static uint16_t active_conn_handle = BLE_HS_CONN_HANDLE_NONE;
 static bool notify_enabled;
 
-static char json_buffer[JSON_BUFFER_SIZE];
+static char json_buffer[JSON_BUFFER_SIZE] EXT_RAM_BSS_ATTR;
 static uint16_t json_len;
-static char stored_read_json[JSON_BUFFER_SIZE] = "{\"todo\":[],\"taskDone\":[]}";
+static char stored_read_json[JSON_BUFFER_SIZE] EXT_RAM_BSS_ATTR = "{\"todo\":[],\"taskDone\":[]}";
 static uint16_t stored_read_len;
 static TaskHandle_t sync_notify_task_handle;
 

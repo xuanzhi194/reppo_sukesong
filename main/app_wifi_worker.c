@@ -144,9 +144,7 @@ static void wifi_worker_handle_connect(void)
         xSemaphoreGive(lvgl_mutex);
     }
 
-    wifi_connect_to_new_network(wifi_ssid, wifi_pw_buf);
-    vTaskDelay(pdMS_TO_TICKS(5000));
-    wifi_success = is_wifi_connected();
+    wifi_success = wifi_connect_and_wait(wifi_ssid, wifi_pw_buf);
 
     if (xSemaphoreTake(lvgl_mutex, portMAX_DELAY) != pdTRUE) {
         wifi_connect_en = 0;

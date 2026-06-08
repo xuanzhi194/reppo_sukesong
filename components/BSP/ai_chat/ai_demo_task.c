@@ -18,6 +18,8 @@
 #define AI_NVS_NAMESPACE   "AIData"
 #define AI_NVS_KEY_DAILY   "daily_res"   /* 每日总结 NVS key */
 #define AI_NVS_KEY_WEEKLY  "week_res"    /* 每周总结 NVS key */
+#define AI_NVS_KEY_DAILY_TS  "daily_ts"  /* 每日总结上次成功完成时间戳 */
+#define AI_NVS_KEY_WEEKLY_TS "week_ts"   /* 每周总结上次成功完成时间戳 */
 
 #define DAILY_MAX_TASKS    25   /* 每日总结最多取 N 条当天任务 */
 #define WEEKLY_MAX_TASKS   80   /* 每周总结最多取 N 条近7天任务 */
@@ -29,6 +31,90 @@ ai_result_t g_ai_weekly_result = {0};
 /* AI 结果就绪标志，解析成功后置 1，UI 读取后由主循环清 0 */
 volatile bool g_ai_daily_result_ready  = false;
 volatile bool g_ai_weekly_result_ready = false;
+
+static int64_t s_last_daily_success_ts  = 0;
+static int64_t s_last_weekly_success_ts = 0;
+
+static int64_t ai_rate_limit_get_last_ts(ai_summary_type_t type)
+{
+    return (type == AI_SUMMARY_DAILY) ? s_last_daily_success_ts : s_last_weekly_success_ts;
+}
+
+static void ai_rate_limit_set_last_ts(ai_summary_type_t type, int64_t ts)
+{
+    if (type == AI_SUMMARY_DAILY) {
+        s_last_daily_success_ts = ts;
+    } else {
+        s_last_weekly_success_ts = ts;
+    }
+}
+
+static bool ai_rate_limit_load_ts(const char *key, int64_t *out)
+{
+    nvs_handle_t h;
+    if (nvs_open(AI_NVS_NAMESPACE, NVS_READONLY, &h) != ESP_OK) {
+        return false;
+    }
+    int64_t val = 0;
+    esp_err_t err = nvs_get_i64(h, key, &val);
+    nvs_close(h);
+    if (err == ESP_OK) {
+        *out = val;
+        return true;
+    }
+    return false;
+}
+
+void ai_rate_limit_init(void)
+{
+    ai_rate_limit_load_ts(AI_NVS_KEY_DAILY_TS, &s_last_daily_success_ts);
+    ai_rate_limit_load_ts(AI_NVS_KEY_WEEKLY_TS, &s_last_weekly_success_ts);
+}
+
+int ai_summary_cooldown_remain_sec(ai_summary_type_t type)
+{
+    int64_t last = ai_rate_limit_get_last_ts(type);
+    if (last <= 0) {
+        return 0;
+    }
+    time_t now = time(NULL);
+    if (now <= 0) {
+        return 0;
+    }
+    int64_t elapsed = (int64_t)now - last;
+    if (elapsed >= AI_SUMMARY_MIN_INTERVAL_SEC) {
+        return 0;
+    }
+    return (int)(AI_SUMMARY_MIN_INTERVAL_SEC - elapsed);
+}
+
+bool ai_summary_rate_limit_ok(ai_summary_type_t type)
+{
+    return ai_summary_cooldown_remain_sec(type) == 0;
+}
+
+void ai_rate_limit_mark_success(ai_summary_type_t type)
+{
+    time_t now = time(NULL);
+    if (now <= 0) {
+        printf("[AI Demo] 时间未同步，跳过冷却时间记录\r\n");
+        return;
+    }
+    int64_t ts = (int64_t)now;
+    const char *key = (type == AI_SUMMARY_DAILY) ? AI_NVS_KEY_DAILY_TS : AI_NVS_KEY_WEEKLY_TS;
+    ai_rate_limit_set_last_ts(type, ts);
+
+    nvs_handle_t h;
+    if (nvs_open(AI_NVS_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) {
+        printf("[AI Demo] NVS 打开失败，无法保存冷却时间\r\n");
+        return;
+    }
+    nvs_set_i64(h, key, ts);
+    nvs_commit(h);
+    nvs_close(h);
+    printf("[AI Demo] %s冷却时间已记录 (ts=%lld)\r\n",
+           type == AI_SUMMARY_DAILY ? "每日" : "每周", (long long)ts);
+}
 
 /* 从 response 字符串解析 AI 结果 */
 static void ai_result_parse(const char *response, ai_result_t *result)
@@ -307,7 +393,7 @@ static void ai_demo_task(void *param)
              "CAT1|<分类名称>|<占比整数%%>\n"
              "CAT2|<分类名称>|<占比整数%%>\n"
              "CAT3|<分类名称>|<占比整数%%>\n"
-             "SUMMARY|<%s,严格要求35到45个中文字,一定要注意使用英文的标点符号，千万不要使用中文的标点符号，同时回复必须使用3500常用字组成，不要使用生僻字>\n"
+             "SUMMARY|<%s,必须严格要求返回的中文字在40个字以内,一定要注意使用英文的标点符号，千万不要使用中文的标点符号，同时回复必须使用3500常用字组成，不要使用生僻字>\n"
              "QUOTE|<英文短句,轻松俏皮或自嘲口吻,与SUMMARY呼应,不超过12个英文单词>\n"
              "END\n"
              "规则：占比按任务数量计算,三个整数之和必须等于100;分类名称不超过4个汉字;只返回这6行;"
@@ -319,6 +405,20 @@ static void ai_demo_task(void *param)
     file_content = NULL;
 
     printf("[AI Demo] 正在发送请求给 AI,请稍候...\r\n");
+    size_t internal_free = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    printf("[AI Demo] HTTPS 前内部堆剩余: %u B\r\n", (unsigned)internal_free);
+    if (internal_free < AI_MIN_INTERNAL_HEAP_BYTES) {
+        printf("[AI Demo] 内部堆不足 (%u B < %d B),放弃 HTTPS 请求\r\n",
+               (unsigned)internal_free, AI_MIN_INTERNAL_HEAP_BYTES);
+        snprintf(response, AI_RESPONSE_BUF_SIZE,
+                 "Memory low (%u B), retry later", (unsigned)internal_free);
+        free(prompt);
+        free(response);
+        free(args);
+        vTaskDelete(NULL);
+        return;
+    }
+
     int64_t t_start = esp_timer_get_time();
     esp_err_t ret = ai_chat_send(prompt, response, AI_RESPONSE_BUF_SIZE);
     int64_t t_end = esp_timer_get_time();
@@ -334,6 +434,7 @@ static void ai_demo_task(void *param)
         strncpy(dest->summary_date, date_from_s, sizeof(dest->summary_date) - 1);
         if (dest->valid) {
             ai_result_save(stype, dest);
+            ai_rate_limit_mark_success(stype);
             if (stype == AI_SUMMARY_DAILY)  g_ai_daily_result_ready  = true;
             else                            g_ai_weekly_result_ready = true;
         } else {
@@ -350,18 +451,25 @@ static void ai_demo_task(void *param)
     vTaskDelete(NULL);
 }
 
-void start_ai_summary(ai_summary_type_t type, bool *ntp_initialized, const char *api_key)
+bool start_ai_summary(ai_summary_type_t type, bool *ntp_initialized, const char *api_key)
 {
+    size_t internal_free = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    printf("[AI Demo] 创建任务前 内部堆剩余: %u B\r\n", (unsigned)internal_free);
+    if (internal_free < AI_MIN_INTERNAL_HEAP_BYTES) {
+        printf("[AI Demo] 启动失败：内部堆不足 (%u B < %d B)\r\n",
+               (unsigned)internal_free, AI_MIN_INTERNAL_HEAP_BYTES);
+        return false;
+    }
+
     ai_demo_args_t *args = (ai_demo_args_t *)malloc(sizeof(ai_demo_args_t));
     if (!args) {
         printf("[AI Demo] 启动失败：参数内存分配失败\r\n");
-        return;
+        return false;
     }
     args->ntp_initialized = ntp_initialized;
     args->api_key         = api_key;
     args->summary_type    = type;
     const char *task_name = (type == AI_SUMMARY_DAILY) ? "ai_daily" : "ai_weekly";
-    printf("[AI Demo] 创建任务前 内部堆剩余: %d B\r\n", (int)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
     /* 注意：ai_demo_task 会调用 nvs_set_blob（flash 操作），
      * 执行 flash 写入时 cache 会被禁用，此时任务栈必须在内部 RAM。
      * 大块 buffer 已在任务内用 heap_caps_malloc(SPIRAM) 分配，
@@ -369,5 +477,7 @@ void start_ai_summary(ai_summary_type_t type, bool *ntp_initialized, const char 
     if (xTaskCreatePinnedToCore(ai_demo_task, task_name, 5120, args, 5, NULL, 1) != pdPASS) {
         printf("[AI Demo] 任务创建失败：内部堆不足\r\n");
         free(args);
+        return false;
     }
+    return true;
 }

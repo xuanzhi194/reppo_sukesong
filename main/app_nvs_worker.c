@@ -4,7 +4,6 @@
  */
 #include "app_nvs_worker.h"
 #include "app_globals.h"
-#include "app_ui.h"
 #include "bsp_ble.h"
 #include "custom.h"
 #include "nvs_flash.h"
@@ -51,16 +50,16 @@ static void nvs_worker_handle_todo_archive(void)
     donelist_load_label = 1;
 }
 
-/** 单词卡答对/答错触发的流水灯 */
+/** 单词卡流水灯：异步播放，不阻塞 UI 切词 */
 static void nvs_worker_handle_led_hints(void)
 {
     if (led_green_en) {
         led_green_en = 0;
-        set_flow_light(34, 80, 32);
+        start_flow_light_fast_async(34, 80, 32);
     }
     if (led_red_en) {
         led_red_en = 0;
-        set_flow_light(80, 32, 33);
+        start_flow_light_fast_async(80, 32, 33);
     }
 }
 
@@ -83,26 +82,6 @@ static void nvs_worker_handle_ble_requests(void)
     }
 }
 
-/** 单词卡 / 复习卡状态变更 → 在 LVGL 锁内刷新界面 */
-static void nvs_worker_handle_wordcard_ui(void)
-{
-    if (!wordcard_change && !reviewcard_change) {
-        return;
-    }
-    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
-        return;
-    }
-    if (wordcard_change) {
-        wordcard_change = 0;
-        app_ui_wordcard_process_change();
-    }
-    if (reviewcard_change) {
-        reviewcard_change = 0;
-        app_ui_reviewcard_process_change();
-    }
-    xSemaphoreGive(lvgl_mutex);
-}
-
 void app_nvs_worker_task(void *param)
 {
     (void)param;
@@ -115,7 +94,6 @@ void app_nvs_worker_task(void *param)
         nvs_worker_handle_todo_archive();
         nvs_worker_handle_led_hints();
         nvs_worker_handle_ble_requests();
-        nvs_worker_handle_wordcard_ui();
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

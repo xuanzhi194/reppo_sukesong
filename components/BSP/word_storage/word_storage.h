@@ -71,6 +71,7 @@ bool word_storage_review_current(word_session_state_t *out);
 void word_storage_review_mark_known(void);
 bool word_storage_review_signal(word_session_state_t *out);
 bool word_storage_review_finished(void);
+void word_storage_ensure_review_saved(void);
 
 /* ----- legacy wrappers ----- */
 bool get_word_from_csv(int line_num, word_item_t *out_item);

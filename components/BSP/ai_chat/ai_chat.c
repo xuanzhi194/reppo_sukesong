@@ -9,6 +9,22 @@
 
 static const char *TAG = "AI_CHAT";
 
+/* esp_http_client + lwIP DNS/TLS 需要内部 DRAM；不足时提前失败，避免 LoadProhibited */
+#define AI_HTTP_MIN_INTERNAL_HEAP  (16 * 1024)
+
+static bool ai_chat_internal_heap_ok(char *response_buf, size_t buf_len)
+{
+    size_t free_internal = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    if (free_internal >= AI_HTTP_MIN_INTERNAL_HEAP) {
+        return true;
+    }
+    ESP_LOGE(TAG, "Internal heap too low for HTTP: %u B (need %d B)",
+             (unsigned)free_internal, AI_HTTP_MIN_INTERNAL_HEAP);
+    snprintf(response_buf, buf_len,
+             "Internal memory low (%u B), retry later", (unsigned)free_internal);
+    return false;
+}
+
 /* 调试开关：1=跳过 HTTPS 证书校验（不安全，仅调试）；0=严格校验（默认） */
 #ifndef AI_CHAT_INSECURE_SKIP_TLS_VERIFY
 #define AI_CHAT_INSECURE_SKIP_TLS_VERIFY 0
@@ -129,6 +145,10 @@ static esp_err_t ai_chat_send_proxy(const char *user_message, char *response_buf
     if (!req_body) {
         return ESP_ERR_NO_MEM;
     }
+    if (!ai_chat_internal_heap_ok(response_buf, buf_len)) {
+        free(req_body);
+        return ESP_ERR_NO_MEM;
+    }
 
     char *http_buf = (char *)heap_caps_malloc(AI_RESPONSE_BUF_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (!http_buf) {
@@ -158,8 +178,8 @@ static esp_err_t ai_chat_send_proxy(const char *user_message, char *response_buf
         .event_handler  = http_event_handler,
         .user_data      = &resp,
         .timeout_ms     = AI_API_TIMEOUT_MS,
-        .buffer_size    = 2048,
-        .buffer_size_tx = 1536,
+        .buffer_size    = 1024,
+        .buffer_size_tx = 1024,
     };
     if (use_tls) {
         config.tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2;
@@ -246,6 +266,10 @@ esp_err_t ai_chat_send(const char *user_message, char *response_buf, size_t buf_
     if (!req_body) {
         return ESP_ERR_NO_MEM;
     }
+    if (!ai_chat_internal_heap_ok(response_buf, buf_len)) {
+        free(req_body);
+        return ESP_ERR_NO_MEM;
+    }
 
     /* 分配 HTTP 响应缓冲区 */
     char *http_buf = (char *)heap_caps_malloc(AI_RESPONSE_BUF_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -282,8 +306,8 @@ esp_err_t ai_chat_send(const char *user_message, char *response_buf, size_t buf_
         .event_handler      = http_event_handler,
         .user_data          = &resp,
         .timeout_ms         = AI_API_TIMEOUT_MS,
-        .buffer_size        = 2048,
-        .buffer_size_tx     = 1536,
+        .buffer_size        = 1024,
+        .buffer_size_tx     = 1024,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);

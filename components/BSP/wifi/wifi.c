@@ -3,11 +3,19 @@
 #include "driver/i2c.h"
 #include "esp_timer.h"
 #include "lwip/ip4_addr.h"
+#include "freertos/semphr.h"
 
 static const char *TAG = "NTP_TIME";
 
+#define WIFI_CONNECT_MAX_ATTEMPTS      3
+#define WIFI_CONNECT_TIMEOUT_MS        15000
+#define WIFI_DISCONNECT_SETTLE_MS      150
+
 static bool s_sntp_started = false;
 static int64_t s_last_sntp_retry_us = 0;
+static SemaphoreHandle_t s_wifi_ip_sem = NULL;
+static volatile bool s_connect_wait_active = false;
+static volatile int s_last_disc_reason = -1;
 
 wifi_scan_info_t g_scan_results[MAX_SCAN_RECORDS];
 uint16_t g_scan_ap_num = 0;
@@ -125,6 +133,9 @@ void my_esp_event(void* event_handler_arg, esp_event_base_t event_base, int32_t 
             int reason = disc ? disc->reason : -1;
             printf("WiFi Connection Disconnected.\n");
             ESP_LOGW(TAG, "STA disconnected, reason=%d", reason);
+            if (s_connect_wait_active) {
+                s_last_disc_reason = reason;
+            }
             stop_sntp();
         }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
@@ -133,6 +144,9 @@ void my_esp_event(void* event_handler_arg, esp_event_base_t event_base, int32_t 
         char ip_str[16];
         sprintf(ip_str, IPSTR, IP2STR(&event->ip_info.ip));
         printf("Station IP Address: %s\n", ip_str);
+        if (s_wifi_ip_sem != NULL) {
+            xSemaphoreGive(s_wifi_ip_sem);
+        }
         /* 拿到 IP 后再启 SNTP，比固定 delay 更稳（尤其手机热点） */
         ensure_sntp_started();
     }
@@ -165,6 +179,9 @@ void init_wifi()
     esp_wifi_set_mode(WIFI_MODE_STA);
     esp_wifi_start();
     esp_wifi_set_ps(WIFI_PS_NONE);
+    if (s_wifi_ip_sem == NULL) {
+        s_wifi_ip_sem = xSemaphoreCreateBinary();
+    }
     printf("WiFi driver started!\n");
 }
 
@@ -172,14 +189,79 @@ void wifi_connect_to_new_network(const char *ssid, const char *password) {
     wifi_config_t wifi_config = { 0 };
 
     strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
-    strncpy((char *)wifi_config.sta.password, password, sizeof(wifi_config.sta.password));
+    if (password != NULL) {
+        strncpy((char *)wifi_config.sta.password, password, sizeof(wifi_config.sta.password));
+    }
     wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    wifi_config.sta.pmf_cfg.capable = true;
+    wifi_config.sta.pmf_cfg.required = false;
+    wifi_config.sta.scan_method = WIFI_FAST_SCAN;
+    wifi_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
 
+    /* 扫描/断连与连接竞态时易出现 AUTH_EXPIRE，先停扫并等待断连稳定 */
+    esp_wifi_scan_stop();
     esp_wifi_disconnect();
+    vTaskDelay(pdMS_TO_TICKS(WIFI_DISCONNECT_SETTLE_MS));
+
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
-    esp_wifi_connect();
+    esp_err_t err = esp_wifi_connect();
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "esp_wifi_connect failed: %s", esp_err_to_name(err));
+    }
 
     printf("Connecting to WiFi: %s...\n", ssid);
+}
+
+bool wifi_connect_and_wait(const char *ssid, const char *password)
+{
+    if (ssid == NULL || ssid[0] == '\0') {
+        return false;
+    }
+    if (s_wifi_ip_sem == NULL) {
+        s_wifi_ip_sem = xSemaphoreCreateBinary();
+        if (s_wifi_ip_sem == NULL) {
+            return false;
+        }
+    }
+
+    for (int attempt = 1; attempt <= WIFI_CONNECT_MAX_ATTEMPTS; attempt++) {
+        xSemaphoreTake(s_wifi_ip_sem, 0);
+        s_last_disc_reason = -1;
+        s_connect_wait_active = true;
+
+        wifi_connect_to_new_network(ssid, password);
+
+        bool connected = false;
+        for (uint32_t waited = 0; waited < WIFI_CONNECT_TIMEOUT_MS; waited += 200) {
+            if (is_wifi_connected()) {
+                connected = true;
+                break;
+            }
+            if (xSemaphoreTake(s_wifi_ip_sem, pdMS_TO_TICKS(200)) == pdTRUE) {
+                connected = true;
+                break;
+            }
+            /* AUTH_EXPIRE 等失败常在 1~2s 内出现，不必傻等满 15s */
+            if (s_last_disc_reason >= 0 && waited >= 1200) {
+                ESP_LOGW(TAG, "Early retry: disconnected (reason=%d) on attempt %d",
+                         s_last_disc_reason, attempt);
+                break;
+            }
+        }
+        s_connect_wait_active = false;
+
+        if (connected || is_wifi_connected()) {
+            ESP_LOGI(TAG, "WiFi connected on attempt %d", attempt);
+            return true;
+        }
+
+        ESP_LOGW(TAG, "WiFi connect attempt %d/%d failed, retrying...",
+                 attempt, WIFI_CONNECT_MAX_ATTEMPTS);
+        esp_wifi_disconnect();
+        vTaskDelay(pdMS_TO_TICKS(600 * (uint32_t)attempt));
+    }
+
+    return is_wifi_connected();
 }
 
 bool is_wifi_connected(void)

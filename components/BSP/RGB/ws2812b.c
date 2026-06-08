@@ -34,16 +34,51 @@ void init_led_strip() {
     led_strip_clear(led_strip);
 }
 
-/**
- * @brief Simple flow light effect
- */
-void set_flow_light(uint32_t r, uint32_t g, uint32_t b) {
+#define FLOW_LIGHT_STEP_MS_DEFAULT  50
+#define FLOW_LIGHT_STEP_MS_FAST     25
+
+static void flow_light_run(uint32_t r, uint32_t g, uint32_t b, uint32_t step_ms)
+{
     for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
         led_strip_set_pixel(led_strip, i, r, g, b);
         led_strip_refresh(led_strip);
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(step_ms));
         led_strip_clear(led_strip);
     }
+}
+
+void set_flow_light(uint32_t r, uint32_t g, uint32_t b)
+{
+    flow_light_run(r, g, b, FLOW_LIGHT_STEP_MS_DEFAULT);
+}
+
+void set_flow_light_fast(uint32_t r, uint32_t g, uint32_t b)
+{
+    flow_light_run(r, g, b, FLOW_LIGHT_STEP_MS_FAST);
+}
+
+static TaskHandle_t s_hint_flow_task = NULL;
+static uint32_t s_hint_flow_r;
+static uint32_t s_hint_flow_g;
+static uint32_t s_hint_flow_b;
+
+static void hint_flow_light_task(void *param)
+{
+    (void)param;
+    flow_light_run(s_hint_flow_r, s_hint_flow_g, s_hint_flow_b, FLOW_LIGHT_STEP_MS_FAST);
+    s_hint_flow_task = NULL;
+    vTaskDelete(NULL);
+}
+
+void start_flow_light_fast_async(uint32_t r, uint32_t g, uint32_t b)
+{
+    s_hint_flow_r = r;
+    s_hint_flow_g = g;
+    s_hint_flow_b = b;
+    if (s_hint_flow_task != NULL) {
+        return;
+    }
+    xTaskCreatePinnedToCore(hint_flow_light_task, "hint_flow", 2048, NULL, 4, &s_hint_flow_task, 0);
 }
 
 static void boot_led_blink_task(void *param)

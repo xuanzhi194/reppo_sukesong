@@ -29,7 +29,7 @@
     "new": "c",
     "functional": "c"
   },
-  "idf.espIdfPath": "E:/esp32idf/Espressif/frameworks/esp-idf-v5.3.1",
+  "idf.espIdfPath": "/Users/sean/.espressif/v5.3.5/esp-idf",
   "idf.currentSetup": "/Users/sean/.espressif/v5.3.5/esp-idf",
-  "idf.port": "/dev/tty.usbserial-130"
+  "idf.port": "/dev/tty.usbserial-1120"
 }

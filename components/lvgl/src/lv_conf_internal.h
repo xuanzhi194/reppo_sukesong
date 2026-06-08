@@ -735,14 +735,16 @@
     #ifdef CONFIG_LV_ASSERT_HANDLER_INCLUDE
         #define LV_ASSERT_HANDLER_INCLUDE CONFIG_LV_ASSERT_HANDLER_INCLUDE
     #else
-        #define LV_ASSERT_HANDLER_INCLUDE <stdint.h>
+        #define LV_ASSERT_HANDLER_INCLUDE <stdlib.h>
     #endif
 #endif
 #ifndef LV_ASSERT_HANDLER
     #ifdef CONFIG_LV_ASSERT_HANDLER
         #define LV_ASSERT_HANDLER CONFIG_LV_ASSERT_HANDLER
     #else
-        #define LV_ASSERT_HANDLER while(1);   /*Halt by default*/
+        /*Use abort() instead of while(1) so the system generates a full backtrace
+         * and restarts, rather than freezing the watchdog permanently.*/
+        #define LV_ASSERT_HANDLER abort();
     #endif
 #endif
 

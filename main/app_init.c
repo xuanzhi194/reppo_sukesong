@@ -22,6 +22,7 @@
 #include "wifi.h"
 #include "wifi_cred_storage.h"
 #include "wificfg_bridge.h"
+#include "volume_bridge.h"
 #include "word_storage.h"
 #include "ws2812b.h"
 #include "driver/i2c.h"
@@ -55,9 +56,11 @@ void app_init_storage_and_data(void)
     wifi_cred_storage_init();
     /* 链入 wificfg 强符号桥接，使列表点击可从 NVS 回填密码 */
     wificfg_bridge_init();
+    volume_bridge_init();
 
     ai_daily_result_load();
     ai_weekly_result_load();
+    ai_rate_limit_init();
     memcpy(&g_ui_daily_result, &g_ai_daily_result, sizeof(ui_ai_result_t));
     memcpy(&g_ui_weekly_result, &g_ai_weekly_result, sizeof(ui_ai_result_t));
 
@@ -85,6 +88,11 @@ void app_init_lvgl_ui(void)
     setup_ui(&guider_ui);
     lv_refr_now(NULL);
     lv_indev_set_group(indev_keypad, g);
+
+    /* Pre-convert the clock label to static-text mode so the periodic timer
+     * callback can use lv_label_set_text_static() without ever calling
+     * lv_mem_free() on LVGL heap, removing the crash root cause. */
+    app_ui_init_clock_label_static();
 
     bat_timer = lv_timer_create(app_ui_battery_timer_cb, 5000, NULL);
     lv_timer_create(app_ui_realtime_clock_timer_cb, 3000, NULL);

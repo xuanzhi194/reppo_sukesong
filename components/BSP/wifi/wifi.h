@@ -34,4 +34,6 @@ bool wait_system_time_sync(uint32_t timeout_ms);
 bool is_wifi_connected();
 void wifi_scan_top_5(void);
 void wifi_connect_to_new_network(const char *ssid, const char *password);
+/** 连接 WiFi 并等待拿到 IP（含自动重试，避免首次 AUTH_EXPIRE 需手动再连） */
+bool wifi_connect_and_wait(const char *ssid, const char *password);
 #endif

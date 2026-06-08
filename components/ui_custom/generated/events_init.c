@@ -1179,7 +1179,7 @@ static void screen_wordcard_btn_dui_event_handler (lv_event_t *e)
             wordcard_change = 1;
             lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
             lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_back, LV_STATE_FOCUSED);
+            group_focus_obj(guider_ui.screen_wordcard_btn_back);
             lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",round_cards_num,round_cards_num);
         } else if(cards_index < round_cards_num) {
             led_green_en = 1; // flow light rgb
@@ -1209,7 +1209,7 @@ static void screen_wordcard_btn_cuo_event_handler (lv_event_t *e)
         if(cards_index >= round_cards_num) {
             lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
             lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_wordcard_btn_back, LV_STATE_FOCUSED);
+            group_focus_obj(guider_ui.screen_wordcard_btn_back);
         }
         break;
     }
@@ -1252,7 +1252,7 @@ static void screen_reviewcard_event_handler (lv_event_t *e)
         if(review_cards_num == 0) {
             lv_label_set_text(guider_ui.screen_reviewcard_label_index,"0/0");
             lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui,LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_reviewcard_btn_back,LV_STATE_FOCUSED);
+            group_focus_obj(guider_ui.screen_reviewcard_btn_back);
             lv_label_set_text(guider_ui.screen_reviewcard_label_meaning,"No word need to review");
             lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic,"");
             lv_label_set_text(guider_ui.screen_reviewcard_label_spelling,"Good Job!");
@@ -1279,12 +1279,14 @@ static void screen_reviewcard_btn_dui_event_handler (lv_event_t *e)
         led_green_en = 1;
         if(cards_index > tmp_review_num) {
             lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-            lv_obj_add_state(guider_ui.screen_reviewcard_btn_back, LV_STATE_FOCUSED);
+            group_focus_obj(guider_ui.screen_reviewcard_btn_back);
         } else if(cards_index == tmp_review_num) {
             cards_index += 1;
             review_cards_num -= 1;
             lv_label_set_text_fmt(guider_ui.screen_reviewcard_label_index,"%d/%d",tmp_review_num,tmp_review_num);
             reviewcard_change = 1;
+            lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
+            group_focus_obj(guider_ui.screen_reviewcard_btn_back);
         } else {
             cards_index += 1;
             review_cards_num -= 1;
@@ -1838,11 +1840,13 @@ static void screen_setting_btn_volume_event_handler (lv_event_t *e)
             volume_en = 0;
             lv_obj_clear_flag(guider_ui.screen_setting_img_volume_close,LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(guider_ui.screen_setting_img_volume_open,LV_OBJ_FLAG_HIDDEN);
+            volume_on_disabled();
         } else {
             //volume open
             volume_en = 1;
             lv_obj_add_flag(guider_ui.screen_setting_img_volume_close,LV_OBJ_FLAG_HIDDEN);
             lv_obj_clear_flag(guider_ui.screen_setting_img_volume_open,LV_OBJ_FLAG_HIDDEN);
+            volume_on_enabled();
         }
         break;
     }

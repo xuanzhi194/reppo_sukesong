@@ -373,6 +373,30 @@ void wificfg_show_connect_ui(lv_obj_t *list_btn, const char *password, bool focu
 /**
  * 默认实现：供 GUI Guider 模拟器链接；固件中由 main/wificfg_bridge.c 强符号覆盖（NVS 读密码）。
  */
+/* GUI Guider 模拟器用空实现；ESP32 固件由 main/wordcard_bridge.c 覆盖 */
+__attribute__((weak)) void wordcard_on_menu_enter(void)
+{
+}
+
+/* ESP32 固件由 main/volume_bridge.c 提供强符号实现 */
+__attribute__((weak)) void volume_enabled_impl(void)
+{
+}
+
+__attribute__((weak)) void volume_disabled_impl(void)
+{
+}
+
+void volume_on_enabled(void)
+{
+    volume_enabled_impl();
+}
+
+void volume_on_disabled(void)
+{
+    volume_disabled_impl();
+}
+
 __attribute__((weak)) void wificfg_on_list_item_clicked(lv_obj_t *list_item)
 {
     wificfg_show_connect_ui(list_item, NULL, false);
@@ -544,6 +568,13 @@ void clear_edge_box(lv_obj_t * obj) {
     lv_obj_set_style_outline_width(obj, 0, LV_STATE_FOCUS_KEY); // 针对键盘聚焦
 }
 
+void group_focus_obj(lv_obj_t *obj)
+{
+    if (g != NULL && obj != NULL && lv_obj_is_valid(obj)) {
+        lv_group_focus_obj(obj);
+    }
+}
+
 
 void screen_todolist_buttion_add(){
     if(g == NULL) {
@@ -673,6 +704,7 @@ void screen_pomodoro_buttion_add(){
 }
 //buttion add function screen_wordmeun
 void screen_wordmenu_buttion_add(){
+    wordcard_on_menu_enter();
     if(g == NULL) {
         g = lv_group_create();
     } else {

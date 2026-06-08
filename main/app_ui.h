@@ -16,6 +16,7 @@ void app_ui_battery_timer_cb(lv_timer_t *timer);
 
 /** 主屏 RTC 时间标签定时刷新（LVGL timer 回调） */
 void app_ui_realtime_clock_timer_cb(lv_timer_t *timer);
+void app_ui_init_clock_label_static(void);
 
 /** 从 SPIFFS 统计初始化单词卡计数（app_init 调用） */
 void app_ui_init_word_counters(void);

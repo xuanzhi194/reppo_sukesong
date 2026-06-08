@@ -1,7 +1,11 @@
 #include "word_storage.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "esp_random.h"
+#include "esp_heap_caps.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const char *TAG = "DICT_READER";
 static const char *REVIEW_INDEX_FILE = "/spiffs/word_review_index.csv";
@@ -15,16 +19,23 @@ word_item_t current_word = {
 /* ===== runtime session state (kept inside this module) ===== */
 static int  s_total_count = 0;
 
-static int  s_round_indices[WORDCARD_ROUND_SIZE] = {0};
+static int  s_round_indices[WORDCARD_ROUND_SIZE] EXT_RAM_BSS_ATTR = {0};
 static int  s_round_size = 0;
 static int  s_learn_cursor = 0;
 static bool s_learn_initial_pending = false;
 
-static int  s_review_indices[WORDCARD_MAX_REVIEW_ITEMS] = {0};
+static int  s_review_indices[WORDCARD_MAX_REVIEW_ITEMS] EXT_RAM_BSS_ATTR = {0};
 static int  s_review_count = 0;
 static int  s_review_session_total = 0;
 static int  s_review_session_processed = 0;
 static bool s_review_initial_pending = false;
+
+static word_item_t s_round_words[WORDCARD_ROUND_SIZE] EXT_RAM_BSS_ATTR;
+
+static long *s_line_offsets = NULL;
+static int   s_line_offset_count = 0;
+
+static TaskHandle_t s_review_save_task = NULL;
 
 /* ===== filesystem helpers ===== */
 static const char *resolve_csv_path(void)
@@ -64,9 +75,109 @@ void init_spiffs(void) {
     }
 }
 
+static void word_storage_free_line_index(void)
+{
+    if (s_line_offsets != NULL) {
+        heap_caps_free(s_line_offsets);
+    }
+    s_line_offsets = NULL;
+    s_line_offset_count = 0;
+}
+
+static bool word_storage_build_line_index(const char *csv_path)
+{
+    word_storage_free_line_index();
+
+    FILE *f = fopen(csv_path, "r");
+    if (f == NULL) {
+        return false;
+    }
+
+    int cap = 256;
+    int count = 0;
+    long *offsets = (long *)heap_caps_malloc(sizeof(long) * cap, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (offsets == NULL) {
+        offsets = (long *)malloc(sizeof(long) * cap);
+    }
+    if (offsets == NULL) {
+        fclose(f);
+        return false;
+    }
+
+    char line_buffer[256];
+    while (fgets(line_buffer, sizeof(line_buffer), f) != NULL) {
+        if (line_buffer[0] == '\n' || line_buffer[0] == '\r' || line_buffer[0] == '\0') {
+            continue;
+        }
+        if (count >= cap) {
+            cap *= 2;
+            long *grown = (long *)heap_caps_realloc(offsets, sizeof(long) * cap, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+            if (grown == NULL) {
+                grown = (long *)realloc(offsets, sizeof(long) * cap);
+            }
+            if (grown == NULL) {
+                heap_caps_free(offsets);
+                fclose(f);
+                return false;
+            }
+            offsets = grown;
+        }
+        offsets[count++] = ftell(f) - (long)strlen(line_buffer);
+    }
+
+    fclose(f);
+    s_line_offsets = offsets;
+    s_line_offset_count = count;
+    return true;
+}
+
+static bool word_storage_parse_line(const char *line_buffer, word_item_t *out_item)
+{
+    char local[256];
+    strncpy(local, line_buffer, sizeof(local) - 1);
+    local[sizeof(local) - 1] = '\0';
+
+    char *token = strtok(local, ",");
+    if (token) {
+        strncpy(out_item->word, token, sizeof(out_item->word) - 1);
+    }
+
+    token = strtok(NULL, ",");
+    if (token) {
+        strncpy(out_item->phonetic, token, sizeof(out_item->phonetic) - 1);
+    }
+
+    token = strtok(NULL, "\n");
+    if (token) {
+        strncpy(out_item->definition, token, sizeof(out_item->definition) - 1);
+    }
+
+    return out_item->word[0] != '\0';
+}
+
+static void review_save_task(void *param)
+{
+    (void)param;
+    word_storage_save_review_indices(s_review_indices, s_review_count);
+    s_review_save_task = NULL;
+    vTaskDelete(NULL);
+}
+
+static void word_storage_schedule_review_save(void)
+{
+    if (s_review_save_task != NULL) {
+        return;
+    }
+    xTaskCreatePinnedToCore(review_save_task, "review_save", 4096, NULL, 3, &s_review_save_task, 0);
+}
+
 /* ===== low level dictionary access ===== */
 int word_storage_get_total_count(void)
 {
+    if (s_line_offset_count > 0) {
+        return s_line_offset_count;
+    }
+
     const char *csv_path = resolve_csv_path();
     if (csv_path == NULL) {
         ESP_LOGW(TAG, "No word csv found: wordcards.csv/wordcard.csv");
@@ -95,34 +206,34 @@ bool word_storage_get_word_by_index(int line_num, word_item_t *out_item)
     const char *csv_path = resolve_csv_path();
     if (csv_path == NULL || out_item == NULL || line_num < 0) return false;
 
+    memset(out_item, 0, sizeof(*out_item));
+
     FILE *f = fopen(csv_path, "r");
     if (f == NULL) {
         ESP_LOGI(TAG, "Failed to open file");
         return false;
     }
 
-    char line_buffer[256];
-    int  current_line = 0;
     bool found = false;
-    memset(out_item, 0, sizeof(*out_item));
+    char line_buffer[256];
 
-    while (fgets(line_buffer, sizeof(line_buffer), f) != NULL) {
-        if (line_buffer[0] == '\n' || line_buffer[0] == '\r' || line_buffer[0] == '\0') continue;
-        if (current_line == line_num) {
-            // 格式: abandon,[ə'bændən],v.放弃;抛弃;放纵
-            char *token = strtok(line_buffer, ",");
-            if (token) strncpy(out_item->word, token, sizeof(out_item->word) - 1);
-
-            token = strtok(NULL, ",");
-            if (token) strncpy(out_item->phonetic, token, sizeof(out_item->phonetic) - 1);
-
-            token = strtok(NULL, "\n");
-            if (token) strncpy(out_item->definition, token, sizeof(out_item->definition) - 1);
-
-            found = true;
-            break;
+    if (s_line_offsets != NULL && line_num < s_line_offset_count) {
+        if (fseek(f, s_line_offsets[line_num], SEEK_SET) == 0 &&
+            fgets(line_buffer, sizeof(line_buffer), f) != NULL) {
+            found = word_storage_parse_line(line_buffer, out_item);
         }
-        current_line++;
+    } else {
+        int current_line = 0;
+        while (fgets(line_buffer, sizeof(line_buffer), f) != NULL) {
+            if (line_buffer[0] == '\n' || line_buffer[0] == '\r' || line_buffer[0] == '\0') {
+                continue;
+            }
+            if (current_line == line_num) {
+                found = word_storage_parse_line(line_buffer, out_item);
+                break;
+            }
+            current_line++;
+        }
     }
 
     fclose(f);
@@ -204,7 +315,11 @@ int word_storage_get_review_count(void)
 /* ===== init ===== */
 void word_storage_init(void)
 {
-    s_total_count = word_storage_get_total_count();
+    const char *csv_path = resolve_csv_path();
+    if (csv_path != NULL) {
+        word_storage_build_line_index(csv_path);
+    }
+    s_total_count = s_line_offset_count;
     s_review_count = word_storage_load_review_indices(s_review_indices,
                                                       WORDCARD_MAX_REVIEW_ITEMS);
     s_round_size = 0;
@@ -224,7 +339,7 @@ static bool review_index_append_if_needed(int csv_idx)
     }
     if (s_review_count >= WORDCARD_MAX_REVIEW_ITEMS) return false;
     s_review_indices[s_review_count++] = csv_idx;
-    word_storage_save_review_indices(s_review_indices, s_review_count);
+    word_storage_schedule_review_save();
     return true;
 }
 
@@ -233,6 +348,11 @@ int word_storage_learn_start(int round_size)
     int target = (round_size > 0) ? round_size : WORDCARD_ROUND_SIZE;
     if (target > WORDCARD_ROUND_SIZE) target = WORDCARD_ROUND_SIZE;
     s_round_size = word_storage_pick_random_indices(s_round_indices, target);
+    for (int i = 0; i < s_round_size; i++) {
+        if (!word_storage_get_word_by_index(s_round_indices[i], &s_round_words[i])) {
+            memset(&s_round_words[i], 0, sizeof(s_round_words[i]));
+        }
+    }
     s_learn_cursor = 0;
     s_learn_initial_pending = true;
     return s_round_size;
@@ -246,7 +366,8 @@ bool word_storage_learn_current(word_session_state_t *out)
     out->current = s_learn_cursor + 1;
     out->finished = (s_round_size <= 0) || (s_learn_cursor >= s_round_size);
     if (out->finished) return false;
-    out->valid = word_storage_get_word_by_index(s_round_indices[s_learn_cursor], &out->word);
+    out->word = s_round_words[s_learn_cursor];
+    out->valid = out->word.word[0] != '\0';
     return out->valid;
 }
 
@@ -310,8 +431,15 @@ void word_storage_review_mark_known(void)
         s_review_indices[i] = s_review_indices[i + 1];
     }
     s_review_count--;
-    word_storage_save_review_indices(s_review_indices, s_review_count);
+    word_storage_schedule_review_save();
     s_review_session_processed++;
+}
+
+void word_storage_ensure_review_saved(void)
+{
+    for (int i = 0; i < 200 && s_review_save_task != NULL; i++) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 }
 
 bool word_storage_review_signal(word_session_state_t *out)

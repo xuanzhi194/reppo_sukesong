@@ -183,6 +183,21 @@ void app_ui_battery_timer_cb(lv_timer_t *timer)
     }
 }
 
+void app_ui_init_clock_label_static(void)
+{
+    if (guider_ui.screen_main_btn_realtime_label == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_main_btn_realtime_label)) {
+        return;
+    }
+    /* Convert the clock label from dynamic text (allocated in LVGL heap by
+     * the generated setup_ui code) to static-text mode.  This frees the
+     * original "00:00" allocation exactly once here, while the LVGL heap is
+     * in a clean, unfragmented state.  From now on, lv_label_set_text_static
+     * stores a pointer to our static buffer and never touches the LVGL heap,
+     * eliminating the alloc/free cycle that triggered heap corruption. */
+    lv_label_set_text_static(guider_ui.screen_main_btn_realtime_label, "--:--");
+}
+
 void app_ui_realtime_clock_timer_cb(lv_timer_t *timer)
 {
     (void)timer;
@@ -197,6 +212,17 @@ void app_ui_realtime_clock_timer_cb(lv_timer_t *timer)
     if (rx8130_get_time(I2C_NUM_0, &now) != ESP_OK) {
         return;
     }
-    lv_label_set_text_fmt(guider_ui.screen_main_btn_realtime_label,
-                          "%02d:%02d", now.hour, now.minute);
+    /* Cache last displayed time: only update LVGL when the minute changes.
+     * Using lv_label_set_text_static avoids repeated alloc/free on the LVGL
+     * heap for what is effectively a fixed-length 5-char string. */
+    static uint8_t s_last_hour = 0xff;
+    static uint8_t s_last_min  = 0xff;
+    if (now.hour == s_last_hour && now.minute == s_last_min) {
+        return;
+    }
+    s_last_hour = now.hour;
+    s_last_min  = now.minute;
+    static char s_clock_buf[8];
+    snprintf(s_clock_buf, sizeof(s_clock_buf), "%02d:%02d", now.hour, now.minute);
+    lv_label_set_text_static(guider_ui.screen_main_btn_realtime_label, s_clock_buf);
 }

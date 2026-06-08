@@ -25,6 +25,9 @@
  * 初始化 PWM 配置
  */
 void buzzer_init();
+void buzzer_bind_mute_check(bool (*fn)(void));
 void buzzer_set_sound(uint32_t freq, uint8_t volume_percent);
+void buzzer_beep(void);
+void buzzer_beep_confirm(void);
 void buzzer_timeout();
 #endif

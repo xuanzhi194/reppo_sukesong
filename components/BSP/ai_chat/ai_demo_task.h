@@ -31,8 +31,26 @@ extern ai_result_t g_ai_weekly_result;
 extern volatile bool g_ai_daily_result_ready;
 extern volatile bool g_ai_weekly_result_ready;
 
-/* 启动 AI 总结任务（type = AI_SUMMARY_DAILY 或 AI_SUMMARY_WEEKLY） */
-void start_ai_summary(ai_summary_type_t type, bool *ntp_initialized, const char *api_key);
+/* lwIP/TLS/HTTP 需要足够的内部 DRAM；低于此阈值时拒绝启动，避免 DNS 阶段崩溃 */
+#define AI_MIN_INTERNAL_HEAP_BYTES  (24 * 1024)
+
+/* 每日/每周总结成功后，至少间隔该秒数才能再次触发 */
+#define AI_SUMMARY_MIN_INTERVAL_SEC  (60 * 60)
+
+/* 从 NVS 恢复上次成功完成时间戳（启动时调用一次） */
+void ai_rate_limit_init(void);
+
+/* 是否允许再次触发（日/周独立计时；从未成功过则允许） */
+bool ai_summary_rate_limit_ok(ai_summary_type_t type);
+
+/* 距离可再次触发的剩余秒数，0 表示无冷却 */
+int ai_summary_cooldown_remain_sec(ai_summary_type_t type);
+
+/* 总结任务成功完成后记录当前时间到 NVS */
+void ai_rate_limit_mark_success(ai_summary_type_t type);
+
+/* 启动 AI 总结任务（type = AI_SUMMARY_DAILY 或 AI_SUMMARY_WEEKLY）；内存不足返回 false */
+bool start_ai_summary(ai_summary_type_t type, bool *ntp_initialized, const char *api_key);
 
 /* 从 NVS 加载对应类型的上次结果，有有效数据则返回 true */
 bool ai_daily_result_load(void);

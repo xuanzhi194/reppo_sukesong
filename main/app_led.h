@@ -21,6 +21,9 @@ void app_led_ai_wait_stop(void);
  */
 void app_led_ai_result_show(bool success, uint8_t retry_count);
 
+/** AI 总结冷却中：黄色流水灯（与红色 WiFi 失败、绿色成功区分） */
+void app_led_ai_cooldown_show(uint8_t retry_count);
+
 /** 创建番茄钟超时蜂鸣+流水灯任务（由主循环在 flag 置位时调用） */
 void app_led_start_buzzer_timeout_task(void);
 

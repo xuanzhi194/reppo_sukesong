@@ -25,6 +25,8 @@ idf_component_register(
                                "app_nvs_worker.c"
                                "app_wifi_worker.c"
                                "wificfg_bridge.c"
+                               "wordcard_bridge.c"
+                               "volume_bridge.c"
                         INCLUDE_DIRS ${include_dirs} 
                         PRIV_REQUIRES ${priv_requires}
                         EMBED_FILES  ${embed_files}

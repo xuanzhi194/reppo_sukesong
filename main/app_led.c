@@ -9,6 +9,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#define POMODORO_ALARM_LIGHT_MS  3000
+
 static bool s_timeout_alarm_light_running = false;
 static bool s_ai_wait_light_running = false;
 static TaskHandle_t s_ai_wait_light_task_handle = NULL;
@@ -25,10 +27,18 @@ static void timeout_alarm_light_task(void *param)
 static void buzzer_timeout_task(void *param)
 {
     (void)param;
+    TickType_t light_end = xTaskGetTickCount() + pdMS_TO_TICKS(POMODORO_ALARM_LIGHT_MS);
+
     s_timeout_alarm_light_running = true;
     xTaskCreatePinnedToCore(timeout_alarm_light_task, "timeout_alarm_light_task",
                             2048, NULL, 7, NULL, 1);
+
+    /* 蜂鸣可因静音立即返回；流水灯至少保持 POMODORO_ALARM_LIGHT_MS */
     buzzer_timeout();
+    while (xTaskGetTickCount() < light_end) {
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+
     s_timeout_alarm_light_running = false;
     buzzer_timeout_task_running = false;
     vTaskDelete(NULL);
@@ -72,6 +82,14 @@ void app_led_ai_result_show(bool success, uint8_t retry_count)
         for (int i = 0; i < retry_count; i++) {
             set_flow_light(80, 32, 33);
         }
+    }
+    set_flow_light(0, 0, 0);
+}
+
+void app_led_ai_cooldown_show(uint8_t retry_count)
+{
+    for (int i = 0; i < retry_count; i++) {
+        set_flow_light(80, 60, 0);
     }
     set_flow_light(0, 0, 0);
 }

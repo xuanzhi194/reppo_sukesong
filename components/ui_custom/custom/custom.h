@@ -145,10 +145,14 @@ extern void wifi_connect_show();
 extern void wifi_disconnect_show();
 void wificfg_show_connect_ui(lv_obj_t *list_btn, const char *password, bool focus_connect_btn);
 /* 模拟器用 custom.c 弱符号默认实现；ESP32 固件由 main/wificfg_bridge.c 强符号覆盖 */
+void wordcard_on_menu_enter(void);
+void volume_on_enabled(void);
+void volume_on_disabled(void);
 void wificfg_on_list_item_clicked(lv_obj_t *list_item);
 extern void screen_ai_load_nvs_data(bool day_or_week);//0 -> day 1->week
 //screens buttion add
 extern lv_group_t *g;
+void group_focus_obj(lv_obj_t *obj);
 void screen_todolist_buttion_add();
 void screen_main_buttion_add();
 void screen_log_buttion_add();
