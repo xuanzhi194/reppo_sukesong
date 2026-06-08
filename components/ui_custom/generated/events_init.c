@@ -1175,7 +1175,6 @@ static void screen_wordcard_btn_dui_event_handler (lv_event_t *e)
         if(cards_index == round_cards_num) {
             led_green_en = 1; // flow light rgb
             cards_index += 1;
-            learned_cards_num += 1;
             wordcard_change = 1;
             lv_obj_add_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
             lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
@@ -1184,7 +1183,6 @@ static void screen_wordcard_btn_dui_event_handler (lv_event_t *e)
         } else if(cards_index < round_cards_num) {
             led_green_en = 1; // flow light rgb
             cards_index += 1;
-            learned_cards_num += 1;
             wordcard_change = 1;
             lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",cards_index,round_cards_num);
         }

@@ -57,6 +57,9 @@ int  word_storage_load_review_indices(int *out_indices, int max_count);
 bool word_storage_save_review_indices(const int *indices, int count);
 int  word_storage_get_review_count(void);
 
+/* ----- learned progress (wordmenu, persisted in NVS) ----- */
+int  word_storage_get_learned_count(void);
+
 /* ----- learn session (wordcard) ----- */
 int  word_storage_learn_start(int round_size);
 bool word_storage_learn_current(word_session_state_t *out);

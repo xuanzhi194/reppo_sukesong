@@ -4,11 +4,15 @@
 #include "esp_attr.h"
 #include "esp_random.h"
 #include "esp_heap_caps.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 static const char *TAG = "DICT_READER";
 static const char *REVIEW_INDEX_FILE = "/spiffs/word_review_index.csv";
+static const char *WORD_NVS_NAMESPACE = "WordData";
+static const char *WORD_NVS_KEY_LEARNED = "learned_cnt";
 
 word_item_t current_word = {
     .definition = "",
@@ -36,6 +40,66 @@ static long *s_line_offsets = NULL;
 static int   s_line_offset_count = 0;
 
 static TaskHandle_t s_review_save_task = NULL;
+static int s_learned_count = 0;
+
+/* ===== learned-count persistence (NVS) ===== */
+static int word_storage_dict_total(void)
+{
+    return (s_total_count > 0) ? s_total_count : word_storage_get_total_count();
+}
+
+static void word_storage_save_learned_count(void)
+{
+    nvs_handle_t h;
+    if (nvs_open(WORD_NVS_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) {
+        return;
+    }
+    nvs_set_i32(h, WORD_NVS_KEY_LEARNED, (int32_t)s_learned_count);
+    nvs_commit(h);
+    nvs_close(h);
+}
+
+static void word_storage_normalize_learned_count(void)
+{
+    int total = word_storage_dict_total();
+    if (total > 0 && s_learned_count >= total) {
+        s_learned_count = 0;
+        word_storage_save_learned_count();
+    }
+}
+
+static void word_storage_load_learned_count(void)
+{
+    nvs_handle_t h;
+    s_learned_count = 0;
+    if (nvs_open(WORD_NVS_NAMESPACE, NVS_READONLY, &h) != ESP_OK) {
+        return;
+    }
+    int32_t val = 0;
+    if (nvs_get_i32(h, WORD_NVS_KEY_LEARNED, &val) == ESP_OK && val >= 0) {
+        s_learned_count = (int)val;
+    }
+    nvs_close(h);
+    word_storage_normalize_learned_count();
+}
+
+static void word_storage_learned_increment(void)
+{
+    int total = word_storage_dict_total();
+    if (total <= 0) {
+        total = 1;
+    }
+    s_learned_count++;
+    if (s_learned_count >= total) {
+        s_learned_count = 0;
+    }
+    word_storage_save_learned_count();
+}
+
+int word_storage_get_learned_count(void)
+{
+    return s_learned_count;
+}
 
 /* ===== filesystem helpers ===== */
 static const char *resolve_csv_path(void)
@@ -320,6 +384,7 @@ void word_storage_init(void)
         word_storage_build_line_index(csv_path);
     }
     s_total_count = s_line_offset_count;
+    word_storage_load_learned_count();
     s_review_count = word_storage_load_review_indices(s_review_indices,
                                                       WORDCARD_MAX_REVIEW_ITEMS);
     s_round_size = 0;
@@ -373,7 +438,10 @@ bool word_storage_learn_current(word_session_state_t *out)
 
 void word_storage_learn_mark_known(void)
 {
-    if (s_learn_cursor < s_round_size) s_learn_cursor++;
+    if (s_learn_cursor < s_round_size) {
+        s_learn_cursor++;
+        word_storage_learned_increment();
+    }
 }
 
 void word_storage_learn_mark_wrong(void)

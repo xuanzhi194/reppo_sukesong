@@ -92,9 +92,9 @@ bool reviewcard_session_start = 0;
 bool led_green_en = 0;
 bool led_red_en = 0;
 int  review_index = 0;
-int  learned_cards_num = 0; //have learned cards num in all cards
-int  total_cards_num = 5000; //all cards number
-int  review_cards_num = 0; // review cards num in all cards
+int  learned_cards_num = 0; //have learned cards num in all cards (NVS)
+int  total_cards_num = 1;   //all cards number (synced from wordbook)
+int  review_cards_num = 0;  // review cards num in all cards (SPIFFS)
 int  cards_index = 0;
 int  round_cards_num = 30;
 //screen_ai variables

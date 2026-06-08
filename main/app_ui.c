@@ -93,6 +93,7 @@ void app_ui_wordcard_process_change(void)
     word_session_state_t st;
     word_storage_learn_signal(marked_wrong, &st);
     review_cards_num = word_storage_get_review_count();
+    learned_cards_num = word_storage_get_learned_count();
     s_last_review_cards_num = review_cards_num;
     wordcard_render(&st);
 }
@@ -114,6 +115,7 @@ void app_ui_init_word_counters(void)
 {
     int word_total = word_storage_get_total_count();
     total_cards_num = (word_total > 0) ? word_total : 1;
+    learned_cards_num = word_storage_get_learned_count();
     review_cards_num = word_storage_get_review_count();
     s_last_review_cards_num = review_cards_num;
 }
