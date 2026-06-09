@@ -79,8 +79,8 @@ void buzzer_beep_confirm(void)
     if (buzzer_muted()) {
         return;
     }
-    buzzer_set_sound(2400, 80);
-    vTaskDelay(pdMS_TO_TICKS(120));
+    buzzer_set_sound(2400, 95);
+    vTaskDelay(pdMS_TO_TICKS(150));
     buzzer_set_sound(2400, 0);
 }
 
@@ -89,8 +89,8 @@ void buzzer_timeout() {
     if (buzzer_muted()) {
         return;
     }
-    uint32_t alarm_freq = 2700; 
-    uint8_t volume = 50;      
+    uint32_t alarm_freq = 2700;
+    uint8_t volume = 35;  /* 降低占空比，减轻 3.3V 纹波对背光/LCD 的影响 */
 
     for (int round = 0; round < 5; round++) {
         for(int i = 0; i < 3; i++) {

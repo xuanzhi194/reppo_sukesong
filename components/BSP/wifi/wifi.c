@@ -10,6 +10,8 @@ static const char *TAG = "NTP_TIME";
 #define WIFI_CONNECT_MAX_ATTEMPTS      3
 #define WIFI_CONNECT_TIMEOUT_MS        15000
 #define WIFI_DISCONNECT_SETTLE_MS      150
+/* 单位 0.25 dBm；64=16dBm。略降发射功率可减轻 WiFi 峰值电流引起的背光变暗 */
+#define WIFI_MAX_TX_POWER_Q4_DBM       64
 
 static bool s_sntp_started = false;
 static int64_t s_last_sntp_retry_us = 0;
@@ -179,6 +181,7 @@ void init_wifi()
     esp_wifi_set_mode(WIFI_MODE_STA);
     esp_wifi_start();
     esp_wifi_set_ps(WIFI_PS_NONE);
+    esp_wifi_set_max_tx_power(WIFI_MAX_TX_POWER_Q4_DBM);
     if (s_wifi_ip_sem == NULL) {
         s_wifi_ip_sem = xSemaphoreCreateBinary();
     }

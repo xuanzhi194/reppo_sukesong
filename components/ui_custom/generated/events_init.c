@@ -1043,8 +1043,16 @@ static void screen_timing_event_handler (lv_event_t *e)
 
         lv_obj_add_flag(guider_ui.screen_timing_img_wificonnect,LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_timing_img_wifidis,LV_OBJ_FLAG_HIDDEN);
-        //---------//
+        break;
+    }
+    case LV_EVENT_SCREEN_LOADED:
+    {
         task_real_time_en = 1;
+        break;
+    }
+    case LV_EVENT_SCREEN_UNLOADED:
+    {
+        task_real_time_en = 0;
         break;
     }
     default:

@@ -11,6 +11,9 @@
 /** 更新 timing 屏 WiFi 图标与电量条（调用前建议已持有 lvgl_mutex） */
 void app_ui_timing_status_update(bool wifi_connected);
 
+/** 更新 timing 屏日期/时间/星期标签（调用前须已持有 lvgl_mutex） */
+void app_ui_timing_labels_update(const char *date_str, const char *time_str, const char *day_str);
+
 /** 主屏 arc / timing 屏 bar 电量定时刷新（LVGL timer 回调） */
 void app_ui_battery_timer_cb(lv_timer_t *timer);
 

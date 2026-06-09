@@ -38,13 +38,14 @@ static void wifi_worker_timing_labels_from_tm(const struct tm *timeinfo)
     if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
         return;
     }
-    if (app_ui_timing_screen_is_alive()) {
-        if (timeinfo->tm_year + 1900 >= 2026) {
-            lv_label_set_text(guider_ui.screen_timing_label_date, date_str);
-            lv_label_set_text(guider_ui.screen_timing_label_realtime, time_str);
-            lv_label_set_text(guider_ui.screen_timing_label_day,
-                              week_days[timeinfo->tm_wday]);
+    if (timeinfo->tm_year + 1900 >= 2026) {
+        int wday = timeinfo->tm_wday;
+        if (wday < 0 || wday > 6) {
+            wday = 0;
         }
+        app_ui_timing_labels_update(date_str, time_str, week_days[wday]);
+    }
+    if (app_ui_timing_screen_is_alive()) {
         app_ui_timing_status_update(true);
     }
     xSemaphoreGive(lvgl_mutex);
@@ -95,12 +96,10 @@ static void wifi_worker_handle_realtime_offline(void)
     if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
         return;
     }
+    if (rtc_err == ESP_OK) {
+        app_ui_timing_labels_update(date_str, time_str, week_days[wday]);
+    }
     if (app_ui_timing_screen_is_alive()) {
-        if (rtc_err == ESP_OK) {
-            lv_label_set_text(guider_ui.screen_timing_label_date, date_str);
-            lv_label_set_text(guider_ui.screen_timing_label_realtime, time_str);
-            lv_label_set_text(guider_ui.screen_timing_label_day, week_days[wday]);
-        }
         app_ui_timing_status_update(false);
     }
     xSemaphoreGive(lvgl_mutex);

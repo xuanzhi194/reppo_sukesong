@@ -904,6 +904,7 @@ void lcd_init_full(bool swap_color_bytes, bool dc_inverted, bool bgr_order)
             .pin_bit_mask = 1ULL << LCD_PIN_BLK,
         };
         ESP_ERROR_CHECK(gpio_config(&bk_io));
+        gpio_set_drive_capability(LCD_PIN_BLK, GPIO_DRIVE_CAP_3);
         s_blk_gpio_done = true;
     }
     gpio_set_level(LCD_PIN_BLK, 1);

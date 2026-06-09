@@ -10,6 +10,7 @@
 #include "wifi.h"
 #include "word_storage.h"
 #include "driver/i2c.h"
+#include <string.h>
 
 static int s_last_review_cards_num = 0;
 
@@ -22,6 +23,15 @@ static inline bool timing_screen_is_alive(void)
     return guider_ui.screen_timing != NULL
         && lv_obj_is_valid(guider_ui.screen_timing)
         && lv_scr_act() == guider_ui.screen_timing;
+}
+
+static bool timing_label_is_ready(lv_obj_t *label)
+{
+    return label != NULL
+        && lv_obj_is_valid(label)
+        && guider_ui.screen_timing != NULL
+        && lv_obj_is_valid(guider_ui.screen_timing)
+        && lv_obj_get_parent(label) == guider_ui.screen_timing;
 }
 
 static inline bool wordcard_screen_is_alive(void)
@@ -127,7 +137,36 @@ bool app_ui_wificfg_screen_is_alive(void)
 
 bool app_ui_timing_screen_is_alive(void)
 {
-    return timing_screen_is_alive();
+    if (!timing_screen_is_alive()) {
+        return false;
+    }
+    return timing_label_is_ready(guider_ui.screen_timing_label_date)
+        && timing_label_is_ready(guider_ui.screen_timing_label_realtime)
+        && timing_label_is_ready(guider_ui.screen_timing_label_day);
+}
+
+void app_ui_timing_labels_update(const char *date_str, const char *time_str, const char *day_str)
+{
+    if (!app_ui_timing_screen_is_alive()) {
+        return;
+    }
+    if (date_str == NULL || time_str == NULL || day_str == NULL) {
+        return;
+    }
+
+    static char s_date[32];
+    static char s_time[16];
+    static char s_day[16];
+    strncpy(s_date, date_str, sizeof(s_date) - 1);
+    s_date[sizeof(s_date) - 1] = '\0';
+    strncpy(s_time, time_str, sizeof(s_time) - 1);
+    s_time[sizeof(s_time) - 1] = '\0';
+    strncpy(s_day, day_str, sizeof(s_day) - 1);
+    s_day[sizeof(s_day) - 1] = '\0';
+
+    lv_label_set_text_static(guider_ui.screen_timing_label_date, s_date);
+    lv_label_set_text_static(guider_ui.screen_timing_label_realtime, s_time);
+    lv_label_set_text_static(guider_ui.screen_timing_label_day, s_day);
 }
 
 void app_ui_timing_status_update(bool wifi_connected)
