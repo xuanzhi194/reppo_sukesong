@@ -84,6 +84,9 @@ bool wifi_success = 0;
 char *wifi_ssid = NULL;
 //todosel variable
 bool focus_en = 0;
+bool focus_session_active = 0;
+bool focus_complete_pending = 0;
+int  focus_session_minutes = 0;
 //wordcard variables
 bool wordcard_change = 0;
 bool reviewcard_change = 0;
@@ -290,6 +293,9 @@ static void countdown_cb(lv_timer_t *t){
         lv_obj_add_flag(guider_ui.screen_pomodoro_btn_start,LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_pomodoro_btn_reset,LV_OBJ_FLAG_HIDDEN);
         countdown_timeout_pending = 1;
+        if (focus_session_active && pomodoro_countdown) {
+            focus_complete_pending = 1;
+        }
         countdown_start_label = 0;
         countdown_process_label = 0;
         return;
@@ -303,6 +309,9 @@ static void countdown_cb(lv_timer_t *t){
 
 void countdown_start(int16_t minutes){
     timer_all_seconds = minutes * 60;
+    if (focus_session_active) {
+        focus_session_minutes = minutes;
+    }
     pomodoro_timer = lv_timer_create(countdown_cb,1000,NULL);
 }
 //-----------------------pomodoro stopwatch------------------------//
@@ -395,6 +404,19 @@ void volume_on_enabled(void)
 void volume_on_disabled(void)
 {
     volume_disabled_impl();
+}
+
+/* ESP32 固件由 main/focus_bridge.c 提供强符号实现 */
+__attribute__((weak)) void focus_session_cancel_impl(void)
+{
+    focus_session_active = 0;
+    focus_session_minutes = 0;
+    focus_complete_pending = 0;
+}
+
+void focus_session_cancel(void)
+{
+    focus_session_cancel_impl();
 }
 
 __attribute__((weak)) void wificfg_on_list_item_clicked(lv_obj_t *list_item)

@@ -23,6 +23,7 @@
 #include "wifi_cred_storage.h"
 #include "wificfg_bridge.h"
 #include "volume_bridge.h"
+#include "focus_bridge.h"
 #include "word_storage.h"
 #include "ws2812b.h"
 #include "driver/i2c.h"
@@ -57,6 +58,7 @@ void app_init_storage_and_data(void)
     /* 链入 wificfg 强符号桥接，使列表点击可从 NVS 回填密码 */
     wificfg_bridge_init();
     volume_bridge_init();
+    focus_time_init();
 
     ai_daily_result_load();
     ai_weekly_result_load();

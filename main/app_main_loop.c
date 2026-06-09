@@ -9,6 +9,7 @@
 #include "ai_chat_secrets.h"
 #include "ai_demo_task.h"
 #include "custom.h"
+#include "focus_bridge.h"
 #include "esp_random.h"
 #include "todo_storage.h"
 #include "wifi.h"
@@ -215,6 +216,7 @@ void app_main_loop_once(void)
     main_loop_handle_wordcard_ui();
     main_loop_handle_answer_book();
     main_loop_handle_countdown_timeout();
+    focus_bridge_on_countdown_complete();
     main_loop_handle_ai_requests();
     main_loop_handle_ai_results();
     main_loop_handle_ai_timeout();

@@ -921,6 +921,7 @@ static void screen_todosel_btn_focus_event_handler (lv_event_t *e)
         current_task_name[sizeof(current_task_name) - 1] = '\0'; // make sure string \0 ending
         todo_back_label = 1;
         focus_en = 1;
+        focus_session_active = 1;
         current_task_index = (page_cur-1) * 4 + todo_index;
         lv_obj_clear_flag(guider_ui.screen_todolist, LV_OBJ_FLAG_CLICKABLE);
         break;
@@ -1408,6 +1409,7 @@ static void screen_pomodoro_btn_back_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
+        focus_session_cancel();
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_pomodoro_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         if(pomodoro_timer != NULL) {
             lv_timer_del(pomodoro_timer);
@@ -1478,6 +1480,7 @@ static void screen_pomodoro_btn_reset_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         if(pomodoro_countdown == 1) {
+            focus_session_cancel();
             if(pomodoro_timer != NULL) {
                 lv_timer_del(pomodoro_timer);
                 pomodoro_timer = NULL;
@@ -1561,10 +1564,6 @@ static void screen_pomodoro_btn_complete_event_handler (lv_event_t *e)
         lv_obj_clear_flag(guider_ui.screen_pomodoro_btn_reset,LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_state(guider_ui.screen_pomodoro_btn_start, LV_STATE_FOCUSED);
 
-        //task done
-        ui_todo_list.items[current_task_index].done = 1;
-        done_sum += 1; //add 1
-        todo_sum -= 1;
         lv_label_set_text(guider_ui.screen_pomodoro_label_pomodoro,"Pomodoro Timer");
 
         break;
