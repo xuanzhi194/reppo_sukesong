@@ -14,6 +14,28 @@
 
 static int s_last_review_cards_num = 0;
 
+#define BAT_ARC_COLOR_NORMAL   0x0a2a4c
+#define BAT_ARC_COLOR_CHARGING 0x8fd68f
+
+static void app_ui_main_battery_arc_update(lv_obj_t *arc, const battery_info_t *info)
+{
+    if (arc == NULL || !lv_obj_is_valid(arc) || info == NULL) {
+        return;
+    }
+
+    int pct = info->display_percent;
+    if (pct < 0) {
+        pct = 0;
+    }
+    if (pct > 100) {
+        pct = 100;
+    }
+    lv_arc_set_value(arc, pct);
+
+    lv_color_t color = lv_color_hex(info->plugged ? BAT_ARC_COLOR_CHARGING : BAT_ARC_COLOR_NORMAL);
+    lv_obj_set_style_arc_color(arc, color, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+}
+
 /* -------------------------------------------------------------------------- */
 /* 屏存活检查                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -190,9 +212,12 @@ void app_ui_timing_status_update(bool wifi_connected)
         }
     }
 
+    battery_info_t bat_info;
+    battery_monitor_get(&bat_info);
+
     if (bar != NULL && lv_obj_is_valid(bar) &&
         lv_obj_get_parent(bar) == guider_ui.screen_timing) {
-        int bat = get_battery_percentage();
+        int bat = bat_info.display_percent;
         if (bat < 0) {
             bat = 0;
         }
@@ -200,6 +225,17 @@ void app_ui_timing_status_update(bool wifi_connected)
             bat = 100;
         }
         lv_bar_set_value(bar, bat, LV_ANIM_OFF);
+    }
+
+    /* 闪电图标：充电中或已充满（仍插线）时显示 */
+    lv_obj_t *baticon = guider_ui.screen_timing_img_baticon;
+    if (baticon != NULL && lv_obj_is_valid(baticon) &&
+        lv_obj_get_parent(baticon) == guider_ui.screen_timing) {
+        if (bat_info.plugged) {
+            lv_obj_clear_flag(baticon, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(baticon, LV_OBJ_FLAG_HIDDEN);
+        }
     }
 }
 
@@ -213,10 +249,9 @@ void app_ui_battery_timer_cb(lv_timer_t *timer)
     if (guider_ui.screen_main != NULL &&
         lv_obj_is_valid(guider_ui.screen_main) &&
         act_scr == guider_ui.screen_main) {
-        lv_obj_t *arc = guider_ui.screen_main_arc_battery;
-        if (arc != NULL && lv_obj_is_valid(arc)) {
-            lv_arc_set_value(arc, get_battery_percentage());
-        }
+        battery_info_t bat_info;
+        battery_monitor_get(&bat_info);
+        app_ui_main_battery_arc_update(guider_ui.screen_main_arc_battery, &bat_info);
     } else if (guider_ui.screen_timing != NULL &&
                lv_obj_is_valid(guider_ui.screen_timing) &&
                act_scr == guider_ui.screen_timing) {

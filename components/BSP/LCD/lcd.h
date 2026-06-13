@@ -44,9 +44,17 @@
 #define TFT_X_OFFSET   0
 #define TFT_Y_OFFSET   35
 
-/* 8080 像素时钟 (Hz). 模组稳定后可试 20M; 16M 为性能/稳定性折中 */
+/* 8080 像素时钟 (Hz). 模组稳定后可试 20M; 16M 为性能/稳定性折中.
+ * 12M: 降低总线翻转瞬时电流/地弹, 缓解大面积重绘时背光被电源纹波带闪 */
 #ifndef LCD_PIXEL_CLOCK_HZ
-#define LCD_PIXEL_CLOCK_HZ   (16 * 1000 * 1000)
+#define LCD_PIXEL_CLOCK_HZ   (12 * 1000 * 1000)
+#endif
+
+/* 8080 数据/控制脚驱动强度: 0~3, 默认 2(20mA).
+ * 降到 1(10mA) 可明显减小同步翻转的电流尖峰与地弹(12MHz 下时序裕量充足);
+ * 若出现花屏/条纹请改回 GPIO_DRIVE_CAP_2 */
+#ifndef LCD_BUS_DRIVE_CAP
+#define LCD_BUS_DRIVE_CAP    GPIO_DRIVE_CAP_1
 #endif
 
 /* 与 lv_port MY_DISP_BUF_LINES 一致, 用于 I80 max_transfer_bytes */

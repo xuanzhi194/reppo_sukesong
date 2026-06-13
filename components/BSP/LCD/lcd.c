@@ -952,6 +952,15 @@ void lcd_init_full(bool swap_color_bytes, bool dc_inverted, bool bgr_order)
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_i80(s_i80_bus, &io_cfg, &s_io_handle));
 
+    /* 降低 8080 总线驱动强度：8 根数据线 + WR/DC/CS 同步翻转的电流尖峰
+     * 是大面积重绘时背光闪动的主要软件侧诱因（与蜂鸣/WiFi 闪屏同源） */
+    for (int i = 0; i < 8; i++) {
+        gpio_set_drive_capability(bus_cfg.data_gpio_nums[i], LCD_BUS_DRIVE_CAP);
+    }
+    gpio_set_drive_capability(LCD_PIN_WR, LCD_BUS_DRIVE_CAP);
+    gpio_set_drive_capability(LCD_PIN_DC, LCD_BUS_DRIVE_CAP);
+    gpio_set_drive_capability(LCD_PIN_CS, LCD_BUS_DRIVE_CAP);
+
     esp_lcd_panel_dev_config_t panel_cfg = {
         .reset_gpio_num = LCD_PIN_RST,
         .rgb_ele_order  = bgr_order ? LCD_RGB_ELEMENT_ORDER_BGR : LCD_RGB_ELEMENT_ORDER_RGB,

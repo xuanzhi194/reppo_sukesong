@@ -27,15 +27,14 @@ static void timeout_alarm_light_task(void *param)
 static void buzzer_timeout_task(void *param)
 {
     (void)param;
-
-    /* 蜂鸣与 WS2812 不同时跑，避免 3.3V 瞬时电流叠加导致背光闪/变暗 */
-    buzzer_timeout();
+    TickType_t light_end = xTaskGetTickCount() + pdMS_TO_TICKS(POMODORO_ALARM_LIGHT_MS);
 
     s_timeout_alarm_light_running = true;
     xTaskCreatePinnedToCore(timeout_alarm_light_task, "timeout_alarm_light_task",
                             2048, NULL, 7, NULL, 1);
 
-    TickType_t light_end = xTaskGetTickCount() + pdMS_TO_TICKS(POMODORO_ALARM_LIGHT_MS);
+    /* 蜂鸣与流水灯同时进行；静音时蜂鸣可立即返回，流水灯仍保持 POMODORO_ALARM_LIGHT_MS */
+    buzzer_timeout();
     while (xTaskGetTickCount() < light_end) {
         vTaskDelay(pdMS_TO_TICKS(20));
     }
