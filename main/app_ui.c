@@ -16,6 +16,8 @@ static int s_last_review_cards_num = 0;
 
 #define BAT_ARC_COLOR_NORMAL   0x0a2a4c
 #define BAT_ARC_COLOR_CHARGING 0x8fd68f
+#define BAT_ARC_COLOR_LOW      0xf0a8a8
+#define BAT_ARC_LOW_PERCENT    20
 
 static void app_ui_main_battery_arc_update(lv_obj_t *arc, const battery_info_t *info)
 {
@@ -32,8 +34,13 @@ static void app_ui_main_battery_arc_update(lv_obj_t *arc, const battery_info_t *
     }
     lv_arc_set_value(arc, pct);
 
-    lv_color_t color = lv_color_hex(info->plugged ? BAT_ARC_COLOR_CHARGING : BAT_ARC_COLOR_NORMAL);
-    lv_obj_set_style_arc_color(arc, color, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    uint32_t color_hex = BAT_ARC_COLOR_NORMAL;
+    if (info->plugged) {
+        color_hex = BAT_ARC_COLOR_CHARGING;
+    } else if (pct < BAT_ARC_LOW_PERCENT) {
+        color_hex = BAT_ARC_COLOR_LOW;
+    }
+    lv_obj_set_style_arc_color(arc, lv_color_hex(color_hex), LV_PART_INDICATOR | LV_STATE_DEFAULT);
 }
 
 /* -------------------------------------------------------------------------- */

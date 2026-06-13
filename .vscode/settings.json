@@ -1,5 +1,14 @@
 {
-  "C_Cpp.intelliSenseEngine": "default",
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "clangd.enable": true,
+  "clangd.path": "/usr/bin/clangd",
+  "clangd.checkUpdates": false,
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=**/xtensa-esp-elf-gcc",
+    "--compile-commands-dir=${workspaceFolder}/build"
+  ],
+  "clangd.onConfigChanged": "restart",
   "idf.espIdfPathWin": "E:/esp32idf/Espressif/frameworks/esp-idf-v5.3.1/",
   "idf.pythonInstallPath": "E:\\esp32idf\\Espressif\\tools\\idf-python\\3.11.2\\python.exe",
   "idf.openOcdConfigs": [
@@ -10,14 +19,10 @@
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32s3"
   },
-  "clangd.path": "E:\\esp32idf\\Espressif\\tools\\esp-clang\\16.0.1-fe4f10a809\\esp-clang\\bin\\clangd.exe",
-  "clangd.arguments": [
-    "--background-index",
-    "--query-driver=E:\\esp32idf\\Espressif\\tools\\xtensa-esp-elf\\esp-13.2.0_20240530\\xtensa-esp-elf\\bin\\xtensa-esp32-elf-gcc.exe",
-    "--compile-commands-dir=${workspaceFolder}\\build"
-  ],
   "idf.flashType": "UART",
   "files.associations": {
+    "*.c": "c",
+    "*.h": "c",
     "gpio.h": "c",
     "bit": "c",
     "compare": "c",
@@ -31,5 +36,5 @@
   },
   "idf.espIdfPath": "/Users/sean/.espressif/v5.3.5/esp-idf",
   "idf.currentSetup": "/Users/sean/.espressif/v5.3.5/esp-idf",
-  "idf.port": "/dev/tty.usbserial-1120"
+  "idf.port": "/dev/tty.usbserial-120"
 }

@@ -1,2 +1,18 @@
 CompileFlags:
-    Remove: [-f*, -m*]
+  CompilationDatabase: build
+  Remove: [-f*, -m*]
+  Add:
+    - -Wno-unknown-warning-option
+    - -Wno-format
+
+Diagnostics:
+  # ESP32 用 xtensa-gcc 编译，Mac 上的 clangd 无法完整理解，会产生大量误报。
+  # 以 idf.py build 的编译结果为准；clangd 主要用于跳转和补全。
+  Suppress: '*'
+  UnusedIncludes: None
+  MissingIncludes: None
+  ClangTidy:
+    Remove: '*'
+
+Index:
+  Background: Build

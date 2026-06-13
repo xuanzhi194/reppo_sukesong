@@ -2188,37 +2188,7 @@ static void screen_ai_event_handler (lv_event_t *e)
         screen_ai_buttion_add();
         is_week = 0;
         screen_ai_load_nvs_data(is_week);
-        int focus_level = 1;
-        int remain_focus_time = 0;
-        int max_level_time = 0;
-        for(int i = 0; i < 10; i++) {
-            if(all_focus_time < focus_level_hour[i]*60) {
-                focus_level = i + 1;
-                max_focus_time = focus_level_hour[i]*60;
-                if(i == 0) {
-                    remain_focus_time = all_focus_time;
-                    max_level_time = focus_level_hour[i]*60;
-                } else {
-                    remain_focus_time = all_focus_time - focus_level_hour[i-1]*60;
-                    max_level_time = focus_level_hour[i]*60 - focus_level_hour[i-1]*60;
-                }
-                break;
-            }
-        }
-
-        int focus_percent = remain_focus_time / max_level_time;
-        lv_bar_set_value(guider_ui.screen_ai_bar_focus,focus_percent,LV_ANIM_ON);
-        lv_label_set_text_fmt(guider_ui.screen_ai_label_duration,"%d/%d",all_focus_time,max_focus_time);
-        lv_obj_clear_flag(guider_ui.screen_ai_img_v1,LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_ai_img_v2,LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_ai_img_v3,LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_ai_img_v4,LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_ai_img_v5,LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_ai_img_v6,LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_ai_img_v7,LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_ai_img_v8,LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_ai_img_v9,LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_ai_img_v10,LV_OBJ_FLAG_HIDDEN);
+        screen_ai_update_focus_level();
         break;
     }
     default:

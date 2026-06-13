@@ -154,6 +154,7 @@ void volume_on_enabled(void);
 void volume_on_disabled(void);
 void wificfg_on_list_item_clicked(lv_obj_t *list_item);
 extern void screen_ai_load_nvs_data(bool day_or_week);//0 -> day 1->week
+void screen_ai_update_focus_level(void);
 //screens buttion add
 extern lv_group_t *g;
 void group_focus_obj(lv_obj_t *obj);

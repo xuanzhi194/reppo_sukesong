@@ -501,6 +501,84 @@ void screen_ai_load_nvs_data(bool day_or_week)
     lv_label_set_text(guider_ui.screen_ai_label_quote, r->quote);
 }
 
+#define FOCUS_LEVEL_COUNT 10
+
+void screen_ai_update_focus_level(void)
+{
+    lv_obj_t *level_imgs[FOCUS_LEVEL_COUNT];
+
+    level_imgs[0] = guider_ui.screen_ai_img_v1;
+    level_imgs[1] = guider_ui.screen_ai_img_v2;
+    level_imgs[2] = guider_ui.screen_ai_img_v3;
+    level_imgs[3] = guider_ui.screen_ai_img_v4;
+    level_imgs[4] = guider_ui.screen_ai_img_v5;
+    level_imgs[5] = guider_ui.screen_ai_img_v6;
+    level_imgs[6] = guider_ui.screen_ai_img_v7;
+    level_imgs[7] = guider_ui.screen_ai_img_v8;
+    level_imgs[8] = guider_ui.screen_ai_img_v9;
+    level_imgs[9] = guider_ui.screen_ai_img_v10;
+
+    int focus_level = 1;
+    int remain_focus_time = all_focus_time;
+    int max_level_time = focus_level_hour[0] * 60;
+    bool maxed = true;
+
+    for (int i = 0; i < FOCUS_LEVEL_COUNT; i++) {
+        int threshold_min = focus_level_hour[i] * 60;
+        if (all_focus_time < threshold_min) {
+            focus_level = i + 1;
+            max_focus_time = threshold_min;
+            maxed = false;
+            if (i == 0) {
+                remain_focus_time = all_focus_time;
+                max_level_time = threshold_min;
+            } else {
+                int prev_min = focus_level_hour[i - 1] * 60;
+                remain_focus_time = all_focus_time - prev_min;
+                max_level_time = threshold_min - prev_min;
+            }
+            break;
+        }
+    }
+
+    if (maxed) {
+        focus_level = FOCUS_LEVEL_COUNT;
+        max_focus_time = focus_level_hour[FOCUS_LEVEL_COUNT - 1] * 60;
+        int prev_min = focus_level_hour[FOCUS_LEVEL_COUNT - 2] * 60;
+        remain_focus_time = all_focus_time - prev_min;
+        max_level_time = max_focus_time - prev_min;
+    }
+
+    int focus_percent = 100;
+    if (max_level_time > 0 && focus_level < FOCUS_LEVEL_COUNT) {
+        focus_percent = remain_focus_time * 100 / max_level_time;
+        if (focus_percent > 100) {
+            focus_percent = 100;
+        }
+    }
+
+    if (guider_ui.screen_ai_bar_focus != NULL &&
+        lv_obj_is_valid(guider_ui.screen_ai_bar_focus)) {
+        lv_bar_set_value(guider_ui.screen_ai_bar_focus, focus_percent, LV_ANIM_ON);
+    }
+    if (guider_ui.screen_ai_label_duration != NULL &&
+        lv_obj_is_valid(guider_ui.screen_ai_label_duration)) {
+        lv_label_set_text_fmt(guider_ui.screen_ai_label_duration,
+                              "%d/%d", all_focus_time, max_focus_time);
+    }
+
+    for (int i = 0; i < FOCUS_LEVEL_COUNT; i++) {
+        if (level_imgs[i] == NULL || !lv_obj_is_valid(level_imgs[i])) {
+            continue;
+        }
+        if (i + 1 == focus_level) {
+            lv_obj_clear_flag(level_imgs[i], LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(level_imgs[i], LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+}
+
 int donelist_load_from_csv(void)
 {
     FILE *f = fopen("/spiffs/task_done.csv", "r");
