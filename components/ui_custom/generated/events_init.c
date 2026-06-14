@@ -410,6 +410,10 @@ static void screen_todolist_event_handler (lv_event_t *e)
             page_num++;
         }
 
+        if (!todosel_back) {
+            page_cur = 1;
+        }
+
         //if this page task < 4 , the empty one btn can not be clicked
         if(total < page_cur * 4) {
             int remain_num = 4 - (total % 4);
@@ -452,8 +456,6 @@ static void screen_todolist_event_handler (lv_event_t *e)
             } else if(todo_index == 3) {
                 lv_group_focus_obj(guider_ui.screen_todolist_btn_todo4);
             }
-        } else {
-            page_cur = 1;
         }
         //show for the first time when loading todolist ui
         lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);
