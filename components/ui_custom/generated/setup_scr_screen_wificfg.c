@@ -123,7 +123,7 @@ void setup_scr_screen_wificfg(lv_ui *ui)
     lv_img_set_src(ui->screen_wificfg_img_wifiicon, &_AAA_wifi_icons_alpha_110x110);
     lv_img_set_pivot(ui->screen_wificfg_img_wifiicon, 50,50);
     lv_img_set_angle(ui->screen_wificfg_img_wifiicon, 0);
-    lv_obj_set_pos(ui->screen_wificfg_img_wifiicon, 29, 43);
+    lv_obj_set_pos(ui->screen_wificfg_img_wifiicon, 28, 43);
     lv_obj_set_size(ui->screen_wificfg_img_wifiicon, 110, 110);
 
     //Write style for screen_wificfg_img_wifiicon, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -136,7 +136,7 @@ void setup_scr_screen_wificfg(lv_ui *ui)
     ui->screen_wificfg_label_status2 = lv_label_create(ui->screen_wificfg);
     lv_label_set_text(ui->screen_wificfg_label_status2, "Disconnected");
     lv_label_set_long_mode(ui->screen_wificfg_label_status2, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_wificfg_label_status2, 39, 139);
+    lv_obj_set_pos(ui->screen_wificfg_label_status2, 38, 139);
     lv_obj_set_size(ui->screen_wificfg_label_status2, 91, 12);
 
     //Write style for screen_wificfg_label_status2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -516,7 +516,7 @@ void setup_scr_screen_wificfg(lv_ui *ui)
 
     //Write codes screen_wificfg_spinner_connect
     ui->screen_wificfg_spinner_connect = lv_spinner_create(ui->screen_wificfg, 1000, 60);
-    lv_obj_set_pos(ui->screen_wificfg_spinner_connect, 65, 114);
+    lv_obj_set_pos(ui->screen_wificfg_spinner_connect, 63, 114);
     lv_obj_set_size(ui->screen_wificfg_spinner_connect, 40, 40);
     lv_obj_add_flag(ui->screen_wificfg_spinner_connect, LV_OBJ_FLAG_HIDDEN);
 

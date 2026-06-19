@@ -88,8 +88,8 @@ void setup_scr_screen_timing(lv_ui *ui)
     ui->screen_timing_label_day = lv_label_create(ui->screen_timing);
     lv_label_set_text(ui->screen_timing_label_day, "Saturday");
     lv_label_set_long_mode(ui->screen_timing_label_day, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_timing_label_day, 208, 72);
-    lv_obj_set_size(ui->screen_timing_label_day, 89, 19);
+    lv_obj_set_pos(ui->screen_timing_label_day, 198, 72);
+    lv_obj_set_size(ui->screen_timing_label_day, 97, 19);
 
     //Write style for screen_timing_label_day, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_timing_label_day, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
