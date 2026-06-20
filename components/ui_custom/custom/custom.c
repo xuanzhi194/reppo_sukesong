@@ -49,12 +49,12 @@ char current_task_name[128] = {0};
 bool volume_en = 0;
 bool ble_success = 0;
 bool ble_enabled = 0;
-bool ble_toggle_on_req = 0;
-bool ble_toggle_off_req = 0;
-bool ble_disconnect_req = 0;
+volatile bool ble_toggle_on_req = 0;
+volatile bool ble_toggle_off_req = 0;
+volatile bool ble_disconnect_req = 0;
 bool ble_flow_led_en = 0;
-bool ble_ui_refresh_req = 0;
-bool todo_ble_ui_refresh_label = 0;
+volatile bool ble_ui_refresh_req = 0;
+volatile bool todo_ble_ui_refresh_label = 0;
 //timer variables
 int16_t timer_all_num = 25; //minutes
 uint32_t timer_all_seconds = 0;
@@ -68,20 +68,21 @@ bool stopwatch_process_label = 0;
 bool countdown_timeout_pending = 0;
 int  current_task_index = 0;
 //timing variablesreview_card
-bool task_real_time_en = 0;
+volatile bool task_real_time_en = 0;
 bool timing_back_en = 0;
 int16_t timing_year = 0;
 int16_t timing_month = 0;
 int16_t timing_day = 0;
 int16_t timing_weekday = 0;
 //wificfg variable
-bool keyboard_start_en = 0;
-bool wifi_scan_en = 0;
-bool wifi_disconnect_en = 0;
-bool wifi_connect_en = 0;
-bool wifi_load_en = 0;
-bool wifi_success = 0;
+volatile bool keyboard_start_en = 0;
+volatile bool wifi_scan_en = 0;
+volatile bool wifi_disconnect_en = 0;
+volatile bool wifi_connect_en = 0;
+volatile bool wifi_load_en = 0;
+volatile bool wifi_success = 0;
 char *wifi_ssid = NULL;
+char wifi_connect_ssid[33] = {0};
 //todosel variable
 bool focus_en = 0;
 bool focus_session_active = 0;
@@ -101,8 +102,8 @@ int  review_cards_num = 0;  // review cards num in all cards (SPIFFS)
 int  cards_index = 0;
 int  round_cards_num = 30;
 //screen_ai variables
-bool ai_day_start = 0;
-bool ai_week_start = 0;
+volatile bool ai_day_start = 0;
+volatile bool ai_week_start = 0;
 done_list_t ui_done_list      = {0};
 bool donelist_load_label      = 0;
 uint8_t donelist_page_cur     = 0;
@@ -274,10 +275,33 @@ void my_kb_event_cb(lv_event_t * e) {
 }
 //-----------------------pomodoro timer------------------------//
 //-------------------------------------------------------------//
+static bool pomodoro_screen_is_alive(void)
+{
+    return guider_ui.screen_pomodoro != NULL
+        && lv_obj_is_valid(guider_ui.screen_pomodoro)
+        && lv_scr_act() == guider_ui.screen_pomodoro;
+}
+
+void pomodoro_timer_stop(void)
+{
+    if (pomodoro_timer != NULL) {
+        lv_timer_del(pomodoro_timer);
+        pomodoro_timer = NULL;
+    }
+}
+
 static void countdown_cb(lv_timer_t *t){
+    if (!pomodoro_screen_is_alive()) {
+        pomodoro_timer_stop();
+        return;
+    }
     if(timer_all_seconds == 0){
         lv_timer_del(t);
         pomodoro_timer = NULL;
+        if (!pomodoro_screen_is_alive()) {
+            countdown_timeout_pending = 1;
+            return;
+        }
         lv_label_set_text(guider_ui.screen_pomodoro_label_timer,"00:00:00");
         lv_obj_clear_state(guider_ui.screen_pomodoro_btn_complete, LV_STATE_DISABLED);
         lv_obj_clear_state(guider_ui.screen_pomodoro_btn_continue, LV_STATE_DISABLED);
@@ -301,6 +325,9 @@ static void countdown_cb(lv_timer_t *t){
         return;
     }
     timer_all_seconds -= 1;
+    if (!pomodoro_screen_is_alive()) {
+        return;
+    }
     int hours = timer_all_seconds / 3600;
     int minutes = (timer_all_seconds % 3600) / 60;
     int seconds = timer_all_seconds % 60;
@@ -308,6 +335,7 @@ static void countdown_cb(lv_timer_t *t){
 }
 
 void countdown_start(int16_t minutes){
+    pomodoro_timer_stop();
     timer_all_seconds = minutes * 60;
     if (focus_session_active) {
         focus_session_minutes = minutes;
@@ -317,6 +345,11 @@ void countdown_start(int16_t minutes){
 //-----------------------pomodoro stopwatch------------------------//
 //-----------------------------------------------------------------//
 static void stopwatch_cb(lv_timer_t *t){
+    (void)t;
+    if (!pomodoro_screen_is_alive()) {
+        pomodoro_timer_stop();
+        return;
+    }
     timer_all_seconds += 1;
     int hours = timer_all_seconds / 3600;
     int minutes = (timer_all_seconds % 3600) / 60;
@@ -325,6 +358,7 @@ static void stopwatch_cb(lv_timer_t *t){
 }
 
 void stopwatch_start(){
+    pomodoro_timer_stop();
     timer_all_seconds = 0;
     pomodoro_timer = lv_timer_create(stopwatch_cb,1000,NULL);
 }
@@ -478,27 +512,59 @@ void wifi_disconnect_show(){
 
 /* 进入 screen_ai 时显示 NVS 已存储的 AI 结果
  * 优先显示每日结果，若无有效数据则尝试每周结果 */
-void screen_ai_load_nvs_data(bool day_or_week)
+void screen_ai_apply_result(const ui_ai_result_t *r)
 {
-    ui_ai_result_t *r = NULL;
-    if (day_or_week == 0)
-        r = &g_ui_daily_result;
-    else if (day_or_week == 1)
-        r = &g_ui_weekly_result;
-    else
-        return;  /* NVS 中尚无数据，保持默认占位内容 */
+    static char s_cat1[32];
+    static char s_cat2[32];
+    static char s_cat3[32];
+    static char s_summary[256];
+    static char s_quote[128];
+    static char s_pct1[8];
+    static char s_pct2[8];
+    static char s_pct3[8];
 
-    lv_label_set_text(guider_ui.screen_ai_label_cat1, r->cat1_name);
-    lv_label_set_text(guider_ui.screen_ai_label_cat2, r->cat2_name);
-    lv_label_set_text(guider_ui.screen_ai_label_cat3, r->cat3_name);
-    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat1_num, "%d%%", r->cat1_percent);
-    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat2_num, "%d%%", r->cat2_percent);
-    lv_label_set_text_fmt(guider_ui.screen_ai_label_cat3_num, "%d%%", r->cat3_percent);
+    if (r == NULL || !r->valid) {
+        return;
+    }
+
+    strncpy(s_cat1, r->cat1_name, sizeof(s_cat1) - 1);
+    s_cat1[sizeof(s_cat1) - 1] = '\0';
+    strncpy(s_cat2, r->cat2_name, sizeof(s_cat2) - 1);
+    s_cat2[sizeof(s_cat2) - 1] = '\0';
+    strncpy(s_cat3, r->cat3_name, sizeof(s_cat3) - 1);
+    s_cat3[sizeof(s_cat3) - 1] = '\0';
+    strncpy(s_summary, r->summary, sizeof(s_summary) - 1);
+    s_summary[sizeof(s_summary) - 1] = '\0';
+    strncpy(s_quote, r->quote, sizeof(s_quote) - 1);
+    s_quote[sizeof(s_quote) - 1] = '\0';
+    snprintf(s_pct1, sizeof(s_pct1), "%d%%", r->cat1_percent);
+    snprintf(s_pct2, sizeof(s_pct2), "%d%%", r->cat2_percent);
+    snprintf(s_pct3, sizeof(s_pct3), "%d%%", r->cat3_percent);
+
+    lv_label_set_text_static(guider_ui.screen_ai_label_cat1, s_cat1);
+    lv_label_set_text_static(guider_ui.screen_ai_label_cat2, s_cat2);
+    lv_label_set_text_static(guider_ui.screen_ai_label_cat3, s_cat3);
+    lv_label_set_text_static(guider_ui.screen_ai_label_cat1_num, s_pct1);
+    lv_label_set_text_static(guider_ui.screen_ai_label_cat2_num, s_pct2);
+    lv_label_set_text_static(guider_ui.screen_ai_label_cat3_num, s_pct3);
     lv_arc_set_value(guider_ui.screen_ai_arc_1, r->cat1_percent);
     lv_arc_set_value(guider_ui.screen_ai_arc_2, r->cat2_percent);
     lv_arc_set_value(guider_ui.screen_ai_arc_3, r->cat3_percent);
-    lv_label_set_text(guider_ui.screen_ai_label_sum,   r->summary);
-    lv_label_set_text(guider_ui.screen_ai_label_quote, r->quote);
+    lv_label_set_text_static(guider_ui.screen_ai_label_sum, s_summary);
+    lv_label_set_text_static(guider_ui.screen_ai_label_quote, s_quote);
+}
+
+void screen_ai_load_nvs_data(bool day_or_week)
+{
+    ui_ai_result_t *r = NULL;
+    if (day_or_week == 0) {
+        r = &g_ui_daily_result;
+    } else if (day_or_week == 1) {
+        r = &g_ui_weekly_result;
+    } else {
+        return;
+    }
+    screen_ai_apply_result(r);
 }
 
 #define FOCUS_LEVEL_COUNT 10

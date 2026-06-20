@@ -1,0 +1,3 @@
+# LVGL: use PSRAM-backed malloc instead of fixed 32KB internal pool
+CONFIG_LV_MEM_CUSTOM=y
+CONFIG_LV_MEM_CUSTOM_INCLUDE="stdlib.h"

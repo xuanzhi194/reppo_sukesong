@@ -36,4 +36,8 @@ void wifi_scan_top_5(void);
 void wifi_connect_to_new_network(const char *ssid, const char *password);
 /** 连接 WiFi 并等待拿到 IP（含自动重试，避免首次 AUTH_EXPIRE 需手动再连） */
 bool wifi_connect_and_wait(const char *ssid, const char *password);
+
+/** STA 断连时回调（由应用层同步 wifi_success / init_ntp 等状态） */
+typedef void (*wifi_disconnect_cb_t)(void);
+void wifi_set_disconnect_callback(wifi_disconnect_cb_t cb);
 #endif

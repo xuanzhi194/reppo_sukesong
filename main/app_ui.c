@@ -123,6 +123,10 @@ static void reviewcard_render(const word_session_state_t *st)
 
 void app_ui_wordcard_process_change(void)
 {
+    if (!wordcard_screen_is_alive()) {
+        wordcard_change = 0;
+        return;
+    }
     if (wordcard_session_start) {
         wordcard_session_start = 0;
         round_cards_num = word_storage_learn_start(WORDCARD_ROUND_SIZE);
@@ -139,6 +143,10 @@ void app_ui_wordcard_process_change(void)
 
 void app_ui_reviewcard_process_change(void)
 {
+    if (!reviewcard_screen_is_alive()) {
+        reviewcard_change = 0;
+        return;
+    }
     if (reviewcard_session_start) {
         reviewcard_session_start = 0;
         word_storage_review_start();

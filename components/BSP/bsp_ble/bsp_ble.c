@@ -7,10 +7,10 @@
 #include <stdbool.h>
 #include <string.h>
 
-extern bool todo_ble_ui_refresh_label;
+extern volatile bool todo_ble_ui_refresh_label;
 extern bool ble_success;
 extern bool ble_enabled;
-extern bool ble_ui_refresh_req;
+extern volatile bool ble_ui_refresh_req;
 
 /* NimBLE */
 #include "nimble/nimble_port.h"
@@ -47,6 +47,7 @@ static bool notify_enabled;
 
 static char json_buffer[JSON_BUFFER_SIZE] EXT_RAM_BSS_ATTR;
 static uint16_t json_len;
+static bool json_assembly_error;
 static char stored_read_json[JSON_BUFFER_SIZE] EXT_RAM_BSS_ATTR = "{\"todo\":[],\"taskDone\":[]}";
 static uint16_t stored_read_len;
 static TaskHandle_t sync_notify_task_handle;
@@ -94,7 +95,7 @@ static int device_write_cb(uint16_t conn_handle,
                          (unsigned)ctxt->offset, (unsigned)remain,
                          (unsigned)stored_read_len);
                 if (ctxt->offset == 0) {
-                    ESP_LOGI(TAG, "READ JSON: %s", stored_read_json);
+                    ESP_LOGI(TAG, "READ JSON sent (%u bytes)", (unsigned)stored_read_len);
                 }
                 return 0;
             }
@@ -111,7 +112,8 @@ static int device_write_cb(uint16_t conn_handle,
     uint8_t data[256];
 
     if (chunk_len == 0 || chunk_len > sizeof(data)) {
-        return 0;
+        ESP_LOGW(TAG, "GATT write rejected: invalid chunk len=%u", (unsigned)chunk_len);
+        return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
     }
 
     os_mbuf_copydata(ctxt->om, 0, chunk_len, data);
@@ -130,12 +132,14 @@ static int device_write_cb(uint16_t conn_handle,
         if (payload_len > 0 && payload_len < JSON_BUFFER_SIZE) {
             memcpy(json_buffer, payload, payload_len);
             json_buffer[payload_len] = '\0';
-            ESP_LOGI(TAG, "==== JSON RECEIVED single (0x02) (%u bytes) ====", (unsigned)payload_len);
-            ESP_LOGI(TAG, "%s", json_buffer);
+            ESP_LOGI(TAG, "JSON single (0x02) received (%u bytes)", (unsigned)payload_len);
             if (todo_storage_apply_ble_json(json_buffer) == ESP_OK) {
                 todo_ble_ui_refresh_label = true;
                 ble_refresh_stored_read_bundle();
             }
+        } else {
+            ESP_LOGW(TAG, "JSON single (0x02) rejected: len=%u", (unsigned)payload_len);
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
         }
     } else if (cmd == 0x06) {
         if (!ble_refresh_stored_read_bundle()) {
@@ -146,30 +150,42 @@ static int device_write_cb(uint16_t conn_handle,
         /* notify 未开时由小程序 read 触发发送，成功日志在 READ 回调里打 */
     } else if (cmd == 0x03) {
         json_len = 0;
-        if (payload_len < JSON_BUFFER_SIZE) {
-            memcpy(json_buffer, payload, payload_len);
-            json_len = payload_len;
+        json_assembly_error = false;
+        if (payload_len >= JSON_BUFFER_SIZE) {
+            json_assembly_error = true;
+            ESP_LOGW(TAG, "JSON START rejected: chunk too large");
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
         }
-        ESP_LOGI(TAG, "JSON START");
+        memcpy(json_buffer, payload, payload_len);
+        json_len = payload_len;
+        ESP_LOGI(TAG, "JSON START (%u bytes)", (unsigned)payload_len);
     } else if (cmd == 0x04) {
-        if (json_len + payload_len < JSON_BUFFER_SIZE) {
-            memcpy(&json_buffer[json_len], payload, payload_len);
-            json_len += payload_len;
+        if (json_assembly_error || json_len + payload_len >= JSON_BUFFER_SIZE) {
+            json_assembly_error = true;
+            json_len = 0;
+            ESP_LOGW(TAG, "JSON chunk rejected: overflow at offset %u", (unsigned)json_len);
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
         }
+        memcpy(&json_buffer[json_len], payload, payload_len);
+        json_len += payload_len;
     } else if (cmd == 0x05) {
-        if (json_len + payload_len < JSON_BUFFER_SIZE) {
-            memcpy(&json_buffer[json_len], payload, payload_len);
-            json_len += payload_len;
+        if (json_assembly_error || json_len + payload_len >= JSON_BUFFER_SIZE) {
+            json_assembly_error = true;
+            json_len = 0;
+            ESP_LOGW(TAG, "JSON END rejected: overflow");
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
         }
+        memcpy(&json_buffer[json_len], payload, payload_len);
+        json_len += payload_len;
         json_buffer[json_len] = '\0';
-        ESP_LOGI(TAG, "==== JSON RECEIVED (%u bytes) ====", (unsigned)json_len);
-        ESP_LOGI(TAG, "%s", json_buffer);
+        ESP_LOGI(TAG, "JSON END received (%u bytes total)", (unsigned)json_len);
 
         if (todo_storage_apply_ble_json(json_buffer) == ESP_OK) {
             todo_ble_ui_refresh_label = true;
             ble_refresh_stored_read_bundle();
         }
         json_len = 0;
+        json_assembly_error = false;
     }
 
     return 0;

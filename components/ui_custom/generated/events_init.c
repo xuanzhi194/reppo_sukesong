@@ -1261,7 +1261,7 @@ static void screen_reviewcard_event_handler (lv_event_t *e)
         if(review_cards_num == 0) {
             lv_label_set_text(guider_ui.screen_reviewcard_label_index,"0/0");
             lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui,LV_STATE_DISABLED);
-            group_focus_obj(guider_ui.screen_wordcard_btn_back);
+            group_focus_obj(guider_ui.screen_reviewcard_btn_back);
             lv_label_set_text(guider_ui.screen_reviewcard_label_meaning,"No word need to review");
             lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic,"");
             lv_label_set_text(guider_ui.screen_reviewcard_label_spelling,"Good Job!");
@@ -1343,7 +1343,7 @@ static void screen_pomodoro_event_handler (lv_event_t *e)
         pomodoro_stopwatch = 0;
         timer_all_num = 25; //minutes
         timer_all_seconds = 0;
-        pomodoro_timer = NULL;
+        pomodoro_timer_stop();
         pomodoro_stopwatch = 0;
         countdown_start_label = 0;
         countdown_process_label = 0;
@@ -1420,17 +1420,12 @@ static void screen_pomodoro_btn_back_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_pomodoro_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
-        if(pomodoro_timer != NULL) {
-            lv_timer_del(pomodoro_timer);
-            pomodoro_timer = NULL;
-        }
+        pomodoro_timer_stop();
         focus_session_cancel();
         pomodoro_countdown = 1;
         pomodoro_stopwatch = 0;
         timer_all_num = 25; //minutes
         timer_all_seconds = 0;
-        pomodoro_timer = NULL;
-        pomodoro_stopwatch = 0;
         countdown_start_label = 0;
         countdown_process_label = 0;
         stopwatch_start_label = 0;
@@ -1458,10 +1453,14 @@ static void screen_pomodoro_btn_start_event_handler (lv_event_t *e)
                 countdown_process_label = 1;
             } else if(countdown_process_label == 1) {
                 countdown_process_label = 0;
-                lv_timer_pause(pomodoro_timer);
+                if (pomodoro_timer != NULL) {
+                    lv_timer_pause(pomodoro_timer);
+                }
             } else if(countdown_process_label == 0) {
                 countdown_process_label = 1;
-                lv_timer_resume(pomodoro_timer);
+                if (pomodoro_timer != NULL) {
+                    lv_timer_resume(pomodoro_timer);
+                }
             }
         } else if(pomodoro_stopwatch == 1) {
             if(stopwatch_start_label == 0) {
@@ -1470,10 +1469,14 @@ static void screen_pomodoro_btn_start_event_handler (lv_event_t *e)
                 stopwatch_process_label = 1;
             } else if(stopwatch_process_label == 1) {
                 stopwatch_process_label = 0;
-                lv_timer_pause(pomodoro_timer);
+                if (pomodoro_timer != NULL) {
+                    lv_timer_pause(pomodoro_timer);
+                }
             } else if(stopwatch_process_label == 0) {
                 stopwatch_process_label = 1;
-                lv_timer_resume(pomodoro_timer);
+                if (pomodoro_timer != NULL) {
+                    lv_timer_resume(pomodoro_timer);
+                }
             }
         }
         break;
@@ -1491,10 +1494,7 @@ static void screen_pomodoro_btn_reset_event_handler (lv_event_t *e)
     {
         if(pomodoro_countdown == 1) {
             focus_session_cancel();
-            if(pomodoro_timer != NULL) {
-                lv_timer_del(pomodoro_timer);
-                pomodoro_timer = NULL;
-            }
+            pomodoro_timer_stop();
             countdown_start_label = 0;
             countdown_process_label = 0;
             timer_all_num = 25;
@@ -1502,10 +1502,7 @@ static void screen_pomodoro_btn_reset_event_handler (lv_event_t *e)
             lv_label_set_text(guider_ui.screen_pomodoro_label_timer,"00:25:00");
             lv_label_set_text(guider_ui.screen_pomodoro_btn_start_label,"Start");
         } else if(pomodoro_stopwatch == 1) {
-            if(pomodoro_timer != NULL) {
-                lv_timer_del(pomodoro_timer);
-                pomodoro_timer = NULL;
-            }
+            pomodoro_timer_stop();
             stopwatch_start_label = 0;
             stopwatch_process_label = 0;
             timer_all_num = 0;
@@ -1552,7 +1549,7 @@ static void screen_pomodoro_btn_complete_event_handler (lv_event_t *e)
         pomodoro_stopwatch = 0;
         timer_all_num = 25; //minutes
         timer_all_seconds = 0;
-        pomodoro_timer = NULL;
+        pomodoro_timer_stop();
         pomodoro_stopwatch = 0;
         countdown_start_label = 0;
         countdown_process_label = 0;
@@ -1609,7 +1606,7 @@ static void screen_pomodoro_btn_continue_event_handler (lv_event_t *e)
         pomodoro_stopwatch = 0;
         timer_all_num = 25; //minutes
         timer_all_seconds = 0;
-        pomodoro_timer = NULL;
+        pomodoro_timer_stop();
         pomodoro_stopwatch = 0;
         countdown_start_label = 0;
         countdown_process_label = 0;
@@ -2123,6 +2120,12 @@ static void screen_wificfg_btn_connect_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
+        if (wifi_ssid != NULL && wifi_ssid[0] != '\0') {
+            strncpy(wifi_connect_ssid, wifi_ssid, sizeof(wifi_connect_ssid) - 1);
+            wifi_connect_ssid[sizeof(wifi_connect_ssid) - 1] = '\0';
+        } else {
+            wifi_connect_ssid[0] = '\0';
+        }
         wifi_connect_en = 1;
         wifi_success = 0;
         lv_obj_clear_flag(guider_ui.screen_wificfg_spinner_connect,LV_OBJ_FLAG_HIDDEN);

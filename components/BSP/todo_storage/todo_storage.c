@@ -15,8 +15,10 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 #include <time.h>
+#include <ctype.h>
 #include "rx8130.h"
 #include "esp_heap_caps.h"
+#include "freertos/semphr.h"
 
 #define TAG           "TODO_STORAGE"
 #define TODO_CSV_PATH "/spiffs/todo.csv"
@@ -26,6 +28,48 @@
 
 // ─── 全局 RAM 缓存 ─────────────────────────────
 todo_list_t g_todo_list = {0};
+static SemaphoreHandle_t s_todo_mutex;
+
+void todo_storage_sanitize_task_name(char *name, size_t cap)
+{
+    if (name == NULL || cap == 0) {
+        return;
+    }
+
+    size_t write = 0;
+    for (size_t read = 0; name[read] != '\0' && read < cap; read++) {
+        unsigned char c = (unsigned char)name[read];
+        if (c < 0x20 || c == 0x7f) {
+            continue;
+        }
+        if (c == ',' || c == '|' || c == '\r' || c == '\n' || c == '\t') {
+            if (write > 0 && name[write - 1] != ' ') {
+                name[write++] = ' ';
+            }
+            continue;
+        }
+        name[write++] = (char)c;
+    }
+    while (write > 0 && name[write - 1] == ' ') {
+        write--;
+    }
+    name[write] = '\0';
+}
+
+bool todo_storage_lock(TickType_t timeout_ticks)
+{
+    if (s_todo_mutex == NULL) {
+        return true;
+    }
+    return xSemaphoreTake(s_todo_mutex, timeout_ticks) == pdTRUE;
+}
+
+void todo_storage_unlock(void)
+{
+    if (s_todo_mutex != NULL) {
+        xSemaphoreGive(s_todo_mutex);
+    }
+}
 
 // ─── 私有：从 NVS 加载 done 标志 ───────────────
 static void _nvs_load_done(void)
@@ -159,6 +203,10 @@ esp_err_t _nvs_save_done(void)
 
 esp_err_t todo_storage_init(void)
 {
+    if (s_todo_mutex == NULL) {
+        s_todo_mutex = xSemaphoreCreateMutex();
+    }
+
     esp_err_t ret = _read_csv();
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "Starting with empty task list.");
@@ -199,14 +247,21 @@ esp_err_t todo_storage_apply_ble_json(const char *json)
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (!todo_storage_lock(pdMS_TO_TICKS(500))) {
+        ESP_LOGE(TAG, "BLE JSON apply: todo lock timeout");
+        return ESP_ERR_TIMEOUT;
+    }
+
     cJSON *root = cJSON_Parse(json);
     if (root == NULL) {
         ESP_LOGE(TAG, "BLE JSON parse failed");
+        todo_storage_unlock();
         return ESP_ERR_INVALID_ARG;
     }
     if (!cJSON_IsArray(root)) {
         ESP_LOGE(TAG, "BLE JSON root is not an array");
         cJSON_Delete(root);
+        todo_storage_unlock();
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -226,6 +281,10 @@ esp_err_t todo_storage_apply_ble_json(const char *json)
         todo_item_t *dst = &g_todo_list.items[g_todo_list.count];
         strncpy(dst->name, content->valuestring, TODO_NAME_LEN - 1);
         dst->name[TODO_NAME_LEN - 1] = '\0';
+        todo_storage_sanitize_task_name(dst->name, TODO_NAME_LEN);
+        if (dst->name[0] == '\0') {
+            continue;
+        }
         dst->duration_min = cJSON_IsString(duration_str)
                                  ? _parse_duration_min(duration_str->valuestring)
                                  : 0;
@@ -241,6 +300,7 @@ esp_err_t todo_storage_apply_ble_json(const char *json)
         _nvs_save_done();
         ESP_LOGI(TAG, "BLE sync: overwrote todo.csv with %u task(s)", g_todo_list.count);
     }
+    todo_storage_unlock();
     return ret;
 }
 
@@ -445,6 +505,7 @@ esp_err_t todo_storage_archive_done_tasks(void)
         if (g_todo_list.items[i].done == 1) {
             // 已完成任务：附加绝对日期+时长并存入 task_done.csv
             strncpy(g_todo_list.items[i].finish_date, current_date, sizeof(g_todo_list.items[i].finish_date) - 1);
+            todo_storage_sanitize_task_name(g_todo_list.items[i].name, TODO_NAME_LEN);
             fprintf(f_done, "%s,%s,%u\n",
                     g_todo_list.items[i].name,
                     g_todo_list.items[i].finish_date,

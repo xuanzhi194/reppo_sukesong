@@ -1,6 +1,8 @@
 #pragma once
 #include <stdint.h>
+#include <stddef.h>
 #include "esp_err.h"
+#include "freertos/FreeRTOS.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +67,15 @@ esp_err_t todo_storage_archive_done_tasks(void);
 
 //** @brief 设置任务完成状态，并保存到 NVS（不修改 CSV） */
 esp_err_t _nvs_save_done(void);
+
+/** @brief 清洗任务名：去掉控制字符，并将 ,| 换行等替换为空格，降低 CSV/AI Prompt 注入风险 */
+void todo_storage_sanitize_task_name(char *name, size_t cap);
+
+/** @brief 获取 g_todo_list 互斥锁（跨 BLE / NVS / UI 同步时使用） */
+bool todo_storage_lock(TickType_t timeout_ticks);
+
+/** @brief 释放 g_todo_list 互斥锁 */
+void todo_storage_unlock(void);
 
 #ifdef __cplusplus
 }

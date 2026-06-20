@@ -68,6 +68,7 @@ typedef struct {
     char *buf;
     int   len;
     int   max_len;
+    bool  truncated;
 } http_resp_t;
 
 static esp_err_t http_event_handler(esp_http_client_event_t *evt)
@@ -76,6 +77,9 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt)
     if (evt->event_id == HTTP_EVENT_ON_DATA && resp) {
         int avail = resp->max_len - resp->len - 1;
         int copy  = (evt->data_len < avail) ? evt->data_len : avail;
+        if (evt->data_len > avail) {
+            resp->truncated = true;
+        }
         if (copy > 0) {
             memcpy(resp->buf + resp->len, evt->data, copy);
             resp->len += copy;
@@ -164,6 +168,7 @@ static esp_err_t ai_chat_send_proxy(const char *user_message, char *response_buf
         .buf     = http_buf,
         .len     = 0,
         .max_len = AI_RESPONSE_BUF_SIZE,
+        .truncated = false,
     };
 
     char auth_header[160];
@@ -196,6 +201,11 @@ static esp_err_t ai_chat_send_proxy(const char *user_message, char *response_buf
     esp_http_client_set_post_field(client, req_body, (int)strlen(req_body));
 
     esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK && resp.truncated) {
+        ESP_LOGE(TAG, "HTTP response truncated at %d bytes", resp.len);
+        snprintf(response_buf, buf_len, "Response truncated (max %d B)", AI_RESPONSE_BUF_SIZE);
+        err = ESP_ERR_INVALID_SIZE;
+    }
     if (err == ESP_OK) {
         int status = esp_http_client_get_status_code(client);
         ESP_LOGI(TAG, "HTTP status=%d, body_len=%d", status, resp.len);
@@ -224,7 +234,7 @@ static esp_err_t ai_chat_send_proxy(const char *user_message, char *response_buf
             snprintf(response_buf, buf_len, "HTTP error %d:\n%.200s", status, http_buf);
             err = ESP_FAIL;
         }
-    } else {
+    } else if (err != ESP_ERR_INVALID_SIZE) {
         ESP_LOGE(TAG, "HTTP perform failed: %s", esp_err_to_name(err));
         snprintf(response_buf, buf_len, "Network error:\n%s", esp_err_to_name(err));
     }
@@ -286,6 +296,7 @@ esp_err_t ai_chat_send(const char *user_message, char *response_buf, size_t buf_
         .buf     = http_buf,
         .len     = 0,
         .max_len = AI_RESPONSE_BUF_SIZE,
+        .truncated = false,
     };
 
     /* 构造 Authorization 头 */
@@ -319,6 +330,12 @@ esp_err_t ai_chat_send(const char *user_message, char *response_buf, size_t buf_
     esp_http_client_set_post_field(client, req_body, (int)strlen(req_body));
 
     esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK && resp.truncated) {
+        ESP_LOGE(TAG, "HTTP response truncated at %d bytes", resp.len);
+        snprintf(response_buf, buf_len, "Response truncated (max %d B)", AI_RESPONSE_BUF_SIZE);
+        err = ESP_ERR_INVALID_SIZE;
+    }
 
     if (err == ESP_OK) {
         int status = esp_http_client_get_status_code(client);
@@ -359,7 +376,7 @@ esp_err_t ai_chat_send(const char *user_message, char *response_buf, size_t buf_
             snprintf(response_buf, buf_len, "HTTP error %d:\n%.200s", status, http_buf);
             err = ESP_FAIL;
         }
-    } else {
+    } else if (err != ESP_ERR_INVALID_SIZE) {
         ESP_LOGE(TAG, "HTTP perform failed: %s", esp_err_to_name(err));
         snprintf(response_buf, buf_len, "Network error:\n%s", esp_err_to_name(err));
     }

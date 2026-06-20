@@ -29,7 +29,7 @@ extern bool init_ntp;
 extern bool buzzer_timeout_task_running;
 
 /** AI 分析请求是否进行中（用于流水灯与超时判定） */
-extern bool ai_request_pending;
+extern volatile bool ai_request_pending;
 extern TickType_t ai_request_deadline;
 
 #endif /* APP_GLOBALS_H */

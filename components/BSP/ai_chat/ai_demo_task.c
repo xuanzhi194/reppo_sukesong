@@ -1,5 +1,6 @@
 #include "ai_demo_task.h"
 #include "ai_chat_secrets.h"
+#include "todo_storage.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -34,6 +35,7 @@ volatile bool g_ai_weekly_result_ready = false;
 
 static int64_t s_last_daily_success_ts  = 0;
 static int64_t s_last_weekly_success_ts = 0;
+static volatile bool s_ai_task_running = false;
 
 static int64_t ai_rate_limit_get_last_ts(ai_summary_type_t type)
 {
@@ -117,6 +119,8 @@ void ai_rate_limit_mark_success(ai_summary_type_t type)
 }
 
 /* 从 response 字符串解析 AI 结果 */
+static bool ai_result_is_valid(const ai_result_t *result);
+
 static void ai_result_parse(const char *response, ai_result_t *result)
 {
     memset(result, 0, sizeof(ai_result_t));
@@ -150,7 +154,45 @@ static void ai_result_parse(const char *response, ai_result_t *result)
         }
         p = end ? end + 1 : NULL;
     }
-    result->valid = (result->cat1_name[0] != '\0');
+    result->valid = ai_result_is_valid(result);
+}
+
+static bool ai_result_is_valid(const ai_result_t *result)
+{
+    if (result == NULL || result->cat1_name[0] == '\0' ||
+        result->cat2_name[0] == '\0' || result->cat3_name[0] == '\0') {
+        return false;
+    }
+
+    if (result->cat1_percent < 0 || result->cat2_percent < 0 || result->cat3_percent < 0) {
+        return false;
+    }
+    if (result->cat1_percent > 100 || result->cat2_percent > 100 || result->cat3_percent > 100) {
+        return false;
+    }
+    if ((result->cat1_percent + result->cat2_percent + result->cat3_percent) != 100) {
+        return false;
+    }
+    return true;
+}
+
+static void ai_sanitize_csv_line(char *line, size_t cap)
+{
+    char *comma = strchr(line, ',');
+    if (comma == NULL) {
+        todo_storage_sanitize_task_name(line, cap);
+        return;
+    }
+
+    char name[TODO_NAME_LEN];
+    size_t name_len = (size_t)(comma - line);
+    if (name_len >= sizeof(name)) {
+        name_len = sizeof(name) - 1;
+    }
+    memcpy(name, line, name_len);
+    name[name_len] = '\0';
+    todo_storage_sanitize_task_name(name, sizeof(name));
+    snprintf(line, cap, "%s%s", name, comma);
 }
 
 /* 将 AI 结果保存到 NVS（按类型使用不同 key） */
@@ -177,6 +219,9 @@ static bool ai_result_load_by_key(const char *key, ai_result_t *out, const char 
     size_t size = sizeof(ai_result_t);
     esp_err_t err = nvs_get_blob(h, key, out, &size);
     nvs_close(h);
+    if (err == ESP_OK) {
+        out->valid = ai_result_is_valid(out);
+    }
     if (err == ESP_OK && out->valid) {
         printf("[AI Demo] %s已从 NVS 恢复 (日期:%s)\r\n", label, out->summary_date);
          printf("  %s%d%% | %s%d%% | %s%d%%\r\n",
@@ -222,6 +267,7 @@ static int filter_csv_by_date(const char *csv_in, char *csv_out, size_t out_size
         line[line_len] = '\0';
 
         if (line_len > 0) {
+            ai_sanitize_csv_line(line, sizeof(line));
             /* 提取第2列日期（格式 YYYY-MM-DD） */
             const char *f1 = strchr(line, ',');
             if (f1) {
@@ -252,6 +298,8 @@ static void ai_demo_task(void *param)
     bool *ntp_initialized = args ? args->ntp_initialized : NULL;
     const char *api_key = args ? args->api_key : NULL;
 
+    s_ai_task_running = true;
+
     const size_t file_content_size = 8192;
     const size_t prompt_size = 10240;
     char *file_content = NULL;
@@ -261,6 +309,7 @@ static void ai_demo_task(void *param)
     if (!api_key || api_key[0] == '\0') {
         printf("[AI Demo] 未配置认证信息,请检查 ai_chat_secrets.h\r\n");
         free(args);
+        s_ai_task_running = false;
         vTaskDelete(NULL);
         return;
     }
@@ -280,6 +329,7 @@ static void ai_demo_task(void *param)
         free(prompt);
         free(response);
         free(args);
+        s_ai_task_running = false;
         vTaskDelete(NULL);
         return;
     }
@@ -292,6 +342,7 @@ static void ai_demo_task(void *param)
         free(prompt);
         free(response);
         free(args);
+        s_ai_task_running = false;
         vTaskDelete(NULL);
         return;
     }
@@ -307,6 +358,7 @@ static void ai_demo_task(void *param)
         free(prompt);
         free(response);
         free(args);
+        s_ai_task_running = false;
         vTaskDelete(NULL);
         return;
     }
@@ -329,6 +381,7 @@ static void ai_demo_task(void *param)
         free(prompt);
         free(response);
         free(args);
+        s_ai_task_running = false;
         vTaskDelete(NULL);
         return;
     }
@@ -365,10 +418,14 @@ static void ai_demo_task(void *param)
         task_count = filter_csv_by_date(file_content, filtered, file_content_size,
                                         date_from_s, date_to_s, max_tasks);
         if (task_count == 0) {
-            /* 日期不匹配时（如测试数据），回退使用全部数据 */
-            printf("[AI Demo] 日期范围内无任务，回退使用全部数据（最多 %d 条）\r\n", max_tasks);
-            task_count = filter_csv_by_date(file_content, filtered, file_content_size,
-                                            "0000-00-00", "9999-99-99", max_tasks);
+            printf("[AI Demo] 日期范围内无任务，跳过 AI 请求\r\n");
+            free(filtered);
+            free(prompt);
+            free(response);
+            free(args);
+            s_ai_task_running = false;
+            vTaskDelete(NULL);
+            return;
         }
         free(file_content);
         file_content = NULL;
@@ -415,6 +472,7 @@ static void ai_demo_task(void *param)
         free(prompt);
         free(response);
         free(args);
+        s_ai_task_running = false;
         vTaskDelete(NULL);
         return;
     }
@@ -432,6 +490,7 @@ static void ai_demo_task(void *param)
         ai_result_t *dest = (stype == AI_SUMMARY_DAILY) ? &g_ai_daily_result : &g_ai_weekly_result;
         ai_result_parse(response, dest);
         strncpy(dest->summary_date, date_from_s, sizeof(dest->summary_date) - 1);
+        dest->valid = ai_result_is_valid(dest);
         if (dest->valid) {
             ai_result_save(stype, dest);
             ai_rate_limit_mark_success(stype);
@@ -448,11 +507,22 @@ static void ai_demo_task(void *param)
     free(prompt);
     free(response);
     free(args);
+    s_ai_task_running = false;
     vTaskDelete(NULL);
 }
 
 bool start_ai_summary(ai_summary_type_t type, bool *ntp_initialized, const char *api_key)
 {
+    if (s_ai_task_running) {
+        printf("[AI Demo] 启动失败：已有 AI 任务在运行\r\n");
+        return false;
+    }
+
+    if (!is_wifi_connected()) {
+        printf("[AI Demo] 启动失败：WiFi 未连接\r\n");
+        return false;
+    }
+
     size_t internal_free = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
     printf("[AI Demo] 创建任务前 内部堆剩余: %u B\r\n", (unsigned)internal_free);
     if (internal_free < AI_MIN_INTERNAL_HEAP_BYTES) {

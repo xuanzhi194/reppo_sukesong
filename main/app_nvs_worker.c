@@ -11,6 +11,7 @@
 #include "ws2812b.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_log.h"
 #include <stdio.h>
 
 /** Todo 完成标记写回 NVS */
@@ -20,8 +21,14 @@ static void nvs_worker_handle_todo_save(void)
         return;
     }
     printf("Saving done flags to NVS...\n");
-    g_todo_list = ui_todo_list;
-    _nvs_save_done();
+    if (todo_storage_lock(pdMS_TO_TICKS(200))) {
+        g_todo_list = ui_todo_list;
+        _nvs_save_done();
+        todo_storage_unlock();
+    } else {
+        ESP_LOGW("NVS_WORKER", "todo save skipped: lock timeout");
+        return;
+    }
     todo_back_label = 0;
 }
 
@@ -41,9 +48,14 @@ static void nvs_worker_handle_todo_archive(void)
     }
     todo_archive_label = 0;
     printf("Archiving completed tasks...\n");
+    if (!todo_storage_lock(pdMS_TO_TICKS(500))) {
+        ESP_LOGW("NVS_WORKER", "todo archive skipped: lock timeout");
+        return;
+    }
     g_todo_list = ui_todo_list;
     todo_storage_archive_done_tasks();
     ui_todo_list = g_todo_list;
+    todo_storage_unlock();
     done_sum = todo_storage_get_done_count();
     todo_sum = g_todo_list.count - done_sum;
     donelist_load_from_csv();

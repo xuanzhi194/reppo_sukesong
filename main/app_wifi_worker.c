@@ -20,6 +20,17 @@
 static const char *TAG_REALTIME = "REAL_TIME";
 static const char *TAG_WIFI = "WIFI";
 
+static void app_wifi_on_sta_disconnected(void)
+{
+    wifi_success = 0;
+    init_ntp = false;
+}
+
+void app_wifi_register_callbacks(void)
+{
+    wifi_set_disconnect_callback(app_wifi_on_sta_disconnected);
+}
+
 /** 将 NTP 时间写入全局 timing_* 并刷新 timing 屏 */
 static void wifi_worker_timing_labels_from_tm(const struct tm *timeinfo)
 {
@@ -135,26 +146,43 @@ static void wifi_worker_handle_scan(void)
 /** 连接 WiFi、保存凭据、更新连接状态 UI */
 static void wifi_worker_handle_connect(void)
 {
+    char ssid_snap[33] = {0};
     char wifi_pw_buf[64] = {0};
+
+    if (wifi_connect_ssid[0] != '\0') {
+        strncpy(ssid_snap, wifi_connect_ssid, sizeof(ssid_snap) - 1);
+    } else if (wifi_ssid != NULL) {
+        strncpy(ssid_snap, wifi_ssid, sizeof(ssid_snap) - 1);
+    }
+
     if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-        const char *wifi_password =
-            lv_textarea_get_text(guider_ui.screen_wificfg_ta_password);
-        strncpy(wifi_pw_buf, wifi_password, sizeof(wifi_pw_buf) - 1);
+        if (app_ui_wificfg_screen_is_alive() &&
+            guider_ui.screen_wificfg_ta_password != NULL &&
+            lv_obj_is_valid(guider_ui.screen_wificfg_ta_password)) {
+            const char *wifi_password =
+                lv_textarea_get_text(guider_ui.screen_wificfg_ta_password);
+            strncpy(wifi_pw_buf, wifi_password, sizeof(wifi_pw_buf) - 1);
+        }
         xSemaphoreGive(lvgl_mutex);
     }
 
-    wifi_success = wifi_connect_and_wait(wifi_ssid, wifi_pw_buf);
+    if (ssid_snap[0] == '\0') {
+        ESP_LOGW(TAG_WIFI, "WiFi connect aborted: empty SSID snapshot");
+        wifi_connect_en = 0;
+        return;
+    }
+
+    wifi_success = wifi_connect_and_wait(ssid_snap, wifi_pw_buf);
 
     if (xSemaphoreTake(lvgl_mutex, portMAX_DELAY) != pdTRUE) {
+        memset(wifi_pw_buf, 0, sizeof(wifi_pw_buf));
         wifi_connect_en = 0;
         return;
     }
     if (wifi_success) {
-        if (wifi_ssid != NULL && wifi_ssid[0] != '\0') {
-            esp_err_t cred_err = wifi_cred_save(wifi_ssid, wifi_pw_buf);
-            if (cred_err != ESP_OK) {
-                ESP_LOGW(TAG_WIFI, "Failed to save WiFi credential: %d", (int)cred_err);
-            }
+        esp_err_t cred_err = wifi_cred_save(ssid_snap, wifi_pw_buf);
+        if (cred_err != ESP_OK) {
+            ESP_LOGW(TAG_WIFI, "Failed to save WiFi credential: %s", esp_err_to_name(cred_err));
         }
         wifi_connect_show();
         ensure_sntp_started();
@@ -162,6 +190,7 @@ static void wifi_worker_handle_connect(void)
     } else {
         wifi_disconnect_show();
     }
+    memset(wifi_pw_buf, 0, sizeof(wifi_pw_buf));
     xSemaphoreGive(lvgl_mutex);
     wifi_connect_en = 0;
 }

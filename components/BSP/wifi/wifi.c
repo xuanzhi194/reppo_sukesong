@@ -18,6 +18,7 @@ static int64_t s_last_sntp_retry_us = 0;
 static SemaphoreHandle_t s_wifi_ip_sem = NULL;
 static volatile bool s_connect_wait_active = false;
 static volatile int s_last_disc_reason = -1;
+static wifi_disconnect_cb_t s_disconnect_cb = NULL;
 
 wifi_scan_info_t g_scan_results[MAX_SCAN_RECORDS];
 uint16_t g_scan_ap_num = 0;
@@ -127,7 +128,12 @@ void stop_sntp(void)
     ESP_LOGI(TAG, "SNTP stopped");
 }
 
-void my_esp_event(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+void wifi_set_disconnect_callback(wifi_disconnect_cb_t cb)
+{
+    s_disconnect_cb = cb;
+}
+
+static void my_esp_event(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT) {
         if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
@@ -139,6 +145,9 @@ void my_esp_event(void* event_handler_arg, esp_event_base_t event_base, int32_t 
                 s_last_disc_reason = reason;
             }
             stop_sntp();
+            if (s_disconnect_cb != NULL) {
+                s_disconnect_cb();
+            }
         }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         printf("IP Address obtained successfully!\n");
@@ -191,9 +200,11 @@ void init_wifi()
 void wifi_connect_to_new_network(const char *ssid, const char *password) {
     wifi_config_t wifi_config = { 0 };
 
-    strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+    strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid) - 1);
+    wifi_config.sta.ssid[sizeof(wifi_config.sta.ssid) - 1] = '\0';
     if (password != NULL) {
-        strncpy((char *)wifi_config.sta.password, password, sizeof(wifi_config.sta.password));
+        strncpy((char *)wifi_config.sta.password, password, sizeof(wifi_config.sta.password) - 1);
+        wifi_config.sta.password[sizeof(wifi_config.sta.password) - 1] = '\0';
     }
     wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
     wifi_config.sta.pmf_cfg.capable = true;

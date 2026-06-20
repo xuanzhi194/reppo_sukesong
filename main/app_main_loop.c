@@ -42,6 +42,9 @@ static void main_loop_handle_countdown_timeout(void)
 /** 启动日/周 AI 分析任务 */
 static void main_loop_start_ai_summary(ai_summary_type_t kind)
 {
+    if (ai_request_pending) {
+        return;
+    }
     ai_request_pending = 1;
     ai_request_deadline = xTaskGetTickCount() + pdMS_TO_TICKS(AI_ANALYSIS_TIMEOUT_MS);
     app_led_ai_wait_start();
@@ -92,31 +95,23 @@ static void main_loop_handle_ai_results(void)
     }
 
     bool is_daily = (bool)g_ai_daily_result_ready;
+    ai_result_t local_copy;
+    ai_result_t *src = is_daily ? &g_ai_daily_result : &g_ai_weekly_result;
+    memcpy(&local_copy, src, sizeof(ai_result_t));
+
     if (is_daily) {
         g_ai_daily_result_ready = false;
     } else {
         g_ai_weekly_result_ready = false;
     }
 
-    ai_result_t *src = is_daily ? &g_ai_daily_result : &g_ai_weekly_result;
     ui_ai_result_t *dst = is_daily ? &g_ui_daily_result : &g_ui_weekly_result;
-    memcpy(dst, src, sizeof(ui_ai_result_t));
+    memcpy(dst, &local_copy, sizeof(ui_ai_result_t));
 
-    ai_result_t *r = src;
     if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         if (guider_ui.screen_ai != NULL && lv_obj_is_valid(guider_ui.screen_ai) &&
             lv_scr_act() == guider_ui.screen_ai) {
-            lv_label_set_text(guider_ui.screen_ai_label_cat1, r->cat1_name);
-            lv_label_set_text(guider_ui.screen_ai_label_cat2, r->cat2_name);
-            lv_label_set_text(guider_ui.screen_ai_label_cat3, r->cat3_name);
-            lv_label_set_text_fmt(guider_ui.screen_ai_label_cat1_num, "%d%%", r->cat1_percent);
-            lv_label_set_text_fmt(guider_ui.screen_ai_label_cat2_num, "%d%%", r->cat2_percent);
-            lv_label_set_text_fmt(guider_ui.screen_ai_label_cat3_num, "%d%%", r->cat3_percent);
-            lv_arc_set_value(guider_ui.screen_ai_arc_1, r->cat1_percent);
-            lv_arc_set_value(guider_ui.screen_ai_arc_2, r->cat2_percent);
-            lv_arc_set_value(guider_ui.screen_ai_arc_3, r->cat3_percent);
-            lv_label_set_text(guider_ui.screen_ai_label_sum, r->summary);
-            lv_label_set_text(guider_ui.screen_ai_label_quote, r->quote);
+            screen_ai_apply_result((const ui_ai_result_t *)&local_copy);
         }
         xSemaphoreGive(lvgl_mutex);
     }
@@ -142,18 +137,21 @@ static void main_loop_handle_ai_timeout(void)
 static void main_loop_handle_ble_ui(void)
 {
     if (ble_ui_refresh_req) {
-        ble_ui_refresh_req = 0;
         if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            ble_ui_refresh_req = 0;
             screen_setting_ble_refresh_icons();
             xSemaphoreGive(lvgl_mutex);
         }
     }
     if (todo_ble_ui_refresh_label) {
-        todo_ble_ui_refresh_label = 0;
-        ui_todo_list = g_todo_list;
-        if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            todo_ble_sync_ui_refresh();
-            xSemaphoreGive(lvgl_mutex);
+        if (todo_storage_lock(pdMS_TO_TICKS(100))) {
+            ui_todo_list = g_todo_list;
+            todo_storage_unlock();
+            if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                todo_ble_ui_refresh_label = 0;
+                todo_ble_sync_ui_refresh();
+                xSemaphoreGive(lvgl_mutex);
+            }
         }
     }
 }

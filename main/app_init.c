@@ -76,6 +76,7 @@ void app_init_storage_and_data(void)
     todo_sum = g_todo_list.count - done_sum;
 
     init_wifi();
+    app_wifi_register_callbacks();
     init_ntp = false;
 }
 
