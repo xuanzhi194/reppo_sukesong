@@ -17,8 +17,6 @@
 #include "freertos/task.h"
 #include <string.h>
 
-#define AI_ANALYSIS_TIMEOUT_MS 12000
-
 /** 答案之书：由 UI 置位，主循环写入随机数 */
 static void main_loop_handle_answer_book(void)
 {
@@ -46,6 +44,7 @@ static void main_loop_start_ai_summary(ai_summary_type_t kind)
         return;
     }
     ai_request_pending = 1;
+    g_ai_task_failed = 0;
     ai_request_deadline = xTaskGetTickCount() + pdMS_TO_TICKS(AI_ANALYSIS_TIMEOUT_MS);
     app_led_ai_wait_start();
 #if AI_CHAT_USE_PROXY
@@ -121,6 +120,22 @@ static void main_loop_handle_ai_results(void)
         app_led_ai_result_show(true, 3);
         ai_request_pending = 0;
     }
+}
+
+/** AI 任务失败：立即红灯，不再等超时 */
+static void main_loop_handle_ai_failure(void)
+{
+    if (!g_ai_task_failed) {
+        return;
+    }
+    g_ai_task_failed = false;
+
+    if (!ai_request_pending) {
+        return;
+    }
+    app_led_ai_wait_stop();
+    app_led_ai_result_show(false, 3);
+    ai_request_pending = 0;
 }
 
 /** AI 超时视为失败 */
@@ -217,6 +232,7 @@ void app_main_loop_once(void)
     focus_bridge_on_countdown_complete();
     main_loop_handle_ai_requests();
     main_loop_handle_ai_results();
+    main_loop_handle_ai_failure();
     main_loop_handle_ai_timeout();
     main_loop_handle_ble_ui();
     main_loop_handle_donelist_reload();

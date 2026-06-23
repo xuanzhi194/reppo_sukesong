@@ -11,6 +11,7 @@
  *   app_led.c          — RGB 流水灯与蜂鸣
  *   app_globals.c      — 全局状态
  */
+ //cyw 20260620 add
 #include "app_init.h"
 #include "app_main_loop.h"
 #include "freertos/FreeRTOS.h"

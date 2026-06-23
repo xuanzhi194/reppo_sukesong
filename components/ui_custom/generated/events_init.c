@@ -924,6 +924,15 @@ static void screen_todosel_btn_focus_event_handler (lv_event_t *e)
         focus_en = 1;
         focus_session_active = 1;
         current_task_index = (page_cur-1) * 4 + todo_index;
+        {
+            int idx = current_task_index;
+            if (idx >= 0 && idx < (int)ui_todo_list.count &&
+                ui_todo_list.items[idx].duration_min > 0) {
+                focus_preset_minutes = (int16_t)ui_todo_list.items[idx].duration_min;
+            } else {
+                focus_preset_minutes = 25;
+            }
+        }
         lv_obj_clear_flag(guider_ui.screen_todolist, LV_OBJ_FLAG_CLICKABLE);
         break;
     }
@@ -1341,7 +1350,11 @@ static void screen_pomodoro_event_handler (lv_event_t *e)
         //---------------------//
         pomodoro_countdown = 1;
         pomodoro_stopwatch = 0;
-        timer_all_num = 25; //minutes
+        if (focus_en) {
+            timer_all_num = focus_preset_minutes;
+        } else {
+            timer_all_num = 25;
+        }
         timer_all_seconds = 0;
         pomodoro_timer_stop();
         pomodoro_stopwatch = 0;
@@ -1361,6 +1374,8 @@ static void screen_pomodoro_event_handler (lv_event_t *e)
             }
             focus_en = 0;
         }
+        lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer,
+                              "%02d:%02d:00", timer_all_num / 60, timer_all_num % 60);
         break;
     }
     default:
@@ -1399,10 +1414,11 @@ static void screen_pomodoro_btn_countdown_event_handler (lv_event_t *e)
         if(countdown_start_label == 0) {
             pomodoro_countdown = 1;
             pomodoro_stopwatch = 0;
-            timer_all_num = 25;
+            timer_all_num = focus_preset_minutes;
             lv_obj_add_flag(guider_ui.screen_pomodoro_img_stopwatch, LV_OBJ_FLAG_HIDDEN);
             lv_obj_clear_flag(guider_ui.screen_pomodoro_img_countdown, LV_OBJ_FLAG_HIDDEN);
-            lv_label_set_text(guider_ui.screen_pomodoro_label_timer,"00:25:00");
+            lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer,
+                                  "%02d:%02d:00", timer_all_num / 60, timer_all_num % 60);
         }
 
 
@@ -1422,6 +1438,7 @@ static void screen_pomodoro_btn_back_event_handler (lv_event_t *e)
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_main, guider_ui.screen_main_del, &guider_ui.screen_pomodoro_del, setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         pomodoro_timer_stop();
         focus_session_cancel();
+        focus_preset_minutes = 25;
         pomodoro_countdown = 1;
         pomodoro_stopwatch = 0;
         timer_all_num = 25; //minutes
@@ -1497,9 +1514,10 @@ static void screen_pomodoro_btn_reset_event_handler (lv_event_t *e)
             pomodoro_timer_stop();
             countdown_start_label = 0;
             countdown_process_label = 0;
-            timer_all_num = 25;
+            timer_all_num = focus_preset_minutes;
             pomodoro_stopwatch = 0;
-            lv_label_set_text(guider_ui.screen_pomodoro_label_timer,"00:25:00");
+            lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer,
+                                  "%02d:%02d:00", timer_all_num / 60, timer_all_num % 60);
             lv_label_set_text(guider_ui.screen_pomodoro_btn_start_label,"Start");
         } else if(pomodoro_stopwatch == 1) {
             pomodoro_timer_stop();
@@ -1547,7 +1565,7 @@ static void screen_pomodoro_btn_complete_event_handler (lv_event_t *e)
     {
         pomodoro_countdown = 1;
         pomodoro_stopwatch = 0;
-        timer_all_num = 25; //minutes
+        timer_all_num = focus_preset_minutes;
         timer_all_seconds = 0;
         pomodoro_timer_stop();
         pomodoro_stopwatch = 0;
@@ -1555,7 +1573,8 @@ static void screen_pomodoro_btn_complete_event_handler (lv_event_t *e)
         countdown_process_label = 0;
         stopwatch_start_label = 0;
         stopwatch_process_label = 0;
-        lv_label_set_text(guider_ui.screen_pomodoro_label_timer,"00:25:00");
+        lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer,
+                              "%02d:%02d:00", timer_all_num / 60, timer_all_num % 60);
         lv_obj_add_state(guider_ui.screen_pomodoro_btn_complete, LV_STATE_DISABLED);
         lv_obj_add_state(guider_ui.screen_pomodoro_btn_continue, LV_STATE_DISABLED);
         lv_obj_add_flag(guider_ui.screen_pomodoro_img_timeout, LV_OBJ_FLAG_HIDDEN);

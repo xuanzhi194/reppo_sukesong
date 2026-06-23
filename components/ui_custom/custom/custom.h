@@ -102,6 +102,7 @@ extern bool  focus_en;
 extern bool  focus_session_active;
 extern bool  focus_complete_pending;
 extern int   focus_session_minutes;
+extern int16_t focus_preset_minutes;
 extern bool countdown_timeout_pending;
 extern volatile bool ai_day_start;
 extern volatile bool ai_week_start;

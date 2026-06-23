@@ -88,6 +88,7 @@ bool focus_en = 0;
 bool focus_session_active = 0;
 bool focus_complete_pending = 0;
 int  focus_session_minutes = 0;
+int16_t focus_preset_minutes = 25;
 //wordcard variables
 bool wordcard_change = 0;
 bool reviewcard_change = 0;

@@ -4,6 +4,8 @@
  *
  * 设计要点：
  *  - VBAT_ADC 只做"估算输入"，UI 显示用 display_percent，两者解耦；
+ *  - 显示曲线按带载端电压标定，并做 IR 压降补偿，避免长期偏低；
+ *  - 放电时上升比下降更快，使显示进度更均匀、跟手；
  *  - BAT_CHARGE / BAT_FULL 经软件去抖后驱动状态机；
  *  - 充电时显示值冻结在插线前的水平，只允许 +1%/45s 缓慢上涨，避免
  *    充电器抬高电池端电压导致百分比瞬间跳变；
@@ -28,10 +30,15 @@ static const char *TAG = "BAT_MONITOR";
 #define BAT_PLUGGED_ENTER_CNT     3      /* 插线认定：CHRG|STDBY 任低 连续 3 次（0.6s） */
 #define BAT_PLUGGED_EXIT_CNT      50     /* 拔线认定：两脚都高 连续 50 次（10s） */
 #define BAT_FULL_STABLE_MS        15000  /* FULL 稳定 15s 才认满电 */
-#define BAT_RECOVERY_MS           60000  /* 拔线后电压恢复期 60s */
+#define BAT_RECOVERY_MS           45000  /* 拔线后电压恢复期 45s */
 #define BAT_CHARGE_RAMP_MS        45000  /* 充电时显示值上涨速率：+1%/45s */
-#define BAT_DISCHG_STEP_MS        5000   /* 放电收敛速率：1%/5s */
-#define BAT_DISCHG_HYST_PCT       2      /* 放电收敛迟滞，差值≤2% 不动 */
+#define BAT_DISCHG_STEP_UP_MS     2500   /* 显示值向估算值上升：1%/2.5s */
+#define BAT_DISCHG_STEP_DOWN_MS   6000   /* 显示值向估算值下降：1%/6s */
+#define BAT_DISCHG_HYST_PCT       1      /* 充放电收敛迟滞 */
+#define BAT_DISCHG_CATCHUP_GAP    4      /* 估算值领先超过该值时允许一次 +2% */
+#define BAT_RECOVERY_STEP_MS      8000   /* 恢复期向估算值缓升：1%/8s */
+#define BAT_LOAD_COMP_MV          80     /* 负载压降补偿（WiFi/屏亮时 IR 估算） */
+#define BAT_COMP_MAX_MV           4150
 
 /* ---------------- ADC 采样参数 ---------------- */
 #define BAT_DUMMY_SAMPLES         2      /* 丢弃前 2 次采样 */
@@ -53,27 +60,48 @@ static battery_info_t s_info = {
 };
 static bool s_has_sample = false;
 
-/* ---------------- 403450 锂电池近似 OCV 显示曲线 ---------------- */
-static const struct { int mv; int pct; } s_ocv_table[] = {
-    {4200, 100}, {4160, 95}, {4110, 90}, {4070, 85}, {4030, 80},
-    {3980, 75},  {3930, 70}, {3890, 60}, {3850, 50}, {3810, 40},
-    {3760, 30},  {3710, 20}, {3650, 10}, {3550, 5},  {3400, 0},
+/* ---------------- 403450 负载端电压 → 显示曲线 ---------------- */
+/* 按设备带载时的端电压标定（非静置 OCV），中段约 25~30mV/5% 使进度更均匀 */
+static const struct { int mv; int pct; } s_soc_table[] = {
+    {4150, 100}, {4070, 95}, {4010, 90}, {3960, 85}, {3920, 80},
+    {3885, 75},  {3855, 70}, {3830, 65}, {3805, 60}, {3780, 55},
+    {3770, 50},  {3745, 45}, {3720, 40}, {3690, 35}, {3655, 30},
+    {3615, 25},  {3570, 20}, {3520, 15}, {3450, 10}, {3350, 5},  {3200, 0},
 };
-#define OCV_TABLE_LEN (sizeof(s_ocv_table) / sizeof(s_ocv_table[0]))
+#define SOC_TABLE_LEN (sizeof(s_soc_table) / sizeof(s_soc_table[0]))
 
-static int ocv_voltage_to_percent(int mv)
+static int clamp_percent(int pct)
 {
-    if (mv >= s_ocv_table[0].mv) {
-        return 100;
-    }
-    if (mv <= s_ocv_table[OCV_TABLE_LEN - 1].mv) {
+    if (pct < 0) {
         return 0;
     }
-    for (size_t i = 1; i < OCV_TABLE_LEN; i++) {
-        if (mv >= s_ocv_table[i].mv) {
-            int v_hi = s_ocv_table[i - 1].mv, p_hi = s_ocv_table[i - 1].pct;
-            int v_lo = s_ocv_table[i].mv,     p_lo = s_ocv_table[i].pct;
-            return p_lo + (mv - v_lo) * (p_hi - p_lo) / (v_hi - v_lo);
+    if (pct > 100) {
+        return 100;
+    }
+    return pct;
+}
+
+static int voltage_to_display_percent(int measured_mv)
+{
+    int mv = measured_mv;
+    if (mv > 0) {
+        mv += BAT_LOAD_COMP_MV;
+        if (mv > BAT_COMP_MAX_MV) {
+            mv = BAT_COMP_MAX_MV;
+        }
+    }
+
+    if (mv >= s_soc_table[0].mv) {
+        return 100;
+    }
+    if (mv <= s_soc_table[SOC_TABLE_LEN - 1].mv) {
+        return 0;
+    }
+    for (size_t i = 1; i < SOC_TABLE_LEN; i++) {
+        if (mv >= s_soc_table[i].mv) {
+            int v_hi = s_soc_table[i - 1].mv, p_hi = s_soc_table[i - 1].pct;
+            int v_lo = s_soc_table[i].mv,     p_lo = s_soc_table[i].pct;
+            return clamp_percent(p_lo + (mv - v_lo) * (p_hi - p_lo) / (v_hi - v_lo));
         }
     }
     return 0;
@@ -255,7 +283,7 @@ static void battery_monitor_task(void *arg)
             if (battery_read_voltage_mv(&mv) == ESP_OK) {
                 smoothed_mv = (smoothed_mv == 0) ? mv : (smoothed_mv * 3 + mv) / 4;
                 if (display < 0) {
-                    display = ocv_voltage_to_percent(smoothed_mv);
+                    display = voltage_to_display_percent(smoothed_mv);
                     last_ramp = now;
                     last_dischg_step = now;
                 }
@@ -285,7 +313,7 @@ static void battery_monitor_task(void *arg)
         }
 
         /* --- 5. 显示平滑 --- */
-        int estimated = (smoothed_mv > 0) ? ocv_voltage_to_percent(smoothed_mv) : -1;
+        int estimated = (smoothed_mv > 0) ? voltage_to_display_percent(smoothed_mv) : -1;
         if (display >= 0) {
             switch (state) {
             case BATTERY_STATE_CHARGING:
@@ -301,23 +329,31 @@ static void battery_monitor_task(void *arg)
                 display = 100;
                 break;
             case BATTERY_STATE_RECOVERY:
-                /* 恢复期保持显示值不变 */
+                /* 恢复期保持显示值，但若估算更高则缓慢回升 */
+                if (estimated >= 0 && estimated > display &&
+                    now - last_dischg_step >= pdMS_TO_TICKS(BAT_RECOVERY_STEP_MS)) {
+                    display++;
+                    last_dischg_step = now;
+                }
                 break;
             case BATTERY_STATE_DISCHARGING:
             default:
-                /* 向估算值限速收敛：1%/5s，带迟滞避免抖动 */
-                if (estimated >= 0 &&
-                    now - last_dischg_step >= pdMS_TO_TICKS(BAT_DISCHG_STEP_MS)) {
-                    if (estimated < display - BAT_DISCHG_HYST_PCT) {
-                        display--;
+                if (estimated >= 0) {
+                    int diff = estimated - display;
+                    if (diff > BAT_DISCHG_HYST_PCT &&
+                        now - last_dischg_step >= pdMS_TO_TICKS(BAT_DISCHG_STEP_UP_MS)) {
+                        display += (diff > BAT_DISCHG_CATCHUP_GAP) ? 2 : 1;
+                        display = clamp_percent(display);
                         last_dischg_step = now;
-                    } else if (estimated > display + BAT_DISCHG_HYST_PCT) {
-                        display++;
+                    } else if (diff < -BAT_DISCHG_HYST_PCT &&
+                               now - last_dischg_step >= pdMS_TO_TICKS(BAT_DISCHG_STEP_DOWN_MS)) {
+                        display--;
                         last_dischg_step = now;
                     }
                 }
                 break;
             }
+            display = clamp_percent(display);
         }
 
         /* --- 6. 发布快照 --- */
@@ -389,7 +425,7 @@ int get_battery_percentage(void)
     /* 任务尚未完成首次采样时的兜底：同步估算一次 */
     int mv;
     if (battery_read_voltage_mv(&mv) == ESP_OK) {
-        return ocv_voltage_to_percent(mv);
+        return voltage_to_display_percent(mv);
     }
     return pct;
 }

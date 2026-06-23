@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 
 #include "freertos/FreeRTOS.h"
@@ -32,6 +33,7 @@ ai_result_t g_ai_weekly_result = {0};
 /* AI 结果就绪标志，解析成功后置 1，UI 读取后由主循环清 0 */
 volatile bool g_ai_daily_result_ready  = false;
 volatile bool g_ai_weekly_result_ready = false;
+volatile bool g_ai_task_failed         = false;
 
 static int64_t s_last_daily_success_ts  = 0;
 static int64_t s_last_weekly_success_ts = 0;
@@ -121,6 +123,27 @@ void ai_rate_limit_mark_success(ai_summary_type_t type)
 /* 从 response 字符串解析 AI 结果 */
 static bool ai_result_is_valid(const ai_result_t *result);
 
+static void ai_task_signal_failure(void)
+{
+    g_ai_task_failed = true;
+}
+
+static void ai_result_normalize_percent(ai_result_t *result)
+{
+    int sum = result->cat1_percent + result->cat2_percent + result->cat3_percent;
+    if (sum == 100 || sum < 95 || sum > 105) {
+        return;
+    }
+    int *pcts[] = { &result->cat1_percent, &result->cat2_percent, &result->cat3_percent };
+    int max_idx = 0;
+    for (int i = 1; i < 3; i++) {
+        if (*pcts[i] > *pcts[max_idx]) {
+            max_idx = i;
+        }
+    }
+    *pcts[max_idx] += (100 - sum);
+}
+
 static void ai_result_parse(const char *response, ai_result_t *result)
 {
     memset(result, 0, sizeof(ai_result_t));
@@ -134,26 +157,32 @@ static void ai_result_parse(const char *response, ai_result_t *result)
         /* 去掉行尾 \r 和空格 */
         while (len > 0 && (line[len-1] == '\r' || line[len-1] == ' ')) len--;
         line[len] = '\0';
+        /* 去掉行首空格 */
+        char *content = line;
+        while (*content == ' ' || *content == '\t') {
+            content++;
+        }
 
-        if (strncmp(line, "CAT1|", 5) == 0) {
-            char *tok = strtok(line + 5, "|");
+        if (strncasecmp(content, "CAT1|", 5) == 0) {
+            char *tok = strtok(content + 5, "|");
             if (tok) { strncpy(result->cat1_name, tok, sizeof(result->cat1_name)-1); tok = strtok(NULL, "|"); }
             if (tok) { result->cat1_percent  = atoi(tok); }
-        } else if (strncmp(line, "CAT2|", 5) == 0) {
-            char *tok = strtok(line + 5, "|");
+        } else if (strncasecmp(content, "CAT2|", 5) == 0) {
+            char *tok = strtok(content + 5, "|");
             if (tok) { strncpy(result->cat2_name, tok, sizeof(result->cat2_name)-1); tok = strtok(NULL, "|"); }
             if (tok) { result->cat2_percent  = atoi(tok); }
-        } else if (strncmp(line, "CAT3|", 5) == 0) {
-            char *tok = strtok(line + 5, "|");
+        } else if (strncasecmp(content, "CAT3|", 5) == 0) {
+            char *tok = strtok(content + 5, "|");
             if (tok) { strncpy(result->cat3_name, tok, sizeof(result->cat3_name)-1); tok = strtok(NULL, "|"); }
             if (tok) { result->cat3_percent  = atoi(tok); }
-        } else if (strncmp(line, "SUMMARY|", 8) == 0) {
-            strncpy(result->summary, line + 8, sizeof(result->summary)-1);
-        } else if (strncmp(line, "QUOTE|", 6) == 0) {
-            strncpy(result->quote, line + 6, sizeof(result->quote)-1);
+        } else if (strncasecmp(content, "SUMMARY|", 8) == 0) {
+            strncpy(result->summary, content + 8, sizeof(result->summary)-1);
+        } else if (strncasecmp(content, "QUOTE|", 6) == 0) {
+            strncpy(result->quote, content + 6, sizeof(result->quote)-1);
         }
         p = end ? end + 1 : NULL;
     }
+    ai_result_normalize_percent(result);
     result->valid = ai_result_is_valid(result);
 }
 
@@ -308,6 +337,7 @@ static void ai_demo_task(void *param)
 
     if (!api_key || api_key[0] == '\0') {
         printf("[AI Demo] 未配置认证信息,请检查 ai_chat_secrets.h\r\n");
+        ai_task_signal_failure();
         free(args);
         s_ai_task_running = false;
         vTaskDelete(NULL);
@@ -325,6 +355,7 @@ static void ai_demo_task(void *param)
     response = (char *)heap_caps_malloc(AI_RESPONSE_BUF_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (!file_content || !prompt || !response) {
         printf("[AI Demo] 内存分配失败: file=%p prompt=%p response=%p\r\n", file_content, prompt, response);
+        ai_task_signal_failure();
         free(file_content);
         free(prompt);
         free(response);
@@ -338,6 +369,7 @@ static void ai_demo_task(void *param)
     if (!is_wifi_connected())
     {
         printf("[AI Demo] WiFi 未连接,退出ai功能...\r\n");
+        ai_task_signal_failure();
         free(file_content);
         free(prompt);
         free(response);
@@ -345,22 +377,30 @@ static void ai_demo_task(void *param)
         s_ai_task_running = false;
         vTaskDelete(NULL);
         return;
-    }
-    printf("[AI Demo] WiFi 已连接,等待 NTP 时间同步...\r\n");
-    ensure_sntp_started();
-    if (ntp_initialized) {
-        *ntp_initialized = true;
     }
 
-    if (!wait_system_time_sync(90000)) {
-        printf("[AI Demo] NTP 时间同步失败（手机热点可能拦截 UDP 123），无法进行 HTTPS 请求\r\n");
-        free(file_content);
-        free(prompt);
-        free(response);
-        free(args);
-        s_ai_task_running = false;
-        vTaskDelete(NULL);
-        return;
+    if (!is_system_time_valid()) {
+        printf("[AI Demo] WiFi 已连接,等待 NTP 时间同步...\r\n");
+        ensure_sntp_started();
+        if (ntp_initialized) {
+            *ntp_initialized = true;
+        }
+        if (!wait_system_time_sync(30000)) {
+            printf("[AI Demo] NTP 时间同步失败（手机热点可能拦截 UDP 123），无法进行 HTTPS 请求\r\n");
+            ai_task_signal_failure();
+            free(file_content);
+            free(prompt);
+            free(response);
+            free(args);
+            s_ai_task_running = false;
+            vTaskDelete(NULL);
+            return;
+        }
+    } else {
+        if (ntp_initialized) {
+            *ntp_initialized = true;
+        }
+        printf("[AI Demo] 系统时间已有效,跳过 NTP 等待\r\n");
     }
 
     {
@@ -377,6 +417,7 @@ static void ai_demo_task(void *param)
     FILE *file = fopen("/spiffs/task_done.csv", "r");
     if (file == NULL) {
         printf("[AI Demo] 无法打开 /spiffs/task_done.csv\r\n");
+        ai_task_signal_failure();
         free(file_content);
         free(prompt);
         free(response);
@@ -419,6 +460,7 @@ static void ai_demo_task(void *param)
                                         date_from_s, date_to_s, max_tasks);
         if (task_count == 0) {
             printf("[AI Demo] 日期范围内无任务，跳过 AI 请求\r\n");
+            ai_task_signal_failure();
             free(filtered);
             free(prompt);
             free(response);
@@ -467,8 +509,7 @@ static void ai_demo_task(void *param)
     if (internal_free < AI_MIN_INTERNAL_HEAP_BYTES) {
         printf("[AI Demo] 内部堆不足 (%u B < %d B),放弃 HTTPS 请求\r\n",
                (unsigned)internal_free, AI_MIN_INTERNAL_HEAP_BYTES);
-        snprintf(response, AI_RESPONSE_BUF_SIZE,
-                 "Memory low (%u B), retry later", (unsigned)internal_free);
+        ai_task_signal_failure();
         free(prompt);
         free(response);
         free(args);
@@ -479,6 +520,11 @@ static void ai_demo_task(void *param)
 
     int64_t t_start = esp_timer_get_time();
     esp_err_t ret = ai_chat_send(prompt, response, AI_RESPONSE_BUF_SIZE);
+    if (ret != ESP_OK && is_wifi_connected()) {
+        printf("[AI Demo] 首次请求失败,1.5s 后重试...\r\n");
+        vTaskDelay(pdMS_TO_TICKS(1500));
+        ret = ai_chat_send(prompt, response, AI_RESPONSE_BUF_SIZE);
+    }
     int64_t t_end = esp_timer_get_time();
     int elapsed_ms = (int)((t_end - t_start) / 1000);
 
@@ -498,9 +544,12 @@ static void ai_demo_task(void *param)
             else                            g_ai_weekly_result_ready = true;
         } else {
             printf("[AI Demo] 解析失败：响应未包含有效 CAT1/CAT2/CAT3 行\r\n");
+            printf("[AI Demo] 原始响应前 512 字符: %.512s\r\n", response);
+            ai_task_signal_failure();
         }
     } else {
         printf("[AI Demo] 请求失败 (%d ms): %s\r\n", elapsed_ms, response);
+        ai_task_signal_failure();
     }
 
     printf("[AI Demo] 任务完成。\r\n");

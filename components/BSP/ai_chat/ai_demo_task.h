@@ -31,6 +31,12 @@ extern ai_result_t g_ai_weekly_result;
 extern volatile bool g_ai_daily_result_ready;
 extern volatile bool g_ai_weekly_result_ready;
 
+/* AI 任务失败标志：任务结束但未产出有效结果时置 1，主循环清 0 */
+extern volatile bool g_ai_task_failed;
+
+/* 主循环等待 AI 任务完成的上限（NTP + HTTPS + 余量） */
+#define AI_ANALYSIS_TIMEOUT_MS    (120 * 1000)
+
 /* lwIP/TLS/HTTP 需要足够的内部 DRAM；低于此阈值时拒绝启动，避免 DNS 阶段崩溃 */
 #define AI_MIN_INTERNAL_HEAP_BYTES  (24 * 1024)
 
