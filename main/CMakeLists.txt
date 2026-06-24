@@ -27,6 +27,7 @@ idf_component_register(
                                "wificfg_bridge.c"
                                "wordcard_bridge.c"
                                "volume_bridge.c"
+                               "brightness_bridge.c"
                                "focus_bridge.c"
                         INCLUDE_DIRS ${include_dirs} 
                         PRIV_REQUIRES ${priv_requires}

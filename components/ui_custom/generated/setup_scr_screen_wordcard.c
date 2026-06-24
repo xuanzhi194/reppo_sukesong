@@ -24,9 +24,7 @@ void setup_scr_screen_wordcard(lv_ui *ui)
     lv_obj_set_scrollbar_mode(ui->screen_wordcard, LV_SCROLLBAR_MODE_OFF);
 
     //Write style for screen_wordcard, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_bg_opa(ui->screen_wordcard, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(ui->screen_wordcard, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_grad_dir(ui->screen_wordcard, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_wordcard, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_src(ui->screen_wordcard, &_AAA_flashcards_learn_bg_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_opa(ui->screen_wordcard, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_recolor_opa(ui->screen_wordcard, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -53,29 +51,6 @@ void setup_scr_screen_wordcard(lv_ui *ui)
     lv_obj_set_style_pad_bottom(ui->screen_wordcard_label_index, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(ui->screen_wordcard_label_index, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_wordcard_label_index, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-    //Write codes screen_wordcard_label_spelling
-    ui->screen_wordcard_label_spelling = lv_label_create(ui->screen_wordcard);
-    lv_label_set_text(ui->screen_wordcard_label_spelling, "Acquire");
-    lv_label_set_long_mode(ui->screen_wordcard_label_spelling, LV_LABEL_LONG_SCROLL_CIRCULAR);
-    lv_obj_set_pos(ui->screen_wordcard_label_spelling, 32, 28);
-    lv_obj_set_size(ui->screen_wordcard_label_spelling, 256, 41);
-
-    //Write style for screen_wordcard_label_spelling, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_wordcard_label_spelling, lv_color_hex(0x274a61), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_wordcard_label_spelling, &lv_font_SourceHanSansSC_Medium_28, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_wordcard_label_spelling, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_wordcard_label_spelling, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_wordcard_label_spelling, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_wordcard_label_spelling, 8, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_wordcard_label_phonetic
     ui->screen_wordcard_label_phonetic = lv_label_create(ui->screen_wordcard);
@@ -250,8 +225,47 @@ void setup_scr_screen_wordcard(lv_ui *ui)
     lv_obj_set_style_text_font(ui->screen_wordcard_btn_back, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_text_opa(ui->screen_wordcard_btn_back, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
 
-    //The custom code of screen_wordcard.
+    //Write codes screen_wordcard_label_spelling
+    ui->screen_wordcard_label_spelling = lv_label_create(ui->screen_wordcard);
+    lv_label_set_text(ui->screen_wordcard_label_spelling, "Acquire");
+    lv_label_set_long_mode(ui->screen_wordcard_label_spelling, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_obj_set_pos(ui->screen_wordcard_label_spelling, 32, 28);
+    lv_obj_set_size(ui->screen_wordcard_label_spelling, 256, 41);
 
+    //Write style for screen_wordcard_label_spelling, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_wordcard_label_spelling, lv_color_hex(0x274a61), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_wordcard_label_spelling, &lv_font_SourceHanSansSC_Medium_28, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_wordcard_label_spelling, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_wordcard_label_spelling, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_wordcard_label_spelling, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_wordcard_label_spelling, 8, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_wordcard_label_spelling, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_wordcard_dog_cuo
+    ui->screen_wordcard_dog_cuo = lv_animimg_create(ui->screen_wordcard);
+    lv_animimg_set_src(ui->screen_wordcard_dog_cuo, (const void **) screen_wordcard_dog_cuo_imgs, 6);
+    lv_animimg_set_duration(ui->screen_wordcard_dog_cuo, 50*6);
+    lv_animimg_set_repeat_count(ui->screen_wordcard_dog_cuo, LV_ANIM_REPEAT_INFINITE);
+    lv_obj_set_pos(ui->screen_wordcard_dog_cuo, 241, 85);
+    lv_obj_set_size(ui->screen_wordcard_dog_cuo, 34, 34);
+
+    //Write codes screen_wordcard_dog_dui
+    ui->screen_wordcard_dog_dui = lv_animimg_create(ui->screen_wordcard);
+    lv_animimg_set_src(ui->screen_wordcard_dog_dui, (const void **) screen_wordcard_dog_dui_imgs, 3);
+    lv_animimg_set_duration(ui->screen_wordcard_dog_dui, 100*3);
+    lv_animimg_set_repeat_count(ui->screen_wordcard_dog_dui, LV_ANIM_REPEAT_INFINITE);
+    lv_obj_set_pos(ui->screen_wordcard_dog_dui, 42, 85);
+    lv_obj_set_size(ui->screen_wordcard_dog_dui, 34, 34);
+
+    //The custom code of screen_wordcard.
+    wordcard_screen_custom_init(ui);
 
     //Update current screen layout.
     lv_obj_update_layout(ui->screen_wordcard);

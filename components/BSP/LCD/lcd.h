@@ -118,6 +118,23 @@ void lcd_deinit(void);
 /* swap_color_bytes: 裸机 RGB565 填色通常用 1; LVGL 且 LV_COLOR_16_SWAP=1 时用 0 */
 void lcd_init_with_options(bool swap_color_bytes);
 void lcd_init_full(bool swap_color_bytes, bool dc_inverted, bool bgr_order);
+#ifndef LCD_BACKLIGHT_LEVEL_COUNT
+#define LCD_BACKLIGHT_LEVEL_COUNT  3
+#endif
+
+#ifndef LCD_BACKLIGHT_LEVEL0_PERCENT
+#define LCD_BACKLIGHT_LEVEL0_PERCENT  30
+#endif
+#ifndef LCD_BACKLIGHT_LEVEL1_PERCENT
+#define LCD_BACKLIGHT_LEVEL1_PERCENT  65
+#endif
+#ifndef LCD_BACKLIGHT_LEVEL2_PERCENT
+#define LCD_BACKLIGHT_LEVEL2_PERCENT  100
+#endif
+
+void lcd_backlight_init(void);
+void lcd_backlight_set_level(uint8_t level);
+uint8_t lcd_backlight_level_to_percent(uint8_t level);
 void lcd_on(void);
 void lcd_off(void);
 void lcd_clear(uint16_t color);

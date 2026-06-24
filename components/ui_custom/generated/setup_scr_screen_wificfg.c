@@ -209,6 +209,25 @@ void setup_scr_screen_wificfg(lv_ui *ui)
     lv_style_set_shadow_width(&style_screen_wificfg_list_1_main_main_focused, 0);
     lv_obj_add_style(ui->screen_wificfg_list_1, &style_screen_wificfg_list_1_main_main_focused, LV_PART_MAIN|LV_STATE_FOCUSED);
 
+    //Write style state: LV_STATE_DISABLED for &style_screen_wificfg_list_1_main_main_disabled
+    static lv_style_t style_screen_wificfg_list_1_main_main_disabled;
+    ui_init_style(&style_screen_wificfg_list_1_main_main_disabled);
+
+    lv_style_set_pad_top(&style_screen_wificfg_list_1_main_main_disabled, 5);
+    lv_style_set_pad_left(&style_screen_wificfg_list_1_main_main_disabled, 5);
+    lv_style_set_pad_right(&style_screen_wificfg_list_1_main_main_disabled, 5);
+    lv_style_set_pad_bottom(&style_screen_wificfg_list_1_main_main_disabled, 5);
+    lv_style_set_bg_opa(&style_screen_wificfg_list_1_main_main_disabled, 255);
+    lv_style_set_bg_color(&style_screen_wificfg_list_1_main_main_disabled, lv_color_hex(0xffffff));
+    lv_style_set_bg_grad_dir(&style_screen_wificfg_list_1_main_main_disabled, LV_GRAD_DIR_NONE);
+    lv_style_set_border_width(&style_screen_wificfg_list_1_main_main_disabled, 1);
+    lv_style_set_border_opa(&style_screen_wificfg_list_1_main_main_disabled, 255);
+    lv_style_set_border_color(&style_screen_wificfg_list_1_main_main_disabled, lv_color_hex(0xe1e6ee));
+    lv_style_set_border_side(&style_screen_wificfg_list_1_main_main_disabled, LV_BORDER_SIDE_FULL);
+    lv_style_set_radius(&style_screen_wificfg_list_1_main_main_disabled, 3);
+    lv_style_set_shadow_width(&style_screen_wificfg_list_1_main_main_disabled, 0);
+    lv_obj_add_style(ui->screen_wificfg_list_1, &style_screen_wificfg_list_1_main_main_disabled, LV_PART_MAIN|LV_STATE_DISABLED);
+
     //Write style state: LV_STATE_DEFAULT for &style_screen_wificfg_list_1_main_scrollbar_default
     static lv_style_t style_screen_wificfg_list_1_main_scrollbar_default;
     ui_init_style(&style_screen_wificfg_list_1_main_scrollbar_default);
@@ -452,7 +471,6 @@ void setup_scr_screen_wificfg(lv_ui *ui)
     lv_textarea_set_one_line(ui->screen_wificfg_ta_password, true);
     lv_textarea_set_accepted_chars(ui->screen_wificfg_ta_password, "");
     lv_textarea_set_max_length(ui->screen_wificfg_ta_password, 32);
-
     lv_obj_set_pos(ui->screen_wificfg_ta_password, 15, 60);
     lv_obj_set_size(ui->screen_wificfg_ta_password, 135, 26);
     lv_obj_add_flag(ui->screen_wificfg_ta_password, LV_OBJ_FLAG_HIDDEN);

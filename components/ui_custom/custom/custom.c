@@ -47,6 +47,7 @@ bool todo_archive_label = 0;
 bool main_load_label = 0;
 char current_task_name[128] = {0};
 bool volume_en = 0;
+uint8_t brightness_level = 2;
 bool ble_success = 0;
 bool ble_enabled = 0;
 volatile bool ble_toggle_on_req = 0;
@@ -439,6 +440,35 @@ void volume_on_enabled(void)
 void volume_on_disabled(void)
 {
     volume_disabled_impl();
+}
+
+__attribute__((weak)) void brightness_apply_impl(uint8_t level)
+{
+    (void)level;
+}
+
+void brightness_apply(void)
+{
+    brightness_apply_impl(brightness_level);
+}
+
+void brightness_update_icon(void)
+{
+    static const lv_opa_t icon_opa[3] = { 90, 170, 255 };
+
+    if (guider_ui.screen_setting_img_brightness == NULL) {
+        return;
+    }
+    lv_obj_set_style_img_opa(guider_ui.screen_setting_img_brightness,
+                             icon_opa[brightness_level % 3],
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
+void brightness_cycle(void)
+{
+    brightness_level = (brightness_level + 1U) % 3U;
+    brightness_apply();
+    brightness_update_icon();
 }
 
 /* ESP32 固件由 main/focus_bridge.c 提供强符号实现 */
@@ -897,6 +927,42 @@ void screen_wordmenu_buttion_add(){
 }
 
 //buttion add function screen_wordcard
+static void wordcard_hide_dog_anims_on(lv_ui *ui)
+{
+    if(ui->screen_wordcard_dog_cuo) {
+        lv_anim_del(ui->screen_wordcard_dog_cuo, NULL);
+        lv_obj_add_flag(ui->screen_wordcard_dog_cuo, LV_OBJ_FLAG_HIDDEN);
+    }
+    if(ui->screen_wordcard_dog_dui) {
+        lv_anim_del(ui->screen_wordcard_dog_dui, NULL);
+        lv_obj_add_flag(ui->screen_wordcard_dog_dui, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
+void wordcard_hide_dog_anims(void)
+{
+    wordcard_hide_dog_anims_on(&guider_ui);
+}
+
+void wordcard_show_dog_dui(void)
+{
+    wordcard_hide_dog_anims();
+    lv_animimg_start(guider_ui.screen_wordcard_dog_dui);
+    lv_obj_clear_flag(guider_ui.screen_wordcard_dog_dui, LV_OBJ_FLAG_HIDDEN);
+}
+
+void wordcard_show_dog_cuo(void)
+{
+    wordcard_hide_dog_anims();
+    lv_animimg_start(guider_ui.screen_wordcard_dog_cuo);
+    lv_obj_clear_flag(guider_ui.screen_wordcard_dog_cuo, LV_OBJ_FLAG_HIDDEN);
+}
+
+void wordcard_screen_custom_init(lv_ui *ui)
+{
+    wordcard_hide_dog_anims_on(ui);
+}
+
 void screen_wordcard_buttion_add(){
     if(g == NULL) {
         g = lv_group_create();
@@ -1017,13 +1083,13 @@ void screen_setting_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_setting_btn_wifi);  
     lv_group_add_obj(g, guider_ui.screen_setting_btn_ble);
     lv_group_add_obj(g, guider_ui.screen_setting_btn_volume);
-    lv_group_add_obj(g, guider_ui.screen_setting_btn_update);
+    lv_group_add_obj(g, guider_ui.screen_setting_btn_brightness);
     lv_group_add_obj(g, guider_ui.screen_setting_btn_general);
     lv_group_add_obj(g, guider_ui.screen_setting_btn_back);  
     clear_edge_box(guider_ui.screen_setting_btn_wifi);
     clear_edge_box(guider_ui.screen_setting_btn_ble);
     clear_edge_box(guider_ui.screen_setting_btn_volume);
-    clear_edge_box(guider_ui.screen_setting_btn_update);
+    clear_edge_box(guider_ui.screen_setting_btn_brightness);
     clear_edge_box(guider_ui.screen_setting_btn_general);
     clear_edge_box(guider_ui.screen_setting_btn_back);
 }

@@ -1,3 +1,6 @@
 # LVGL: use PSRAM-backed malloc instead of fixed 32KB internal pool
 CONFIG_LV_MEM_CUSTOM=y
 CONFIG_LV_MEM_CUSTOM_INCLUDE="stdlib.h"
+
+# IRAM 优化（FREERTOS/RINGBUF/HEAP/SPI_FLASH_ROM → Flash）会导致 LVGL 从 Flash
+# 读取大图时触发 "Cache disabled but cached memory region accessed"，已关闭。

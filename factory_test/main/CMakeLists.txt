@@ -1,0 +1,11 @@
+idf_component_register(
+    SRCS
+        "factory_test_main.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        BSP
+        nvs_flash
+        esp_system
+        freertos
+)

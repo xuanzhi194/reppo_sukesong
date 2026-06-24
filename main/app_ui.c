@@ -114,7 +114,15 @@ static void reviewcard_render(const word_session_state_t *st)
         lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic, "");
         lv_label_set_text(guider_ui.screen_reviewcard_label_meaning, "No word need to review");
         lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
+        if (guider_ui.screen_reviewcard_dog_dance != NULL &&
+            lv_obj_is_valid(guider_ui.screen_reviewcard_dog_dance)) {
+            lv_obj_clear_flag(guider_ui.screen_reviewcard_dog_dance, LV_OBJ_FLAG_HIDDEN);
+        }
         return;
+    }
+    if (guider_ui.screen_reviewcard_dog_dance != NULL &&
+        lv_obj_is_valid(guider_ui.screen_reviewcard_dog_dance)) {
+        lv_obj_add_flag(guider_ui.screen_reviewcard_dog_dance, LV_OBJ_FLAG_HIDDEN);
     }
     lv_label_set_text(guider_ui.screen_reviewcard_label_spelling, st->word.word);
     lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic, st->word.phonetic);

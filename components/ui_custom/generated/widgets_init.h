@@ -24,6 +24,9 @@ void clock_count(int *hour, int *min, int *sec);
 
 
 extern const lv_img_dsc_t * screen_reppo_reppo_gif_imgs[24];
+extern const lv_img_dsc_t * screen_wordcard_dog_cuo_imgs[6];
+extern const lv_img_dsc_t * screen_wordcard_dog_dui_imgs[3];
+extern const lv_img_dsc_t * screen_reviewcard_dog_dance_imgs[3];
 
 #ifdef __cplusplus
 }

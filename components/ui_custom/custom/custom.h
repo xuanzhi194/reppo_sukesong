@@ -110,6 +110,7 @@ extern int  all_focus_time;
 extern int  max_focus_time;
 extern int  focus_level_hour[10];
 extern bool volume_en;
+extern uint8_t brightness_level;
 extern bool ble_success;
 extern bool ble_enabled;
 extern volatile bool ble_toggle_on_req;
@@ -155,6 +156,9 @@ void wificfg_show_connect_ui(lv_obj_t *list_btn, const char *password, bool focu
 void wordcard_on_menu_enter(void);
 void volume_on_enabled(void);
 void volume_on_disabled(void);
+void brightness_apply(void);
+void brightness_update_icon(void);
+void brightness_cycle(void);
 void wificfg_on_list_item_clicked(lv_obj_t *list_item);
 extern void screen_ai_load_nvs_data(bool day_or_week);//0 -> day 1->week
 void screen_ai_apply_result(const ui_ai_result_t *r);
@@ -168,6 +172,10 @@ void screen_log_buttion_add();
 void screen_timing_buttion_add();
 void screen_pomodoro_buttion_add();
 void screen_wordcard_buttion_add();
+void wordcard_screen_custom_init(lv_ui *ui);
+void wordcard_show_dog_dui(void);
+void wordcard_show_dog_cuo(void);
+void wordcard_hide_dog_anims(void);
 void screen_wordmenu_buttion_add();
 void screen_reviewcard_buttion_add();
 void screen_setting_buttion_add();

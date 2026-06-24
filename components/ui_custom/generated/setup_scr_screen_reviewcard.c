@@ -204,6 +204,15 @@ void setup_scr_screen_reviewcard(lv_ui *ui)
     lv_obj_set_style_text_font(ui->screen_reviewcard_btn_back, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_text_opa(ui->screen_reviewcard_btn_back, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
 
+    //Write codes screen_reviewcard_dog_dance
+    ui->screen_reviewcard_dog_dance = lv_animimg_create(ui->screen_reviewcard);
+    lv_animimg_set_src(ui->screen_reviewcard_dog_dance, (const void **) screen_reviewcard_dog_dance_imgs, 3);
+    lv_animimg_set_duration(ui->screen_reviewcard_dog_dance, 100*3);
+    lv_animimg_set_repeat_count(ui->screen_reviewcard_dog_dance, LV_ANIM_REPEAT_INFINITE);
+    lv_animimg_start(ui->screen_reviewcard_dog_dance);
+    lv_obj_set_pos(ui->screen_reviewcard_dog_dance, 245, 30);
+    lv_obj_set_size(ui->screen_reviewcard_dog_dance, 34, 34);
+
     //The custom code of screen_reviewcard.
 
 

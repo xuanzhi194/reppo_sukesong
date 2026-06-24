@@ -97,37 +97,37 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_obj_set_style_text_font(ui->screen_setting_btn_general, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_FOCUSED);
     lv_obj_set_style_text_opa(ui->screen_setting_btn_general, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
 
-    //Write codes screen_setting_btn_update
-    ui->screen_setting_btn_update = lv_btn_create(ui->screen_setting);
-    ui->screen_setting_btn_update_label = lv_label_create(ui->screen_setting_btn_update);
-    lv_label_set_text(ui->screen_setting_btn_update_label, "Update");
-    lv_label_set_long_mode(ui->screen_setting_btn_update_label, LV_LABEL_LONG_WRAP);
-    lv_obj_align(ui->screen_setting_btn_update_label, LV_ALIGN_LEFT_MID, 0, 0);
-    lv_obj_set_style_pad_all(ui->screen_setting_btn_update, 0, LV_STATE_DEFAULT);
-    lv_obj_set_width(ui->screen_setting_btn_update_label, LV_PCT(100));
-    lv_obj_set_pos(ui->screen_setting_btn_update, 19, 110);
-    lv_obj_set_size(ui->screen_setting_btn_update, 95, 16);
+    //Write codes screen_setting_btn_brightness
+    ui->screen_setting_btn_brightness = lv_btn_create(ui->screen_setting);
+    ui->screen_setting_btn_brightness_label = lv_label_create(ui->screen_setting_btn_brightness);
+    lv_label_set_text(ui->screen_setting_btn_brightness_label, "Brightness");
+    lv_label_set_long_mode(ui->screen_setting_btn_brightness_label, LV_LABEL_LONG_WRAP);
+    lv_obj_align(ui->screen_setting_btn_brightness_label, LV_ALIGN_LEFT_MID, 0, 0);
+    lv_obj_set_style_pad_all(ui->screen_setting_btn_brightness, 0, LV_STATE_DEFAULT);
+    lv_obj_set_width(ui->screen_setting_btn_brightness_label, LV_PCT(100));
+    lv_obj_set_pos(ui->screen_setting_btn_brightness, 19, 110);
+    lv_obj_set_size(ui->screen_setting_btn_brightness, 95, 16);
 
-    //Write style for screen_setting_btn_update, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_bg_opa(ui->screen_setting_btn_update, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(ui->screen_setting_btn_update, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_setting_btn_update, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_setting_btn_update, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_setting_btn_update, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_setting_btn_update, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_setting_btn_update, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_setting_btn_update, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    //Write style for screen_setting_btn_brightness, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_bg_opa(ui->screen_setting_btn_brightness, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui->screen_setting_btn_brightness, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_btn_brightness, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_setting_btn_brightness, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_setting_btn_brightness, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_btn_brightness, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_setting_btn_brightness, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_setting_btn_brightness, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-    //Write style for screen_setting_btn_update, Part: LV_PART_MAIN, State: LV_STATE_FOCUSED.
-    lv_obj_set_style_bg_opa(ui->screen_setting_btn_update, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_color(ui->screen_setting_btn_update, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_grad_dir(ui->screen_setting_btn_update, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_border_width(ui->screen_setting_btn_update, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_radius(ui->screen_setting_btn_update, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_shadow_width(ui->screen_setting_btn_update, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_color(ui->screen_setting_btn_update, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_font(ui->screen_setting_btn_update, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_FOCUSED);
-    lv_obj_set_style_text_opa(ui->screen_setting_btn_update, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
+    //Write style for screen_setting_btn_brightness, Part: LV_PART_MAIN, State: LV_STATE_FOCUSED.
+    lv_obj_set_style_bg_opa(ui->screen_setting_btn_brightness, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_color(ui->screen_setting_btn_brightness, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_grad_dir(ui->screen_setting_btn_brightness, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_border_width(ui->screen_setting_btn_brightness, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_radius(ui->screen_setting_btn_brightness, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_shadow_width(ui->screen_setting_btn_brightness, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_color(ui->screen_setting_btn_brightness, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_font(ui->screen_setting_btn_brightness, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_obj_set_style_text_opa(ui->screen_setting_btn_brightness, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
 
     //Write codes screen_setting_btn_volume
     ui->screen_setting_btn_volume = lv_btn_create(ui->screen_setting);
@@ -330,21 +330,21 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_obj_set_style_radius(ui->screen_setting_img_ble_dis, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_clip_corner(ui->screen_setting_img_ble_dis, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-    //Write codes screen_setting_img_update
-    ui->screen_setting_img_update = lv_img_create(ui->screen_setting);
-    lv_obj_add_flag(ui->screen_setting_img_update, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_setting_img_update, &_AAA_reppo_update_alpha_100x100);
-    lv_img_set_pivot(ui->screen_setting_img_update, 50,50);
-    lv_img_set_angle(ui->screen_setting_img_update, 0);
-    lv_obj_set_pos(ui->screen_setting_img_update, 173, 41);
-    lv_obj_set_size(ui->screen_setting_img_update, 100, 100);
-    lv_obj_add_flag(ui->screen_setting_img_update, LV_OBJ_FLAG_HIDDEN);
+    //Write codes screen_setting_img_brightness
+    ui->screen_setting_img_brightness = lv_img_create(ui->screen_setting);
+    lv_obj_add_flag(ui->screen_setting_img_brightness, LV_OBJ_FLAG_CLICKABLE);
+    lv_img_set_src(ui->screen_setting_img_brightness, &_AAA_setting_brightness_alpha_105x105);
+    lv_img_set_pivot(ui->screen_setting_img_brightness, 50,50);
+    lv_img_set_angle(ui->screen_setting_img_brightness, 0);
+    lv_obj_set_pos(ui->screen_setting_img_brightness, 173, 41);
+    lv_obj_set_size(ui->screen_setting_img_brightness, 105, 105);
+    lv_obj_add_flag(ui->screen_setting_img_brightness, LV_OBJ_FLAG_HIDDEN);
 
-    //Write style for screen_setting_img_update, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_img_recolor_opa(ui->screen_setting_img_update, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_img_opa(ui->screen_setting_img_update, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_setting_img_update, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_clip_corner(ui->screen_setting_img_update, true, LV_PART_MAIN|LV_STATE_DEFAULT);
+    //Write style for screen_setting_img_brightness, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_img_recolor_opa(ui->screen_setting_img_brightness, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_img_opa(ui->screen_setting_img_brightness, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_setting_img_brightness, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(ui->screen_setting_img_brightness, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_setting_label_about
     ui->screen_setting_label_about = lv_label_create(ui->screen_setting);

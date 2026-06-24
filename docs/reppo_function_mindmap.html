@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reppo 功能思维导图</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172026;
+      background: #f7f9fb;
+      line-height: 1.65;
+    }
+    header {
+      padding: 36px 48px 24px;
+      background: #172026;
+      color: #fff;
+    }
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      font-weight: 700;
+    }
+    header p {
+      margin: 0;
+      color: #c9d3dc;
+      font-size: 14px;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 24px 56px;
+    }
+    section {
+      background: #fff;
+      border: 1px solid #d9e1e8;
+      border-radius: 8px;
+      padding: 24px;
+      margin: 0 0 20px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+    h3 {
+      margin: 20px 0 8px;
+      font-size: 16px;
+    }
+    ul {
+      margin-top: 8px;
+    }
+    li {
+      margin: 4px 0;
+    }
+    code {
+      background: #eef3f7;
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #d9e1e8;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #eef3f7;
+    }
+    .note {
+      color: #506070;
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .mini {
+      border: 1px solid #d9e1e8;
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfe;
+    }
+    .mini h3 {
+      margin-top: 0;
+    }
+    @media print {
+      header { background: #fff; color: #172026; border-bottom: 1px solid #d9e1e8; }
+      header p { color: #506070; }
+      section { box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Reppo 功能思维导图</h1>
+    <p>基于当前 ESP-IDF 工程静态代码阅读生成。详细维护版见 docs/reppo_function_mindmap.md。</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>总体思维导图</h2>
+      <pre class="mermaid">
+mindmap
+  root((Reppo))
+    产品定位
+      ESP32-S3-N16R8 便携学习与专注设备
+      ST7789P3 横屏
+      EC06 旋钮交互
+      WiFi BLE AI 本地存储
+    固件启动链路
+      硬件初始化
+      存储与数据初始化
+      LVGL UI 初始化
+      Worker 后台任务
+      主循环状态处理
+    BSP 硬件层
+      LCD ST7789P3 8080 I8
+      EC06 编码器 GPIO1 GPIO2
+      确认键 GPIO5
+      RX8130 RTC I2C0
+      电池 ADC GPIO8
+      TP4056 GPIO19 GPIO20
+      WS2812B GPIO17
+      蜂鸣器 GPIO7
+      WiFi STA
+      NimBLE GATT
+    应用功能层
+      主界面
+      Todo 与 Done
+      番茄钟
+      专注模式
+      单词卡
+      错词复习
+      AI 日周总结
+      设置
+      答案书
+    数据与持久化
+      SPIFFS
+      NVS
+      10MB factory
+      1MB storage
+    云端与工具
+      DeepSeek AI Proxy
+      api.reppo.top HTTPS
+      Web Serial 烧录
+      reusable_bsp
+    稳定性策略
+      LVGL mutex
+      对象存活检查
+      DMA 超时保护
+      电池状态机
+      AI heap 检查
+      BLE 分片传输
+      RTC 离线回退
+    待确认与风险
+      工程名 project-name
+      README 样板化
+      AI token 占位符
+      GIF PNG 解码未启用
+      CSV 复杂文本兼容
+      BLE 配置可收窄
+      </pre>
+    </section>
+
+    <section>
+      <h2>架构分层</h2>
+      <div class="grid">
+        <div class="mini">
+          <h3>硬件 BSP 层</h3>
+          <ul>
+            <li>LCD、EC06、RX8130、电池、RGB、蜂鸣器、WiFi、BLE、AI HTTP 客户端。</li>
+            <li>主要目录：<code>components/BSP</code>。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>系统服务层</h3>
+          <ul>
+            <li>NVS、SPIFFS、WiFi worker、NVS worker、LVGL port、SNTP/RTC 切换。</li>
+            <li>主要目录：<code>main</code>、<code>components/lv_port</code>。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>应用功能层</h3>
+          <ul>
+            <li>主界面、Todo、番茄钟、专注、单词卡、AI 总结、设置、答案书。</li>
+            <li>主要目录：<code>components/ui_custom</code>、<code>main/app_ui.c</code>。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>外部工具层</h3>
+          <ul>
+            <li>AI 代理服务、网页烧录站、可复用 BSP 文档。</li>
+            <li>主要目录：<code>server/ai_proxy</code>、<code>web-flash</code>、<code>reusable_bsp</code>。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>核心功能清单</h2>
+      <div class="grid">
+        <div class="mini">
+          <h3>显示与输入</h3>
+          <ul>
+            <li>ST7789P3 8080-I8，横屏 320x170。</li>
+            <li>LVGL 8，双缓冲，DMA flush，100ms 超时保护。</li>
+            <li>EC06 旋钮映射 LVGL keypad，GPIO5 确认键。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>时间与电源</h3>
+          <ul>
+            <li>RX8130 RTC，WiFi 在线时 SNTP 同步，离线读取 RTC。</li>
+            <li>403450 800mAh 电池，ADC + TP4056 CHRG/STDBY 判断。</li>
+            <li>电量使用 SOC 曲线、状态机和平滑策略。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>学习与专注</h3>
+          <ul>
+            <li>Todo CSV、Done 归档、BLE 同步。</li>
+            <li>番茄钟、秒表、任务绑定专注、等级累计。</li>
+            <li>单词卡随机学习 30 个，错词复习队列。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>AI 与连接</h3>
+          <ul>
+            <li>WiFi 配网、凭据保存、SNTP 管理。</li>
+            <li>NimBLE GATT，支持 JSON 分片和 notify。</li>
+            <li>AI 日/周总结通过 ECS Proxy 调 DeepSeek。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>硬件资源表</h2>
+      <table>
+        <thead>
+          <tr><th>功能</th><th>器件/接口</th><th>引脚/参数</th><th>代码位置</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>LCD</td><td>ST7789P3 8080-I8</td><td>320x170 UI，12MHz PCLK</td><td>components/BSP/LCD</td></tr>
+          <tr><td>编码器</td><td>EC06</td><td>A GPIO1，B GPIO2</td><td>components/BSP/encoder</td></tr>
+          <tr><td>确认键</td><td>GPIO key</td><td>GPIO5</td><td>components/lv_port</td></tr>
+          <tr><td>RTC</td><td>RX8130</td><td>I2C0 SDA15 SCL16，0x32</td><td>components/BSP/RX8130</td></tr>
+          <tr><td>电池 ADC</td><td>100K/100K 分压</td><td>GPIO8 / ADC1_CH7</td><td>components/BSP/bat_percent</td></tr>
+          <tr><td>充电/满电</td><td>TP4056</td><td>GPIO19 / GPIO20，低有效</td><td>components/BSP/bat_percent</td></tr>
+          <tr><td>RGB</td><td>WS2812B</td><td>GPIO17，10 颗</td><td>components/BSP/RGB</td></tr>
+          <tr><td>蜂鸣器</td><td>LEDC PWM</td><td>GPIO7</td><td>components/BSP/buzzer</td></tr>
+          <tr><td>BLE</td><td>NimBLE GATT</td><td>service 0x00FF / char 0xFF01</td><td>components/BSP/bsp_ble</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>数据流</h2>
+      <h3>时间</h3>
+      <pre class="mermaid">
+flowchart LR
+  WiFi[WiFi connected] --> SNTP[SNTP sync]
+  SNTP --> SYS[System time]
+  SYS --> RTC[Sync RX8130]
+  RTC --> UI[LVGL time labels]
+  OFF[WiFi offline] --> RTCREAD[Read RX8130]
+  RTCREAD --> UI
+      </pre>
+      <h3>Todo 与 AI</h3>
+      <pre class="mermaid">
+flowchart LR
+  BLE[BLE JSON] --> TODO[/todo.csv/]
+  TODO --> UI[Todo UI]
+  UI --> FOCUS[Focus countdown]
+  FOCUS --> DONE[/task_done.csv/]
+  DONE --> PROMPT[Build prompt]
+  PROMPT --> PROXY[ECS AI Proxy]
+  PROXY --> DS[DeepSeek]
+  DS --> RESULT[NVS AIData]
+  RESULT --> AIUI[AI screen]
+      </pre>
+    </section>
+
+    <section>
+      <h2>待确认与扩展边界</h2>
+      <ul>
+        <li>当前 AI 功能是“固定数据总结”，不是完整代码 agent。若要自然语言生成任意固件，需要服务器侧代码生成、编译、日志反馈、固件产物管理和沙箱。</li>
+        <li>当前 LVGL 未启用 GIF/PNG/BMP 解码。任意图片/GIF 显示需要资源生成/上传、转换压缩、存储、解码和屏幕适配链路。</li>
+        <li>CSV 适合受控数据，复杂自然语言任务文本建议升级为 JSON 或严格 CSV 转义。</li>
+        <li>BLE 配置启用角色较多，量产前可按真实角色收窄以节省内存。</li>
+        <li>工程名和网页烧录 bin 名仍是 <code>project-name</code>，发布前建议统一为 Reppo。</li>
+      </ul>
+      <p class="note">完整逐项清单请查看 Markdown 文档。</p>
+    </section>
+  </main>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+  </script>
+</body>
+</html>

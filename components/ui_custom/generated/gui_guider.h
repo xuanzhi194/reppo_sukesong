@@ -95,6 +95,20 @@ typedef struct
 	lv_obj_t *screen_todoback_btn_cancel_label;
 	lv_obj_t *screen_todoback_btn_recover;
 	lv_obj_t *screen_todoback_btn_recover_label;
+	lv_obj_t *screen_wordcard;
+	bool screen_wordcard_del;
+	lv_obj_t *screen_wordcard_label_index;
+	lv_obj_t *screen_wordcard_label_phonetic;
+	lv_obj_t *screen_wordcard_label_meaning;
+	lv_obj_t *screen_wordcard_btn_dui;
+	lv_obj_t *screen_wordcard_btn_dui_label;
+	lv_obj_t *screen_wordcard_btn_cuo;
+	lv_obj_t *screen_wordcard_btn_cuo_label;
+	lv_obj_t *screen_wordcard_btn_back;
+	lv_obj_t *screen_wordcard_btn_back_label;
+	lv_obj_t *screen_wordcard_label_spelling;
+	lv_obj_t *screen_wordcard_dog_cuo;
+	lv_obj_t *screen_wordcard_dog_dui;
 	lv_obj_t *screen_timing;
 	bool screen_timing_del;
 	lv_obj_t *screen_timing_btn_main;
@@ -117,18 +131,6 @@ typedef struct
 	lv_obj_t *screen_wordmeun_btn_review_label;
 	lv_obj_t *screen_wordmeun_btn_back;
 	lv_obj_t *screen_wordmeun_btn_back_label;
-	lv_obj_t *screen_wordcard;
-	bool screen_wordcard_del;
-	lv_obj_t *screen_wordcard_label_index;
-	lv_obj_t *screen_wordcard_label_spelling;
-	lv_obj_t *screen_wordcard_label_phonetic;
-	lv_obj_t *screen_wordcard_label_meaning;
-	lv_obj_t *screen_wordcard_btn_dui;
-	lv_obj_t *screen_wordcard_btn_dui_label;
-	lv_obj_t *screen_wordcard_btn_cuo;
-	lv_obj_t *screen_wordcard_btn_cuo_label;
-	lv_obj_t *screen_wordcard_btn_back;
-	lv_obj_t *screen_wordcard_btn_back_label;
 	lv_obj_t *screen_reviewcard;
 	bool screen_reviewcard_del;
 	lv_obj_t *screen_reviewcard_label_index;
@@ -139,6 +141,7 @@ typedef struct
 	lv_obj_t *screen_reviewcard_btn_dui_label;
 	lv_obj_t *screen_reviewcard_btn_back;
 	lv_obj_t *screen_reviewcard_btn_back_label;
+	lv_obj_t *screen_reviewcard_dog_dance;
 	lv_obj_t *screen_pomodoro;
 	bool screen_pomodoro_del;
 	lv_obj_t *screen_pomodoro_img_pomorect1;
@@ -173,8 +176,8 @@ typedef struct
 	lv_obj_t *screen_setting_btn_back_label;
 	lv_obj_t *screen_setting_btn_general;
 	lv_obj_t *screen_setting_btn_general_label;
-	lv_obj_t *screen_setting_btn_update;
-	lv_obj_t *screen_setting_btn_update_label;
+	lv_obj_t *screen_setting_btn_brightness;
+	lv_obj_t *screen_setting_btn_brightness_label;
 	lv_obj_t *screen_setting_btn_volume;
 	lv_obj_t *screen_setting_btn_volume_label;
 	lv_obj_t *screen_setting_btn_ble;
@@ -187,7 +190,7 @@ typedef struct
 	lv_obj_t *screen_setting_img_wifi_close;
 	lv_obj_t *screen_setting_img_ble;
 	lv_obj_t *screen_setting_img_ble_dis;
-	lv_obj_t *screen_setting_img_update;
+	lv_obj_t *screen_setting_img_brightness;
 	lv_obj_t *screen_setting_label_about;
 	lv_obj_t *screen_setting_label_txt1;
 	lv_obj_t *screen_setting_label_txt2;
@@ -331,9 +334,9 @@ void setup_scr_screen_main(lv_ui *ui);
 void setup_scr_screen_todolist(lv_ui *ui);
 void setup_scr_screen_todosel(lv_ui *ui);
 void setup_scr_screen_todoback(lv_ui *ui);
+void setup_scr_screen_wordcard(lv_ui *ui);
 void setup_scr_screen_timing(lv_ui *ui);
 void setup_scr_screen_wordmeun(lv_ui *ui);
-void setup_scr_screen_wordcard(lv_ui *ui);
 void setup_scr_screen_reviewcard(lv_ui *ui);
 void setup_scr_screen_pomodoro(lv_ui *ui);
 void setup_scr_screen_setting(lv_ui *ui);
@@ -415,6 +418,19 @@ LV_IMG_DECLARE(_AAA_todosel_bg_320x170);
 
 LV_IMG_DECLARE(_AAA_todo_fanqie_bg2_320x170);
 
+LV_IMG_DECLARE(_AAA_flashcards_learn_bg_320x170);
+#include "extra/widgets/animimg/lv_animimg.h"
+LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_0);
+LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_1);
+LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_2);
+LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_3);
+LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_4);
+LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_5);
+#include "extra/widgets/animimg/lv_animimg.h"
+LV_IMG_DECLARE(screen_wordcard_dog_duiAAA_dog_love_0);
+LV_IMG_DECLARE(screen_wordcard_dog_duiAAA_dog_love_1);
+LV_IMG_DECLARE(screen_wordcard_dog_duiAAA_dog_love_2);
+
 LV_IMG_DECLARE(_AAA_clock_bg_320x170);
 LV_IMG_DECLARE(_AAA_shandian_icon_alpha_9x13);
 LV_IMG_DECLARE(_AAA_clock_wifi_icon_alpha_14x14);
@@ -422,9 +438,11 @@ LV_IMG_DECLARE(_AAA_clock_wifiduan_icon_alpha_15x15);
 
 LV_IMG_DECLARE(_AAA_cishu_320x170);
 
-LV_IMG_DECLARE(_AAA_flashcards_learn_bg_320x170);
-
 LV_IMG_DECLARE(_AAA_flashcards_review_bg_320x170);
+#include "extra/widgets/animimg/lv_animimg.h"
+LV_IMG_DECLARE(screen_reviewcard_dog_danceAAA_dog_dance_0);
+LV_IMG_DECLARE(screen_reviewcard_dog_danceAAA_dog_dance_1);
+LV_IMG_DECLARE(screen_reviewcard_dog_danceAAA_dog_dance_2);
 
 LV_IMG_DECLARE(_AAA_fanqie_bg_320x170);
 LV_IMG_DECLARE(_pomorect_alpha_257x52);
@@ -439,7 +457,7 @@ LV_IMG_DECLARE(_AAA_clock_wifi_icon_alpha_100x100);
 LV_IMG_DECLARE(_AAA_clock_wifiduan_icon_alpha_100x100);
 LV_IMG_DECLARE(_AAA_reppo_bluetooth_icon_alpha_57x92);
 LV_IMG_DECLARE(_AAA_reppo_ble_dis_alpha_100x100);
-LV_IMG_DECLARE(_AAA_reppo_update_alpha_100x100);
+LV_IMG_DECLARE(_AAA_setting_brightness_alpha_105x105);
 
 LV_IMG_DECLARE(_AAA_wifi_lianjie_320x170);
 LV_IMG_DECLARE(_pomorect_alpha_160x125);
@@ -475,12 +493,12 @@ LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_14)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_20)
 LV_FONT_DECLARE(lv_font_Acme_Regular_14)
+LV_FONT_DECLARE(lv_font_arial_14)
+LV_FONT_DECLARE(lv_font_montserratMedium_12)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_28)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_52)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_17)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_12)
-LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_28)
-LV_FONT_DECLARE(lv_font_arial_14)
-LV_FONT_DECLARE(lv_font_montserratMedium_12)
 LV_FONT_DECLARE(lv_font_Abel_regular_30)
 LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_14)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_13)

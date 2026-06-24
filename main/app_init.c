@@ -23,6 +23,7 @@
 #include "wifi_cred_storage.h"
 #include "wificfg_bridge.h"
 #include "volume_bridge.h"
+#include "brightness_bridge.h"
 #include "focus_bridge.h"
 #include "word_storage.h"
 #include "ws2812b.h"
@@ -87,6 +88,7 @@ void app_init_lvgl_ui(void)
     lvgl_tick_timer_init();
     lv_init();
     lv_port_disp_init();
+    brightness_bridge_init();
     lv_port_indev_init();
     setup_ui(&guider_ui);
     lv_refr_now(NULL);

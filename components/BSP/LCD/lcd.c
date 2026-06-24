@@ -1,5 +1,6 @@
 #include "lcd.h"
 #include "driver/gpio.h"
+#include "driver/ledc.h"
 #include "esp_attr.h"
 #include "esp_check.h"
 #include "esp_err.h"
@@ -63,9 +64,96 @@ void lcd_register_flush_done_cb(lcd_flush_done_cb_t cb, void *user_ctx)
     s_flush_done_user_ctx = user_ctx;
 }
 
-/* ---------- 背光 ---------- */
-void lcd_on(void)  { gpio_set_level(LCD_PIN_BLK, 1); }
-void lcd_off(void) { gpio_set_level(LCD_PIN_BLK, 0); }
+/* ---------- 背光 (PWM, 与蜂鸣器分用不同 LEDC timer/channel) ---------- */
+#define BLK_LEDC_TIMER      LEDC_TIMER_1
+#define BLK_LEDC_CHANNEL    LEDC_CHANNEL_1
+#define BLK_LEDC_MODE       LEDC_LOW_SPEED_MODE
+#define BLK_LEDC_DUTY_MAX   ((1U << 10) - 1U)
+
+static bool     s_backlight_pwm_ready = false;
+static uint8_t  s_backlight_percent   = 100;
+
+static const uint8_t s_backlight_level_percent[LCD_BACKLIGHT_LEVEL_COUNT] = {
+    LCD_BACKLIGHT_LEVEL0_PERCENT,
+    LCD_BACKLIGHT_LEVEL1_PERCENT,
+    LCD_BACKLIGHT_LEVEL2_PERCENT,
+};
+
+static void lcd_backlight_apply_percent(uint8_t percent)
+{
+    if (percent > 100) {
+        percent = 100;
+    }
+    s_backlight_percent = percent;
+
+    if (!s_backlight_pwm_ready) {
+        gpio_set_level(LCD_PIN_BLK, percent > 0 ? 1 : 0);
+        return;
+    }
+
+    uint32_t duty = (BLK_LEDC_DUTY_MAX * (uint32_t)percent) / 100U;
+    ledc_set_duty(BLK_LEDC_MODE, BLK_LEDC_CHANNEL, duty);
+    ledc_update_duty(BLK_LEDC_MODE, BLK_LEDC_CHANNEL);
+}
+
+void lcd_backlight_init(void)
+{
+    if (s_backlight_pwm_ready) {
+        return;
+    }
+
+    ledc_timer_config_t timer = {
+        .speed_mode      = BLK_LEDC_MODE,
+        .timer_num         = BLK_LEDC_TIMER,
+        .duty_resolution   = LEDC_TIMER_10_BIT,
+        .freq_hz           = 5000,
+        .clk_cfg           = LEDC_AUTO_CLK,
+    };
+    ESP_ERROR_CHECK(ledc_timer_config(&timer));
+
+    ledc_channel_config_t channel = {
+        .speed_mode = BLK_LEDC_MODE,
+        .channel    = BLK_LEDC_CHANNEL,
+        .timer_sel  = BLK_LEDC_TIMER,
+        .intr_type  = LEDC_INTR_DISABLE,
+        .gpio_num   = LCD_PIN_BLK,
+        .duty       = 0,
+        .hpoint     = 0,
+    };
+    ESP_ERROR_CHECK(ledc_channel_config(&channel));
+    s_backlight_pwm_ready = true;
+    lcd_backlight_apply_percent(s_backlight_percent);
+}
+
+void lcd_backlight_set_level(uint8_t level)
+{
+    if (level >= LCD_BACKLIGHT_LEVEL_COUNT) {
+        level = LCD_BACKLIGHT_LEVEL_COUNT - 1;
+    }
+    lcd_backlight_apply_percent(s_backlight_level_percent[level]);
+}
+
+uint8_t lcd_backlight_level_to_percent(uint8_t level)
+{
+    if (level >= LCD_BACKLIGHT_LEVEL_COUNT) {
+        level = LCD_BACKLIGHT_LEVEL_COUNT - 1;
+    }
+    return s_backlight_level_percent[level];
+}
+
+void lcd_on(void)
+{
+    if (s_backlight_percent == 0) {
+        lcd_backlight_apply_percent(100);
+    } else {
+        lcd_backlight_apply_percent(s_backlight_percent);
+    }
+}
+
+void lcd_off(void)
+{
+    lcd_backlight_apply_percent(0);
+}
 
 /* datasheet: 8080 只写时 RD(Pin9) 保持无效(高) */
 static void lcd_gpio_8080_idle(void)
@@ -899,15 +987,9 @@ void lcd_init_full(bool swap_color_bytes, bool dc_inverted, bool bgr_order)
     lcd_gpio_8080_idle();
 
     if (!s_blk_gpio_done) {
-        gpio_config_t bk_io = {
-            .mode         = GPIO_MODE_OUTPUT,
-            .pin_bit_mask = 1ULL << LCD_PIN_BLK,
-        };
-        ESP_ERROR_CHECK(gpio_config(&bk_io));
-        gpio_set_drive_capability(LCD_PIN_BLK, GPIO_DRIVE_CAP_3);
+        lcd_backlight_init();
         s_blk_gpio_done = true;
     }
-    gpio_set_level(LCD_PIN_BLK, 1);
 
     const int data_normal[8] = {
         LCD_PIN_DB0, LCD_PIN_DB1, LCD_PIN_DB2, LCD_PIN_DB3,
