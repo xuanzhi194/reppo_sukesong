@@ -103,7 +103,7 @@ static void buzzer_tone(uint32_t freq_hz, uint32_t dur_ms)
 {
     buzzer_set_sound(freq_hz, 70);
     DELAY_MS(dur_ms);
-    buzzer_set_sound(0, 0);
+    buzzer_set_sound(freq_hz, 0);
 }
 
 /* ============================================================================

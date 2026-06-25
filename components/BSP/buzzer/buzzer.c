@@ -56,9 +56,19 @@ void buzzer_set_sound(uint32_t freq, uint8_t volume_percent) {
         if (buzzer_muted()) {
             volume_percent = 0;
         }
-        // update frequency
+
+        /* volume=0 时仅关断输出；不可把 freq 设为 0，否则 ledc_set_freq 会除零崩溃 */
+        if (volume_percent == 0) {
+            ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, 0);
+            ledc_update_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL);
+            return;
+        }
+
+        if (freq == 0) {
+            freq = BUZZER_INITIAL_FREQ;
+        }
+
         ledc_set_freq(BUZZER_LEDC_MODE, BUZZER_LEDC_TIMER, freq);
-        // set duty cycle (2^13 / 2 = 4096)
         uint32_t duty_param = (8192 * volume_percent) / 100;
         ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, duty_param);
         ledc_update_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL);
