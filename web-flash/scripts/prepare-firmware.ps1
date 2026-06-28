@@ -10,7 +10,6 @@ $Dest = Join-Path $WebFlash "firmware"
 $map = @{
     "bootloader.bin"         = "bootloader\bootloader.bin"
     "partition-table.bin"    = "partition_table\partition-table.bin"
-    "ota_data_initial.bin"   = "ota_data_initial.bin"
     "project-name.bin"       = "project-name.bin"
     "storage.bin"            = "storage.bin"
 }

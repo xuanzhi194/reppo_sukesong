@@ -66,9 +66,10 @@
 |------|------|
 | bootloader.bin | 0x0 |
 | partition-table.bin | 0x8000 |
-| ota_data_initial.bin | 0xd000 |
 | project-name.bin | 0x10000 |
-| storage.bin | 0xa10000 |
+| storage.bin | 0xc10000 |
+
+`badge` 分区（0xe10000，1MB FAT）由固件首次使用时格式化，无需预烧 bin。
 
 与 `partitions.csv` 及 `idf.py build` 输出一致。
 
