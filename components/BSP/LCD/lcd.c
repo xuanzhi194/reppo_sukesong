@@ -977,9 +977,22 @@ void lcd_deinit(void)
     s_flush_done_user_ctx = NULL;
 }
 
+void lcd_set_madctl(uint8_t madctl)
+{
+    if (s_io_handle == NULL) {
+        return;
+    }
+    esp_lcd_panel_io_tx_param(s_io_handle, LCD_CMD_MADCTL, &madctl, 1);
+}
+
 void lcd_init_full(bool swap_color_bytes, bool dc_inverted, bool bgr_order)
 {
     static bool s_blk_gpio_done = false;
+
+    /* 已初始化时先释放 I80 总线，避免 esp_lcd_new_i80_bus 报 no free slot */
+    if (s_i80_bus != NULL) {
+        lcd_deinit();
+    }
 
     s_dc_inverted = dc_inverted;
     s_bgr_order   = bgr_order;

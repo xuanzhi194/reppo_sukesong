@@ -227,6 +227,9 @@ static const uint8_t s_font8x8[95][8] = {
 #define UI_ROW_Y0    (UI_TITLE_H + UI_SEP_H)   /* = 17 */
 #define UI_TEXT_DY    4    /* 行内字体顶部偏移 */
 
+/* 产测 UI 用 MADCTL：MV 横屏，去掉 MX 避免文字左右镜像 (0x60 含 MX) */
+#define FACTORY_LCD_MADCTL  0x20
+
 /* RGB565 颜色（swap_color_bytes=true 下与 lcd.h 宏一致） */
 #define UI_C_TITLE_BG  0x000F
 #define UI_C_TITLE_FG  0xFFFF
@@ -379,6 +382,7 @@ static void ui_init_screen(void)
 {
     for (int i = 0; i < TEST_COUNT; i++) s_test_states[i] = STATE_WAIT;
     lcd_init_with_options(true);
+    lcd_set_madctl(FACTORY_LCD_MADCTL);
     lcd_on();
     ui_draw_title("REPPO FACTORY TEST v1.0", UI_C_TITLE_BG, UI_C_TITLE_FG);
     for (int i = 0; i < TEST_COUNT; i++) ui_draw_test_row(i);
@@ -600,7 +604,7 @@ static bool test_rtc(void)
 
 /* ============================================================================
  *  [08] LCD ST7789P3 视觉测试（纯色 + 八色彩条）
- *  注意：此测试会重初始化 LCD，结束后由主循环调用 ui_redraw_all() 恢复界面
+ *  LCD 已在 ui_init_screen 初始化，此处仅做视觉检验，不重初始化 I80 总线
  * ============================================================================ */
 
 static void lcd_draw_color_bars(void)
@@ -624,10 +628,9 @@ static void lcd_draw_color_bars(void)
 
 static bool test_lcd(void)
 {
-    ESP_LOGI(TAG, "LCD: 初始化 ST7789P3 (8080 I80)...");
-    lcd_init_with_options(true);
-    lcd_on();
-    DELAY_MS(200);
+    ESP_LOGI(TAG, "LCD: 全屏纯色 + 八色彩条视觉测试...");
+    lcd_set_madctl(FACTORY_LCD_MADCTL);
+    DELAY_MS(100);
 
     const struct { uint16_t color; const char *name; } fills[] = {
         {RED,    "红"},

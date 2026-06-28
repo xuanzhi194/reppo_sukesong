@@ -115,6 +115,7 @@
 
 void lcd_init(void);
 void lcd_deinit(void);
+void lcd_set_madctl(uint8_t madctl);
 /* swap_color_bytes: 裸机 RGB565 填色通常用 1; LVGL 且 LV_COLOR_16_SWAP=1 时用 0 */
 void lcd_init_with_options(bool swap_color_bytes);
 void lcd_init_full(bool swap_color_bytes, bool dc_inverted, bool bgr_order);
