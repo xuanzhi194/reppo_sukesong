@@ -1271,6 +1271,26 @@ void screen_getanswer_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_getanswer_btn_answer); 
     clear_focus_box(guider_ui.screen_getanswer_btn_answer);
 }
+
+//buttion add function screen_picture
+void screen_picture_buttion_add(){
+    if(g == NULL) {
+        g = lv_group_create();
+    } else {
+        lv_group_remove_all_objs(g); 
+    }
+    //setting default group
+    lv_group_set_default(g);
+    //indev with group
+    lv_indev_t * indev = NULL;
+    while ((indev = lv_indev_get_next(indev))) {
+        if (lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
+            lv_indev_set_group(indev, g);
+        }
+    }
+    lv_group_add_obj(g, guider_ui.screen_picture_img_picture); 
+    clear_focus_box(guider_ui.screen_picture_img_picture);
+}
 void custom_init(lv_ui *ui)
 {
 

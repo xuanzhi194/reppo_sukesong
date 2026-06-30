@@ -186,6 +186,7 @@ void screen_donelist_buttion_add();
 void screen_todoback_buttion_add();
 void screen_answer_buttion_add();
 void screen_getanswer_buttion_add();
+void screen_picture_buttion_add();
 void answer_book_show_random_answer(void);
 
 void my_kb_event_cb(lv_event_t * e);
