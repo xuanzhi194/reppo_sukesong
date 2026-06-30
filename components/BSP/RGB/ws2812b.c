@@ -10,7 +10,23 @@ extern bool ble_flow_led_en;
 #define LED_STRIP_NUM_LEDS  10 
 
 static led_strip_handle_t led_strip;
-void init_led_strip() {
+static bool s_led_strip_ready = false;
+
+/** 上电后立即点亮全部 LED，不等待流水动画 */
+static void led_strip_boot_instant_hint(void)
+{
+    for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
+        led_strip_set_pixel(led_strip, i, 51, 64, 69);
+    }
+    led_strip_refresh(led_strip);
+}
+
+void init_led_strip(void)
+{
+    if (s_led_strip_ready) {
+        return;
+    }
+
     /* 1. LED strip general configuration */
     led_strip_config_t strip_config = {
         .strip_gpio_num = LED_STRIP_GPIO_PIN,
@@ -29,9 +45,9 @@ void init_led_strip() {
 
     /* Create the LED strip object using RMT backend */
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
-    
-    /* Clear all LEDs (Power-on reset state) */
-    led_strip_clear(led_strip);
+
+    s_led_strip_ready = true;
+    led_strip_boot_instant_hint();
 }
 
 #define FLOW_LIGHT_STEP_MS_DEFAULT  50
@@ -84,9 +100,9 @@ void start_flow_light_fast_async(uint32_t r, uint32_t g, uint32_t b)
 static void boot_led_blink_task(void *param)
 {
     (void)param;
-    set_flow_light(51, 64, 69);
-    set_flow_light(10, 24, 49);
-    set_flow_light(20, 20, 20);
+    set_flow_light_fast(51, 64, 69);
+    set_flow_light_fast(10, 24, 49);
+    set_flow_light_fast(20, 20, 20);
     led_strip_clear(led_strip);
     led_strip_refresh(led_strip);
     vTaskDelete(NULL);
@@ -94,7 +110,10 @@ static void boot_led_blink_task(void *param)
 
 void start_boot_led_blink(void)
 {
-    xTaskCreatePinnedToCore(boot_led_blink_task, "boot_led", 2048, NULL, 5, NULL, 0);
+    if (!s_led_strip_ready) {
+        init_led_strip();
+    }
+    xTaskCreatePinnedToCore(boot_led_blink_task, "boot_led", 2048, NULL, 8, NULL, 0);
 }
 
 static TaskHandle_t s_ble_flow_task = NULL;

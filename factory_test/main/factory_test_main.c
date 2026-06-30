@@ -227,10 +227,7 @@ static const uint8_t s_font8x8[95][8] = {
 #define UI_ROW_Y0    (UI_TITLE_H + UI_SEP_H)   /* = 17 */
 #define UI_TEXT_DY    4    /* 行内字体顶部偏移 */
 
-/* 产测 UI 用 MADCTL：MV 横屏，去掉 MX 避免文字左右镜像 (0x60 含 MX) */
-#define FACTORY_LCD_MADCTL  0x20
-
-/* RGB565 颜色（swap_color_bytes=true 下与 lcd.h 宏一致） */
+/* RGB565 颜色（与 lcd.h 宏一致，配合 lcd_init() / swap=1） */
 #define UI_C_TITLE_BG  0x000F
 #define UI_C_TITLE_FG  0xFFFF
 #define UI_C_SEP       0x07FF
@@ -287,20 +284,21 @@ static const char * const s_ui_names[TEST_COUNT] = {
  *  LCD UI — 像素行渲染工具
  * ============================================================================ */
 
-/* 在 s_row_buf[x] 渲染 ASCII 字符 c 的第 fr 行（0..7）像素 */
+/* 在 s_row_buf[x] 渲染 ASCII 字符 c 的第 fr 行（0..7）像素
+ * ST7789 MADCTL=0x60 下逐字符会左右镜像，写入时反转列序修正字形。 */
 static void row_char(int x, int fr, char c, uint16_t fg, uint16_t bg)
 {
     if ((uint8_t)c < 0x20 || (uint8_t)c > 0x7E) c = ' ';
     uint8_t bits = s_font8x8[(uint8_t)c - 0x20][fr];
     for (int col = 0; col < 8; col++) {
-        int px = x + col;
+        int px = x + (7 - col);
         if (px >= 0 && px < TFT_WIDTH) {
             s_row_buf[px] = (bits & (0x80u >> col)) ? fg : bg;
         }
     }
 }
 
-/* 在 s_row_buf 渲染字符串第 fr 行像素 */
+/* 在 s_row_buf 渲染字符串（正常从左到右顺序） */
 static void row_str(int x, int fr, const char *s, uint16_t fg, uint16_t bg)
 {
     while (*s) {
@@ -377,13 +375,12 @@ static void ui_draw_test_row(int idx)
     }
 }
 
-/* 初始化 LCD 并绘制全部测试行（WAIT 状态） */
+/* 初始化 LCD 并绘制全部测试行（WAIT 状态）
+ * 与主程序 lv_port 一致：lcd_init() -> MADCTL=0x60, gap=(0,35), swap=1 */
 static void ui_init_screen(void)
 {
     for (int i = 0; i < TEST_COUNT; i++) s_test_states[i] = STATE_WAIT;
-    lcd_init_with_options(true);
-    lcd_set_madctl(FACTORY_LCD_MADCTL);
-    lcd_on();
+    lcd_init();
     ui_draw_title("REPPO FACTORY TEST v1.0", UI_C_TITLE_BG, UI_C_TITLE_FG);
     for (int i = 0; i < TEST_COUNT; i++) ui_draw_test_row(i);
 }
@@ -629,7 +626,6 @@ static void lcd_draw_color_bars(void)
 static bool test_lcd(void)
 {
     ESP_LOGI(TAG, "LCD: 全屏纯色 + 八色彩条视觉测试...");
-    lcd_set_madctl(FACTORY_LCD_MADCTL);
     DELAY_MS(100);
 
     const struct { uint16_t color; const char *name; } fills[] = {

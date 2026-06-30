@@ -250,22 +250,24 @@ void setup_scr_screen_wordcard(lv_ui *ui)
 
     //Write codes screen_wordcard_dog_cuo
     ui->screen_wordcard_dog_cuo = lv_animimg_create(ui->screen_wordcard);
-    lv_animimg_set_src(ui->screen_wordcard_dog_cuo, (const void **) screen_wordcard_dog_cuo_imgs, 6);
+    lv_animimg_set_src(ui->screen_wordcard_dog_cuo, (const void **) screen_wordcard_dog_cuo_imgs, 6, false);
     lv_animimg_set_duration(ui->screen_wordcard_dog_cuo, 50*6);
     lv_animimg_set_repeat_count(ui->screen_wordcard_dog_cuo, LV_ANIM_REPEAT_INFINITE);
+    lv_animimg_start(ui->screen_wordcard_dog_cuo);
     lv_obj_set_pos(ui->screen_wordcard_dog_cuo, 241, 85);
     lv_obj_set_size(ui->screen_wordcard_dog_cuo, 34, 34);
 
     //Write codes screen_wordcard_dog_dui
     ui->screen_wordcard_dog_dui = lv_animimg_create(ui->screen_wordcard);
-    lv_animimg_set_src(ui->screen_wordcard_dog_dui, (const void **) screen_wordcard_dog_dui_imgs, 3);
+    lv_animimg_set_src(ui->screen_wordcard_dog_dui, (const void **) screen_wordcard_dog_dui_imgs, 3, false);
     lv_animimg_set_duration(ui->screen_wordcard_dog_dui, 100*3);
     lv_animimg_set_repeat_count(ui->screen_wordcard_dog_dui, LV_ANIM_REPEAT_INFINITE);
+    lv_animimg_start(ui->screen_wordcard_dog_dui);
     lv_obj_set_pos(ui->screen_wordcard_dog_dui, 42, 85);
     lv_obj_set_size(ui->screen_wordcard_dog_dui, 34, 34);
 
     //The custom code of screen_wordcard.
-    wordcard_screen_custom_init(ui);
+
 
     //Update current screen layout.
     lv_obj_update_layout(ui->screen_wordcard);

@@ -36,6 +36,8 @@ typedef struct
 	lv_obj_t *screen_main_btn_ai_label;
 	lv_obj_t *screen_main_btn_fun;
 	lv_obj_t *screen_main_btn_fun_label;
+	lv_obj_t *screen_main_btn_photo;
+	lv_obj_t *screen_main_btn_photo_label;
 	lv_obj_t *screen_main_btn_setting;
 	lv_obj_t *screen_main_btn_setting_label;
 	lv_obj_t *screen_main_label_donenum;
@@ -54,6 +56,7 @@ typedef struct
 	lv_obj_t *screen_main_arc_battery;
 	lv_obj_t *screen_main_img_select_timing;
 	lv_obj_t *screen_main_img_select;
+	lv_obj_t *screen_main_img_photo_icon;
 	lv_obj_t *screen_todolist;
 	bool screen_todolist_del;
 	lv_obj_t *screen_todolist_btn_back;
@@ -305,6 +308,9 @@ typedef struct
 	bool screen_getanswer_del;
 	lv_obj_t *screen_getanswer_btn_answer;
 	lv_obj_t *screen_getanswer_btn_answer_label;
+	lv_obj_t *screen_picture;
+	bool screen_picture_del;
+	lv_obj_t *screen_picture_img_picture;
 	lv_obj_t *g_kb_top_layer;
 }lv_ui;
 
@@ -346,6 +352,7 @@ void setup_scr_screen_donelist(lv_ui *ui);
 void setup_scr_screen_answer(lv_ui *ui);
 void setup_scr_screen_loading(lv_ui *ui);
 void setup_scr_screen_getanswer(lv_ui *ui);
+void setup_scr_screen_picture(lv_ui *ui);
 #include "extra/widgets/animimg/lv_animimg.h"
 LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_00);
 LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_01);
@@ -374,36 +381,40 @@ LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_23);
 
 LV_IMG_DECLARE(_AAA_main_bg_320x170);
 
-LV_IMG_DECLARE(_AAA_main_todolist_39x54);
+LV_IMG_DECLARE(_AAA_main_todolist1_39x54);
 
-LV_IMG_DECLARE(_AAA_main_todolist_39x54);
+LV_IMG_DECLARE(_AAA_main_todolist1_39x54);
 
-LV_IMG_DECLARE(_AAA_main_donelist_45x54);
+LV_IMG_DECLARE(_AAA_main_donelist1_45x54);
 
-LV_IMG_DECLARE(_AAA_main_donelist_45x54);
+LV_IMG_DECLARE(_AAA_main_donelist1_45x54);
 
-LV_IMG_DECLARE(_AAA_main_book_37x55);
+LV_IMG_DECLARE(_AAA_main_book1_37x55);
 
-LV_IMG_DECLARE(_AAA_main_book_37x55);
+LV_IMG_DECLARE(_AAA_main_book1_37x55);
 
-LV_IMG_DECLARE(_AAA_main_time_43x55);
+LV_IMG_DECLARE(_AAA_main_timer_43x55);
 
-LV_IMG_DECLARE(_AAA_main_time_43x55);
+LV_IMG_DECLARE(_AAA_main_timer_43x55);
 
-LV_IMG_DECLARE(_AAA_main_ai_49x54);
+LV_IMG_DECLARE(_AAA_main_ai1_49x54);
 
-LV_IMG_DECLARE(_AAA_main_ai_49x54);
+LV_IMG_DECLARE(_AAA_main_ai1_49x54);
 
-LV_IMG_DECLARE(_AAA_main_fun_55x54);
+LV_IMG_DECLARE(_AAA_main_fun1_55x54);
 
-LV_IMG_DECLARE(_AAA_main_fun_55x54);
+LV_IMG_DECLARE(_AAA_main_fun1_55x54);
 
-LV_IMG_DECLARE(_AAA_main_setting_46x54);
+LV_IMG_DECLARE(_AAA_main_photo_43x55);
 
-LV_IMG_DECLARE(_AAA_main_setting_46x54);
-LV_IMG_DECLARE(_AAA_small_todo_alpha_16x15);
+LV_IMG_DECLARE(_AAA_main_photo_43x55);
+
+LV_IMG_DECLARE(_AAA_main_setting1_46x54);
+
+LV_IMG_DECLARE(_AAA_main_setting1_46x54);
+LV_IMG_DECLARE(_AAA_small_todo_alpha_16x14);
 LV_IMG_DECLARE(_AAA_smallfun_alpha_19x18);
-LV_IMG_DECLARE(_AAA_small_setting_alpha_16x16);
+LV_IMG_DECLARE(_AAA_small_setting_alpha_15x15);
 LV_IMG_DECLARE(_AAA_small_deepseek_alpha_20x16);
 LV_IMG_DECLARE(_AAA_small_timer_alpha_15x15);
 LV_IMG_DECLARE(_AAA_small_words_alpha_17x15);
@@ -411,6 +422,7 @@ LV_IMG_DECLARE(_AAA_small_Done_alpha_15x15);
 LV_IMG_DECLARE(_AAA_main_dian_alpha_6x6);
 LV_IMG_DECLARE(_AAA_select_alpha_46x14);
 LV_IMG_DECLARE(_AAA_select_alpha_56x23);
+LV_IMG_DECLARE(_AAA_small_photo_alpha_15x14);
 
 LV_IMG_DECLARE(_AAA_todolist_bg_320x170);
 
@@ -486,15 +498,16 @@ LV_IMG_DECLARE(_AAA_answer_wait_bg_320x170);
 LV_IMG_DECLARE(_AAA_answer_icon_bg_alpha_58x58);
 
 LV_IMG_DECLARE(_AAA__answer_end_bg_320x170);
+LV_IMG_DECLARE(_word_BG1_alpha_320x170);
 
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
+LV_FONT_DECLARE(lv_font_montserratMedium_12)
 LV_FONT_DECLARE(lv_font_Acme_Regular_12)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_14)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_20)
 LV_FONT_DECLARE(lv_font_Acme_Regular_14)
 LV_FONT_DECLARE(lv_font_arial_14)
-LV_FONT_DECLARE(lv_font_montserratMedium_12)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_28)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_52)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_17)

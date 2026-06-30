@@ -206,7 +206,7 @@ void setup_scr_screen_reviewcard(lv_ui *ui)
 
     //Write codes screen_reviewcard_dog_dance
     ui->screen_reviewcard_dog_dance = lv_animimg_create(ui->screen_reviewcard);
-    lv_animimg_set_src(ui->screen_reviewcard_dog_dance, (const void **) screen_reviewcard_dog_dance_imgs, 3);
+    lv_animimg_set_src(ui->screen_reviewcard_dog_dance, (const void **) screen_reviewcard_dog_dance_imgs, 3, false);
     lv_animimg_set_duration(ui->screen_reviewcard_dog_dance, 100*3);
     lv_animimg_set_repeat_count(ui->screen_reviewcard_dog_dance, LV_ANIM_REPEAT_INFINITE);
     lv_animimg_start(ui->screen_reviewcard_dog_dance);

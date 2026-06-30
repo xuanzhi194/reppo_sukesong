@@ -14,11 +14,16 @@
  //cyw 20260620 add
 #include "app_init.h"
 #include "app_main_loop.h"
+#include "ws2812b.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 void app_main(void)
 {
+    /* 最先初始化流水灯并立即点亮，缩短长按开机后的视觉反馈延迟 */
+    init_led_strip();
+    start_boot_led_blink();
+
     app_init_hardware();
     app_init_storage_and_data();
     app_init_lvgl_ui();

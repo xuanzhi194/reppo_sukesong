@@ -35,6 +35,7 @@ void events_init_screen_donelist(lv_ui *ui);
 void events_init_screen_answer(lv_ui *ui);
 void events_init_screen_loading(lv_ui *ui);
 void events_init_screen_getanswer(lv_ui *ui);
+void events_init_screen_picture(lv_ui *ui);
 
 #ifdef __cplusplus
 }

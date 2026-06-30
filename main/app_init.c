@@ -26,7 +26,6 @@
 #include "brightness_bridge.h"
 #include "focus_bridge.h"
 #include "word_storage.h"
-#include "ws2812b.h"
 #include "driver/i2c.h"
 #include "esp_log.h"
 #include "lvgl.h"
@@ -34,8 +33,6 @@
 
 void app_init_hardware(void)
 {
-    init_led_strip();
-    start_boot_led_blink();
     init_encoder_direction();
     buzzer_init();
     battery_adc_init();
