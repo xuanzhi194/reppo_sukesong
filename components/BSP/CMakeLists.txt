@@ -10,6 +10,7 @@ set(src_dirs
             RGB
             encoder
             bsp_ble
+            badge_storage
             ai_chat
  
 )
@@ -26,6 +27,7 @@ set(include_dirs
             RGB
             encoder
             bsp_ble
+            badge_storage
             ai_chat
 )
  
@@ -40,6 +42,8 @@ set(requires
             nvs_flash
             esp_system
             spiffs
+            fatfs
+            wear_levelling
             esp_adc
             led_strip
             bt

@@ -173,6 +173,7 @@ typedef struct
 	lv_obj_t *screen_pomodoro_btn_minus_label;
 	lv_obj_t *screen_pomodoro_img_countdown;
 	lv_obj_t *screen_pomodoro_img_stopwatch;
+	lv_obj_t *screen_pomodoro_img_pause;
 	lv_obj_t *screen_setting;
 	bool screen_setting_del;
 	lv_obj_t *screen_setting_btn_back;
@@ -461,6 +462,7 @@ LV_IMG_DECLARE(_pomorect_alpha_257x52);
 LV_IMG_DECLARE(_AAA_fanqie_xiangling_alpha_288x146);
 LV_IMG_DECLARE(_AAA_daojishi_alpha_15x15);
 LV_IMG_DECLARE(_AAA_miaobiao_alpha_15x15);
+LV_IMG_DECLARE(_AAA_stop_alpha_69x21);
 
 LV_IMG_DECLARE(_AAA_reppo_setting_bg_320x170);
 LV_IMG_DECLARE(_AAA_reppo_volume_kai_icon_alpha_93x75);

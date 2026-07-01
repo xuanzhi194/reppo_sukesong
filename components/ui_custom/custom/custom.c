@@ -290,6 +290,32 @@ void pomodoro_timer_stop(void)
         lv_timer_del(pomodoro_timer);
         pomodoro_timer = NULL;
     }
+    pomodoro_pause_icon_refresh();
+}
+
+void pomodoro_pause_icon_refresh(void)
+{
+    lv_obj_t *img = guider_ui.screen_pomodoro_img_pause;
+    if (img == NULL || !lv_obj_is_valid(img)) {
+        return;
+    }
+    if (!pomodoro_screen_is_alive()) {
+        lv_obj_add_flag(img, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+
+    bool running = false;
+    if (pomodoro_countdown && countdown_start_label && countdown_process_label) {
+        running = true;
+    } else if (pomodoro_stopwatch && stopwatch_start_label && stopwatch_process_label) {
+        running = true;
+    }
+
+    if (running) {
+        lv_obj_clear_flag(img, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(img, LV_OBJ_FLAG_HIDDEN);
+    }
 }
 
 static void countdown_cb(lv_timer_t *t){
@@ -324,6 +350,7 @@ static void countdown_cb(lv_timer_t *t){
         }
         countdown_start_label = 0;
         countdown_process_label = 0;
+        pomodoro_pause_icon_refresh();
         return;
     }
     timer_all_seconds -= 1;
@@ -828,6 +855,7 @@ void screen_main_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_main_btn_timer);
     lv_group_add_obj(g, guider_ui.screen_main_btn_ai); 
     lv_group_add_obj(g, guider_ui.screen_main_btn_fun);
+    lv_group_add_obj(g, guider_ui.screen_main_btn_photo);
     lv_group_add_obj(g, guider_ui.screen_main_btn_setting);
     lv_group_add_obj(g, guider_ui.screen_main_btn_realtime);
     //clear focus box
@@ -837,6 +865,7 @@ void screen_main_buttion_add(){
     clear_focus_box(guider_ui.screen_main_btn_timer);
     clear_focus_box(guider_ui.screen_main_btn_ai);
     clear_focus_box(guider_ui.screen_main_btn_fun);
+    clear_focus_box(guider_ui.screen_main_btn_photo);
     clear_focus_box(guider_ui.screen_main_btn_setting);
     clear_focus_box(guider_ui.screen_main_btn_realtime);
 }
@@ -859,6 +888,44 @@ void screen_timing_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_timing_btn_main);  
     clear_focus_box(guider_ui.screen_timing_btn_main);
 
+}
+
+static void pomodoro_pause_icon_after_guider(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_CLICKED || code == LV_EVENT_SCREEN_LOADED) {
+        pomodoro_pause_icon_refresh();
+    }
+}
+
+static void pomodoro_pause_icon_bind_hooks(void)
+{
+    static lv_obj_t *bound_screen;
+
+    lv_obj_t *scr = guider_ui.screen_pomodoro;
+    if (scr == NULL || !lv_obj_is_valid(scr)) {
+        return;
+    }
+    if (bound_screen == scr) {
+        return;
+    }
+    bound_screen = scr;
+
+    lv_obj_add_event_cb(scr, pomodoro_pause_icon_after_guider, LV_EVENT_SCREEN_LOADED, NULL);
+
+    lv_obj_t *btns[] = {
+        guider_ui.screen_pomodoro_btn_start,
+        guider_ui.screen_pomodoro_btn_reset,
+        guider_ui.screen_pomodoro_btn_back,
+        guider_ui.screen_pomodoro_btn_complete,
+        guider_ui.screen_pomodoro_btn_continue,
+        guider_ui.screen_pomodoro_btn_stopwatch,
+        guider_ui.screen_pomodoro_btn_countdown,
+        NULL,
+    };
+    for (int i = 0; btns[i] != NULL; i++) {
+        lv_obj_add_event_cb(btns[i], pomodoro_pause_icon_after_guider, LV_EVENT_CLICKED, NULL);
+    }
 }
 
 //buttion add function screen_pomodoro
@@ -898,6 +965,7 @@ void screen_pomodoro_buttion_add(){
     clear_edge_box(guider_ui.screen_pomodoro_btn_complete);
     clear_edge_box(guider_ui.screen_pomodoro_btn_continue);
 
+    pomodoro_pause_icon_bind_hooks();
 }
 //buttion add function screen_wordmeun
 void screen_wordmenu_buttion_add(){
@@ -1291,6 +1359,20 @@ void screen_picture_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_picture_img_picture); 
     clear_focus_box(guider_ui.screen_picture_img_picture);
 }
+
+/* GUI Guider 模拟器用弱符号占位；ESP-IDF 固件由 main/picture_bridge.c 强符号覆盖 */
+__attribute__((weak)) void picture_bridge_screen_on_load(void)
+{
+    lv_img_set_src(guider_ui.screen_picture_img_picture, &_word_BG1_alpha_320x170);
+}
+
+void screen_picture_custom_init(void)
+{
+    screen_picture_buttion_add();
+    picture_bridge_screen_on_load();
+    lv_obj_invalidate(guider_ui.screen_picture_img_picture);
+}
+
 void custom_init(lv_ui *ui)
 {
 

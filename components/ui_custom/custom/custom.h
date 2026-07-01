@@ -148,6 +148,8 @@ void screen_reppo_custom_init();
 void countdown_start(int16_t minutes);
 void stopwatch_start();
 void pomodoro_timer_stop(void);
+/** 番茄钟/秒表运行中显示 img_pause，暂停或未开始时隐藏 */
+void pomodoro_pause_icon_refresh(void);
 void focus_session_cancel(void);
 extern void wifi_connect_show();
 extern void wifi_disconnect_show();
@@ -187,6 +189,9 @@ void screen_todoback_buttion_add();
 void screen_answer_buttion_add();
 void screen_getanswer_buttion_add();
 void screen_picture_buttion_add();
+void screen_picture_custom_init();
+/** 弱符号默认在 custom.c；固件强符号见 main/picture_bridge.c */
+void picture_bridge_screen_on_load(void);
 void answer_book_show_random_answer(void);
 
 void my_kb_event_cb(lv_event_t * e);

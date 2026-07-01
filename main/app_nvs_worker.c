@@ -86,6 +86,7 @@ static void nvs_worker_handle_ble_requests(void)
     if (ble_toggle_off_req) {
         ble_toggle_off_req = 0;
         stop_ble_flow_light();
+        start_flow_light_fast_async(80, 32, 33);
         bsp_ble_deinit();
     }
     if (ble_disconnect_req) {

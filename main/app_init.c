@@ -26,6 +26,8 @@
 #include "brightness_bridge.h"
 #include "focus_bridge.h"
 #include "word_storage.h"
+#include "badge_storage.h"
+#include "picture_bridge.h"
 #include "driver/i2c.h"
 #include "esp_log.h"
 #include "lvgl.h"
@@ -65,6 +67,8 @@ void app_init_storage_and_data(void)
     memcpy(&g_ui_weekly_result, &g_ai_weekly_result, sizeof(ui_ai_result_t));
 
     init_spiffs();
+    badge_storage_init();
+    picture_bridge_init();
     word_storage_init();
     app_ui_init_word_counters();
 

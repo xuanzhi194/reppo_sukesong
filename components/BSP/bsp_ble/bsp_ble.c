@@ -1,5 +1,6 @@
 #include "bsp_ble.h"
 #include "todo_storage.h"
+#include "badge_storage.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -56,6 +57,9 @@ static void ble_app_advertise(void);
 static int send_todo_json_via_notify(void);
 static bool ble_refresh_stored_read_bundle(void);
 static void schedule_sync_notify_delayed(void);
+static void badge_notify_status(uint8_t status, uint8_t progress);
+static uint32_t ble_read_u32_le(const uint8_t *p);
+static int notify_todo_chunk(uint8_t cmd, const uint8_t *payload, uint16_t payload_len);
 
 static bool ble_refresh_stored_read_bundle(void)
 {
@@ -71,6 +75,30 @@ static bool ble_refresh_stored_read_bundle(void)
     }
     stored_read_len = (uint16_t)strlen(stored_read_json);
     return true;
+}
+
+static uint32_t ble_read_u32_le(const uint8_t *p)
+{
+    return (uint32_t)p[0]
+         | ((uint32_t)p[1] << 8)
+         | ((uint32_t)p[2] << 16)
+         | ((uint32_t)p[3] << 24);
+}
+
+static void badge_notify_status(uint8_t status, uint8_t progress)
+{
+    if (!notify_enabled || active_conn_handle == BLE_HS_CONN_HANDLE_NONE) {
+        return;
+    }
+    uint8_t payload[2] = { status, progress };
+    for (int attempt = 0; attempt < 5; attempt++) {
+        int rc = notify_todo_chunk(BLE_CMD_IMG_STATUS, payload, sizeof(payload));
+        if (rc == 0) {
+            return;
+        }
+        ESP_LOGW(TAG, "badge status notify failed rc=%d attempt=%d", rc, attempt + 1);
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
 }
 
 static int device_write_cb(uint16_t conn_handle,
@@ -186,6 +214,46 @@ static int device_write_cb(uint16_t conn_handle,
         }
         json_len = 0;
         json_assembly_error = false;
+    } else if (cmd == BLE_CMD_IMG_INFO) {
+        if (payload_len < 9) {
+            ESP_LOGW(TAG, "IMG INFO rejected: len=%u", (unsigned)payload_len);
+            badge_notify_status(BADGE_STATUS_ERR, 0);
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        }
+        uint32_t total = ble_read_u32_le(payload);
+        uint32_t crc32 = ble_read_u32_le(payload + 4);
+        uint8_t format = payload[8];
+        esp_err_t err = badge_storage_rx_begin(total, crc32, format);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "IMG INFO begin failed: %s", esp_err_to_name(err));
+            badge_notify_status(BADGE_STATUS_ERR, 0);
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+        badge_notify_status(BADGE_STATUS_BUSY, 0);
+    } else if (cmd == BLE_CMD_IMG_DATA) {
+        if (payload_len < 5) {
+            ESP_LOGW(TAG, "IMG DATA rejected: len=%u", (unsigned)payload_len);
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        }
+        uint32_t offset = ble_read_u32_le(payload);
+        const uint8_t *chunk = payload + 4;
+        uint16_t chunk_len = payload_len - 4;
+        esp_err_t err = badge_storage_rx_write(offset, chunk, chunk_len);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "IMG DATA write failed off=%lu", (unsigned long)offset);
+            badge_notify_status(BADGE_STATUS_ERR, 0);
+            badge_storage_rx_abort();
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+    } else if (cmd == BLE_CMD_IMG_COMMIT) {
+        esp_err_t err = badge_storage_rx_commit();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "IMG COMMIT failed: %s", esp_err_to_name(err));
+            badge_notify_status(BADGE_STATUS_ERR, 0);
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+        badge_notify_status(BADGE_STATUS_OK, 100);
+        ESP_LOGI(TAG, "Badge image saved");
     }
 
     return 0;
@@ -229,6 +297,7 @@ static int bsp_ble_gap_event(struct ble_gap_event *event, void *arg)
         break;
     case BLE_GAP_EVENT_DISCONNECT:
         ESP_LOGI(TAG, "BLE GAP EVENT DISCONNECTED");
+        badge_storage_rx_abort();
         active_conn_handle = BLE_HS_CONN_HANDLE_NONE;
         notify_enabled = false;
         ble_success = false;

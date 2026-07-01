@@ -325,7 +325,7 @@ static void screen_main_btn_photo_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"Book of Answer");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Picture");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -2680,6 +2680,20 @@ void events_init_screen_getanswer (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_getanswer_btn_answer, screen_getanswer_btn_answer_event_handler, LV_EVENT_ALL, ui);
 }
 
+static void screen_picture_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_SCREEN_LOAD_START:
+    {
+        screen_picture_custom_init();
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 static void screen_picture_img_picture_event_handler (lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -2696,6 +2710,7 @@ static void screen_picture_img_picture_event_handler (lv_event_t *e)
 
 void events_init_screen_picture (lv_ui *ui)
 {
+    lv_obj_add_event_cb(ui->screen_picture, screen_picture_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_picture_img_picture, screen_picture_img_picture_event_handler, LV_EVENT_ALL, ui);
 }
 

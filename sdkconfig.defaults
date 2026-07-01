@@ -2,5 +2,12 @@
 CONFIG_LV_MEM_CUSTOM=y
 CONFIG_LV_MEM_CUSTOM_INCLUDE="stdlib.h"
 
+# Badge picture: JPEG from /badge via POSIX FS + SJPG decoder
+CONFIG_LV_USE_SJPG=y
+CONFIG_LV_USE_FS_POSIX=y
+CONFIG_LV_FS_POSIX_LETTER=66
+CONFIG_LV_FS_POSIX_PATH="/badge"
+CONFIG_LV_FS_POSIX_CACHE_SIZE=0
+
 # IRAM 优化（FREERTOS/RINGBUF/HEAP/SPI_FLASH_ROM → Flash）会导致 LVGL 从 Flash
 # 读取大图时触发 "Cache disabled but cached memory region accessed"，已关闭。
