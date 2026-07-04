@@ -53,6 +53,33 @@ void init_led_strip(void)
 #define FLOW_LIGHT_STEP_MS_DEFAULT  50
 #define FLOW_LIGHT_STEP_MS_FAST     25
 
+/** 开机三条流水：步进稍慢 + 多灯拖尾，避免单点闪烁过快、亮度不均 */
+#define BOOT_FLOW_STEP_MS           45
+#define BOOT_FLOW_TRAIL_LEN         2
+#define BOOT_FLOW_PASS_GAP_MS       80
+
+static void boot_flow_light_once(uint32_t r, uint32_t g, uint32_t b)
+{
+    const int trail = BOOT_FLOW_TRAIL_LEN;
+
+    for (int head = 0; head < LED_STRIP_NUM_LEDS + trail - 1; head++) {
+        for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
+            int age = head - i;
+            if (age >= 0 && age < trail) {
+                uint32_t scale = 255U - (uint32_t)age * 255U / (uint32_t)trail;
+                led_strip_set_pixel(led_strip, i,
+                                    (uint32_t)(r * scale) / 255U,
+                                    (uint32_t)(g * scale) / 255U,
+                                    (uint32_t)(b * scale) / 255U);
+            } else {
+                led_strip_set_pixel(led_strip, i, 0, 0, 0);
+            }
+        }
+        led_strip_refresh(led_strip);
+        vTaskDelay(pdMS_TO_TICKS(BOOT_FLOW_STEP_MS));
+    }
+}
+
 static void flow_light_run(uint32_t r, uint32_t g, uint32_t b, uint32_t step_ms)
 {
     for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
@@ -100,9 +127,15 @@ void start_flow_light_fast_async(uint32_t r, uint32_t g, uint32_t b)
 static void boot_led_blink_task(void *param)
 {
     (void)param;
-    set_flow_light_fast(51, 64, 69);
-    set_flow_light_fast(10, 24, 49);
-    set_flow_light_fast(20, 20, 20);
+    led_strip_clear(led_strip);
+    led_strip_refresh(led_strip);
+
+    boot_flow_light_once(51, 64, 69);
+    vTaskDelay(pdMS_TO_TICKS(BOOT_FLOW_PASS_GAP_MS));
+    boot_flow_light_once(10, 24, 49);
+    vTaskDelay(pdMS_TO_TICKS(BOOT_FLOW_PASS_GAP_MS));
+    boot_flow_light_once(20, 20, 20);
+
     led_strip_clear(led_strip);
     led_strip_refresh(led_strip);
     vTaskDelete(NULL);
@@ -163,4 +196,33 @@ void start_ble_flow_light(void)
 void stop_ble_flow_light(void)
 {
     ble_flow_led_en = false;
+}
+
+void set_led_bar_level(uint8_t lit_count, uint32_t r, uint32_t g, uint32_t b)
+{
+    if (!s_led_strip_ready) {
+        init_led_strip();
+    }
+    if (lit_count > LED_STRIP_NUM_LEDS) {
+        lit_count = LED_STRIP_NUM_LEDS;
+    }
+    /* 从条带末端向前点亮：剩余时间减少时先熄第一颗 */
+    uint8_t first_on = LED_STRIP_NUM_LEDS - lit_count;
+    for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
+        if (i >= first_on) {
+            led_strip_set_pixel(led_strip, i, r, g, b);
+        } else {
+            led_strip_set_pixel(led_strip, i, 0, 0, 0);
+        }
+    }
+    led_strip_refresh(led_strip);
+}
+
+void clear_led_bar(void)
+{
+    if (!s_led_strip_ready) {
+        return;
+    }
+    led_strip_clear(led_strip);
+    led_strip_refresh(led_strip);
 }

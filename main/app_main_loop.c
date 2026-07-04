@@ -17,7 +17,7 @@
 #include "freertos/task.h"
 #include <string.h>
 
-/** 答案之书：由 UI 置位，主循环写入随机数 */
+/** 答案之书：由 UI 置位，主循环写入随机数并启动 loading 流水灯 */
 static void main_loop_handle_answer_book(void)
 {
     if (!answer_book_rand_req) {
@@ -25,6 +25,17 @@ static void main_loop_handle_answer_book(void)
     }
     answer_book_rand_req = 0;
     answer_book_rand = esp_random();
+    app_led_answer_loading_start();
+}
+
+/** 答案之书 loading 结束：停止流水灯 */
+static void main_loop_handle_answer_loading_led(void)
+{
+    if (!answer_loading_led_stop_req) {
+        return;
+    }
+    answer_loading_led_stop_req = 0;
+    app_led_answer_loading_stop();
 }
 
 /** 番茄钟倒计时结束 → 蜂鸣 + 流水灯 */
@@ -228,6 +239,7 @@ void app_main_loop_once(void)
 {
     main_loop_handle_wordcard_ui();
     main_loop_handle_answer_book();
+    main_loop_handle_answer_loading_led();
     main_loop_handle_countdown_timeout();
     focus_bridge_on_countdown_complete();
     main_loop_handle_ai_requests();

@@ -478,10 +478,11 @@ static void screen_todolist_event_handler (lv_event_t *e)
                 lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
                 lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
             } else {
-                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
-                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
-                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
-                lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                /* remain_num == 4: 本页无任务（如 total == 0），全部禁用 */
+                lv_obj_add_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                lv_obj_add_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
             }
         } else {
             lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
@@ -722,10 +723,11 @@ static void screen_todolist_btn_lastpage_event_handler (lv_event_t *e)
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
                 } else {
-                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
-                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
-                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
-                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                    /* remain_num == 4: 本页无任务（如 total == 0），全部禁用 */
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
                 }
             } else {
                 lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
@@ -815,10 +817,11 @@ static void screen_todolist_btn_nxtpage_event_handler (lv_event_t *e)
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
                 } else {
-                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
-                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
-                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
-                    lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
+                    /* remain_num == 4: 本页无任务（如 total == 0），全部禁用 */
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+                    lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
                 }
             } else {
                 lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);

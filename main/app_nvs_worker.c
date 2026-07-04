@@ -80,6 +80,8 @@ static void nvs_worker_handle_ble_requests(void)
 {
     if (ble_toggle_on_req) {
         ble_toggle_on_req = 0;
+        ble_enabled = true;
+        ble_ui_refresh_req = true;
         bsp_ble_init();
         start_ble_flow_light();
     }

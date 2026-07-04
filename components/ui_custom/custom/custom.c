@@ -17,6 +17,7 @@
 #include "lvgl.h"
 #include "custom.h"
 #include "widgets_init.h"
+#include "ws2812b.h"
 #include <stdlib.h>
 
 //lv group define
@@ -120,6 +121,7 @@ ui_ai_result_t g_ui_weekly_result = {0};
 
 bool answer_book_rand_req = 0;
 unsigned int answer_book_rand = 0;
+volatile bool answer_loading_led_stop_req = 0;
 
 static const char * const answer_book_answers[] = {
     "先别急，答案会自己浮现",
@@ -284,6 +286,55 @@ static bool pomodoro_screen_is_alive(void)
         && lv_scr_act() == guider_ui.screen_pomodoro;
 }
 
+#define POMODORO_LED_BAR_MAX        10
+#define POMODORO_LED_R              30
+#define POMODORO_LED_G              52
+#define POMODORO_LED_B              83
+
+static uint8_t s_pomodoro_led_last_lit = 0xFF;
+static uint32_t s_pomodoro_countdown_total_seconds = 0;
+
+/** 剩余 / 本次总时长 → 亮灯数（1~10，向上取整；已结束为 0） */
+static uint8_t pomodoro_countdown_leds_from_ratio(uint32_t remaining, uint32_t total)
+{
+    if (remaining == 0 || total == 0) {
+        return 0;
+    }
+    uint32_t lit = (remaining * POMODORO_LED_BAR_MAX + total - 1U) / total;
+    if (lit > POMODORO_LED_BAR_MAX) {
+        lit = POMODORO_LED_BAR_MAX;
+    }
+    return (uint8_t)lit;
+}
+
+void pomodoro_countdown_led_clear(void)
+{
+    s_pomodoro_led_last_lit = 0xFF;
+    s_pomodoro_countdown_total_seconds = 0;
+    clear_led_bar();
+}
+
+void pomodoro_countdown_led_refresh(void)
+{
+    if (!pomodoro_screen_is_alive()
+        || !pomodoro_countdown
+        || pomodoro_stopwatch
+        || !countdown_start_label
+        || timer_all_seconds == 0) {
+        pomodoro_countdown_led_clear();
+        return;
+    }
+
+    uint8_t lit = pomodoro_countdown_leds_from_ratio(
+        timer_all_seconds, s_pomodoro_countdown_total_seconds);
+
+    if (lit == s_pomodoro_led_last_lit) {
+        return;
+    }
+    s_pomodoro_led_last_lit = lit;
+    set_led_bar_level(lit, POMODORO_LED_R, POMODORO_LED_G, POMODORO_LED_B);
+}
+
 void pomodoro_timer_stop(void)
 {
     if (pomodoro_timer != NULL) {
@@ -291,6 +342,7 @@ void pomodoro_timer_stop(void)
         pomodoro_timer = NULL;
     }
     pomodoro_pause_icon_refresh();
+    pomodoro_countdown_led_refresh();
 }
 
 void pomodoro_pause_icon_refresh(void)
@@ -351,6 +403,7 @@ static void countdown_cb(lv_timer_t *t){
         countdown_start_label = 0;
         countdown_process_label = 0;
         pomodoro_pause_icon_refresh();
+        pomodoro_countdown_led_refresh();
         return;
     }
     timer_all_seconds -= 1;
@@ -361,15 +414,18 @@ static void countdown_cb(lv_timer_t *t){
     int minutes = (timer_all_seconds % 3600) / 60;
     int seconds = timer_all_seconds % 60;
     lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer,"%02d:%02d:%02d",hours,minutes,seconds);
+    pomodoro_countdown_led_refresh();
 }
 
 void countdown_start(int16_t minutes){
     pomodoro_timer_stop();
-    timer_all_seconds = minutes * 60;
+    timer_all_seconds = (uint32_t)minutes * 60U;
+    s_pomodoro_countdown_total_seconds = timer_all_seconds;
     if (focus_session_active) {
         focus_session_minutes = minutes;
     }
     pomodoro_timer = lv_timer_create(countdown_cb,1000,NULL);
+    s_pomodoro_led_last_lit = 0xFF;
 }
 //-----------------------pomodoro stopwatch------------------------//
 //-----------------------------------------------------------------//
@@ -893,8 +949,13 @@ void screen_timing_buttion_add(){
 static void pomodoro_pause_icon_after_guider(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_SCREEN_UNLOADED) {
+        pomodoro_countdown_led_clear();
+        return;
+    }
     if (code == LV_EVENT_CLICKED || code == LV_EVENT_SCREEN_LOADED) {
         pomodoro_pause_icon_refresh();
+        pomodoro_countdown_led_refresh();
     }
 }
 
@@ -912,6 +973,7 @@ static void pomodoro_pause_icon_bind_hooks(void)
     bound_screen = scr;
 
     lv_obj_add_event_cb(scr, pomodoro_pause_icon_after_guider, LV_EVENT_SCREEN_LOADED, NULL);
+    lv_obj_add_event_cb(scr, pomodoro_pause_icon_after_guider, LV_EVENT_SCREEN_UNLOADED, NULL);
 
     lv_obj_t *btns[] = {
         guider_ui.screen_pomodoro_btn_start,
@@ -921,6 +983,9 @@ static void pomodoro_pause_icon_bind_hooks(void)
         guider_ui.screen_pomodoro_btn_continue,
         guider_ui.screen_pomodoro_btn_stopwatch,
         guider_ui.screen_pomodoro_btn_countdown,
+        guider_ui.screen_pomodoro_btn_minus,
+        guider_ui.screen_pomodoro_btn_plus,
+        guider_ui.screen_pomodoro_btn_addnum,
         NULL,
     };
     for (int i = 0; btns[i] != NULL; i++) {
@@ -1123,13 +1188,40 @@ void screen_setting_ble_refresh_icons(void)
         !lv_obj_is_valid(img_on) || !lv_obj_is_valid(img_dis)) {
         return;
     }
-    if (ble_success) {
+    if (ble_enabled) {
         lv_obj_clear_flag(img_on, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(img_dis, LV_OBJ_FLAG_HIDDEN);
     } else {
         lv_obj_add_flag(img_on, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(img_dis, LV_OBJ_FLAG_HIDDEN);
     }
+}
+
+static void screen_setting_ble_icon_after_guider(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_CLICKED && ble_toggle_on_req) {
+        ble_enabled = true;
+    }
+    if (code == LV_EVENT_FOCUSED || code == LV_EVENT_CLICKED) {
+        screen_setting_ble_refresh_icons();
+    }
+}
+
+static void screen_setting_ble_icon_bind_hooks(void)
+{
+    static lv_obj_t *bound_btn;
+
+    lv_obj_t *btn = guider_ui.screen_setting_btn_ble;
+    if (btn == NULL || !lv_obj_is_valid(btn)) {
+        return;
+    }
+    if (bound_btn == btn) {
+        return;
+    }
+    bound_btn = btn;
+    lv_obj_add_event_cb(btn, screen_setting_ble_icon_after_guider, LV_EVENT_FOCUSED, NULL);
+    lv_obj_add_event_cb(btn, screen_setting_ble_icon_after_guider, LV_EVENT_CLICKED, NULL);
 }
 
 //buttion add function screen_setting
@@ -1160,6 +1252,7 @@ void screen_setting_buttion_add(){
     clear_edge_box(guider_ui.screen_setting_btn_brightness);
     clear_edge_box(guider_ui.screen_setting_btn_general);
     clear_edge_box(guider_ui.screen_setting_btn_back);
+    screen_setting_ble_icon_bind_hooks();
 }
 
 //buttion add function screen_wificfg
@@ -1338,6 +1431,7 @@ void screen_getanswer_buttion_add(){
     }
     lv_group_add_obj(g, guider_ui.screen_getanswer_btn_answer); 
     clear_focus_box(guider_ui.screen_getanswer_btn_answer);
+    answer_loading_led_stop_req = 1;
 }
 
 //buttion add function screen_picture

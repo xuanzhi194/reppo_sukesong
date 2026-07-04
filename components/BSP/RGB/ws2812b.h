@@ -11,4 +11,8 @@ void start_boot_led_blink(void);
 void start_ble_flow_light(void);
 void stop_ble_flow_light(void);
 
+/** 静态点亮前 lit_count 颗 LED（0~10），其余熄灭 */
+void set_led_bar_level(uint8_t lit_count, uint32_t r, uint32_t g, uint32_t b);
+void clear_led_bar(void);
+
 #endif

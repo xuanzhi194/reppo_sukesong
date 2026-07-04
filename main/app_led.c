@@ -14,6 +14,8 @@
 static bool s_timeout_alarm_light_running = false;
 static bool s_ai_wait_light_running = false;
 static TaskHandle_t s_ai_wait_light_task_handle = NULL;
+static bool s_answer_loading_light_running = false;
+static TaskHandle_t s_answer_loading_light_task_handle = NULL;
 
 static void timeout_alarm_light_task(void *param)
 {
@@ -70,6 +72,31 @@ void app_led_ai_wait_stop(void)
     for (int i = 0; i < 100 && s_ai_wait_light_task_handle != NULL; i++) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+}
+
+static void answer_loading_light_task(void *param)
+{
+    (void)param;
+    while (s_answer_loading_light_running) {
+        set_flow_light_fast(30, 52, 83);
+    }
+    s_answer_loading_light_task_handle = NULL;
+    vTaskDelete(NULL);
+}
+
+void app_led_answer_loading_start(void)
+{
+    if (s_answer_loading_light_running || s_answer_loading_light_task_handle != NULL) {
+        return;
+    }
+    s_answer_loading_light_running = true;
+    xTaskCreatePinnedToCore(answer_loading_light_task, "answer_load_light",
+                            2048, NULL, 7, &s_answer_loading_light_task_handle, 0);
+}
+
+void app_led_answer_loading_stop(void)
+{
+    s_answer_loading_light_running = false;
 }
 
 void app_led_ai_result_show(bool success, uint8_t retry_count)

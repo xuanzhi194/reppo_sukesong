@@ -124,6 +124,7 @@ void todo_ble_sync_ui_refresh(void);
 /* 答案之书：custom 置位请求，main 写入 answer_book_rand */
 extern bool answer_book_rand_req;
 extern unsigned int answer_book_rand;
+extern volatile bool answer_loading_led_stop_req;
 /* done_list 结构体，用于 screen_donelist 展示 task_done.csv */
 #define DONE_MAX_ITEMS  100
 typedef struct {
@@ -148,6 +149,8 @@ void screen_reppo_custom_init();
 void countdown_start(int16_t minutes);
 void stopwatch_start();
 void pomodoro_timer_stop(void);
+void pomodoro_countdown_led_refresh(void);
+void pomodoro_countdown_led_clear(void);
 /** 番茄钟/秒表运行中显示 img_pause，暂停或未开始时隐藏 */
 void pomodoro_pause_icon_refresh(void);
 void focus_session_cancel(void);

@@ -532,6 +532,8 @@ void bsp_ble_init(void)
     rc = nimble_port_init();
     if (rc != 0) {
         ESP_LOGE(TAG, "Failed to initialize nimble port, rc=%d", rc);
+        ble_enabled = false;
+        ble_ui_refresh_req = true;
         return;
     }
 
@@ -543,6 +545,8 @@ void bsp_ble_init(void)
     if (rc != 0) {
         ESP_LOGE(TAG, "ble_gatts_count_cfg failed: %d", rc);
         nimble_port_deinit();
+        ble_enabled = false;
+        ble_ui_refresh_req = true;
         return;
     }
 
@@ -550,6 +554,8 @@ void bsp_ble_init(void)
     if (rc != 0) {
         ESP_LOGE(TAG, "ble_gatts_add_svcs failed: %d", rc);
         nimble_port_deinit();
+        ble_enabled = false;
+        ble_ui_refresh_req = true;
         return;
     }
 
