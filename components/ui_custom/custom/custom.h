@@ -149,8 +149,6 @@ void screen_reppo_custom_init();
 void countdown_start(int16_t minutes);
 void stopwatch_start();
 void pomodoro_timer_stop(void);
-void pomodoro_countdown_led_refresh(void);
-void pomodoro_countdown_led_clear(void);
 /** 番茄钟/秒表运行中显示 img_pause，暂停或未开始时隐藏 */
 void pomodoro_pause_icon_refresh(void);
 void focus_session_cancel(void);
@@ -181,6 +179,7 @@ void wordcard_screen_custom_init(lv_ui *ui);
 void wordcard_show_dog_dui(void);
 void wordcard_show_dog_cuo(void);
 void wordcard_hide_dog_anims(void);
+void reviewcard_show_dog_dui(void);
 void screen_wordmenu_buttion_add();
 void screen_reviewcard_buttion_add();
 void screen_setting_buttion_add();

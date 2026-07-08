@@ -46,6 +46,7 @@ void setup_scr_screen_loading(lv_ui *ui)
 
     //The custom code of screen_loading.
 
+
     //Update current screen layout.
     lv_obj_update_layout(ui->screen_loading);
 

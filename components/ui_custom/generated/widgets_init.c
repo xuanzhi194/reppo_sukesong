@@ -121,3 +121,8 @@ const lv_img_dsc_t * screen_reviewcard_dog_dance_imgs[3] = {
     &screen_reviewcard_dog_danceAAA_dog_dance_1,
     &screen_reviewcard_dog_danceAAA_dog_dance_2,
 };
+const lv_img_dsc_t * screen_reviewcard_dog_dui_imgs[3] = {
+    &screen_reviewcard_dog_duiAAA_dog_love_2_0,
+    &screen_reviewcard_dog_duiAAA_dog_love_2_1,
+    &screen_reviewcard_dog_duiAAA_dog_love_2_2,
+};

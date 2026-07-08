@@ -478,13 +478,14 @@ static void screen_todolist_event_handler (lv_event_t *e)
                 lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
                 lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
             } else {
-                /* remain_num == 4: 本页无任务（如 total == 0），全部禁用 */
+                /* remain_num == 4: 本页无任务（total==0 或整页翻空），全部禁用 */
                 lv_obj_add_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
                 lv_obj_add_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
                 lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
                 lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
             }
         } else {
+            /* total >= page_cur*4：本页满员，全部启用 */
             lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
             lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
             lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
@@ -817,13 +818,14 @@ static void screen_todolist_btn_nxtpage_event_handler (lv_event_t *e)
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
                 } else {
-                    /* remain_num == 4: 本页无任务（如 total == 0），全部禁用 */
+                    /* remain_num == 4: 本页无任务，全部禁用 */
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
                 }
             } else {
+                /* 本页满员，全部启用 */
                 lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
                 lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
                 lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
@@ -1131,6 +1133,11 @@ static void screen_wordcard_btn_dui_event_handler (lv_event_t *e)
             wordcard_change = 1;
             lv_label_set_text_fmt(guider_ui.screen_wordcard_label_index,"%d/%d",cards_index,round_cards_num);
         }
+
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
         wordcard_show_dog_dui();
         break;
     }
@@ -1155,6 +1162,11 @@ static void screen_wordcard_btn_cuo_event_handler (lv_event_t *e)
             lv_obj_add_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
             group_focus_obj(guider_ui.screen_wordcard_btn_back);
         }
+
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
         wordcard_show_dog_cuo();
         break;
     }
@@ -1170,6 +1182,11 @@ static void screen_wordcard_btn_back_event_handler (lv_event_t *e)
     case LV_EVENT_CLICKED:
     {
         ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_wordcard_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        wordcard_hide_dog_anims();
         break;
     }
     default:
@@ -1316,6 +1333,7 @@ static void screen_reviewcard_event_handler (lv_event_t *e)
     {
         //screen_wordcard
         screen_reviewcard_buttion_add();
+        lv_obj_add_flag(guider_ui.screen_reviewcard_dog_dui,LV_OBJ_FLAG_HIDDEN);
         //--------------------//
         if(review_cards_num == 0) {
             lv_label_set_text(guider_ui.screen_reviewcard_label_index,"0/0");
@@ -1365,6 +1383,16 @@ static void screen_reviewcard_btn_dui_event_handler (lv_event_t *e)
         }
         break;
     }
+    case LV_EVENT_FOCUSED:
+    {
+        lv_obj_clear_flag(guider_ui.screen_reviewcard_dog_dui, LV_OBJ_FLAG_HIDDEN);
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_add_flag(guider_ui.screen_reviewcard_dog_dui,LV_OBJ_FLAG_HIDDEN);
+        break;
+    }
     default:
         break;
     }
@@ -1399,6 +1427,7 @@ static void screen_pomodoro_event_handler (lv_event_t *e)
     {
         //screen_buttion add//
         screen_pomodoro_buttion_add();
+        lv_obj_add_flag(guider_ui.screen_pomodoro_img_pause,LV_OBJ_FLAG_HIDDEN);
         //---------------------//
         pomodoro_countdown = 1;
         pomodoro_stopwatch = 0;

@@ -17,7 +17,6 @@
 #include "lvgl.h"
 #include "custom.h"
 #include "widgets_init.h"
-#include "ws2812b.h"
 #include <stdlib.h>
 
 //lv group define
@@ -124,106 +123,209 @@ unsigned int answer_book_rand = 0;
 volatile bool answer_loading_led_stop_req = 0;
 
 static const char * const answer_book_answers[] = {
-    "先别急，答案会自己浮现",
-    "可以试试，但别用力过猛",
-    "今天适合迈出第一步",
-    "换个角度看，会更清楚",
-    "等等看，时机还差一点",
-    "答案在你忽略的细节里",
-    "把问题写下来，它会变小",
-    "去做，边做边修正",
-    "先完成，再完美",
-    "这件事值得认真对待",
-    "问问同伴，会有新思路",
-    "不要高估今天，也别低估长期",
-    "休息一下，效率会回来",
-    "它没有你想的那么难",
-    "这次选择简单一点",
-    "保留余地，是更聪明的决定",
-    "先把最小版本跑通",
-    "今晚不适合硬扛",
-    "你已经知道答案了",
-    "把复杂问题拆成三步",
-    "相信直觉，但检查证据",
-    "再等一个信号",
-    "别被情绪带着走",
-    "认真可以，焦虑不必",
-    "这会是一个不错的开始",
-    "答案偏向肯定",
-    "答案偏向否定",
-    "现在还不是最佳时机",
-    "大胆一点，问题不大",
-    "先和重要的人确认一下",
-    "今天适合收尾，不适合开新坑",
-    "把手机放下，答案会清楚些",
-    "去启真湖边走走再决定",
-    "图书馆会给你一点方向",
-    "先吃饭，别空腹做决定",
-    "这件事需要睡醒后再判断",
-    "保持节奏，不用冲刺",
-    "少想一点，多验证一点",
-    "它会比预期顺利",
-    "留给明天也可以",
-    "先处理最确定的部分",
-    "不要为了快而绕远路",
-    "接受不确定，然后继续",
-    "这不是终点，只是一次迭代",
-    "问问自己真正想要什么",
-    "答案藏在长期收益里",
-    "可以拒绝，不必内耗",
-    "选让你更平静的那个",
-    "先把桌面整理干净",
-    "把仿真跑起来再说",
-    "今天适合做减法",
-    "慢一点，结果会更稳",
-    "你需要的是开始，不是答案",
-    "别急着证明自己",
-    "这件事值得再坚持一下",
-    "方向没错，只是需要调整",
-    "让数据说话",
-    "先别承诺太满",
-    "好消息会晚一点到",
-    "给自己十分钟缓冲",
-    "选择更可持续的方案",
-    "可以，但要设边界",
+    /* —— 肯定 —— */
+    "毫无疑问",
+    "是的",
+    "当然",
+    "放手去做",
+    "时机已到",
+    "值得尝试",
+    "勇敢迈出一步",
+    "命运说：行",
+    "星星眨眼表示同意",
+    "宇宙给你点了赞",
+    "签文：大吉",
+    "卦象：可行",
+    "前景看好",
+    "会得到支持",
+    "结果会比你想的好",
+    "相信直觉",
+    "现在正是时候",
+    "去做就对了",
+    "好运正在靠近",
+    "门已为你打开",
+    "顺水行舟",
+    "贵人会出现",
+    "坚持到底会看到光",
+    "你可以的",
+    "值得一搏",
+    "向前走吧",
+    "老天开了绿灯",
+    "YES",
+    "全票通过",
+    "马到成功",
+    "水到渠成",
+    "柳暗花明",
+    "福星高照",
+    "不必再问了",
+    "答案是肯定的",
+    "绝对可以",
+    "没问题",
+    "会有好结果",
+    "抓住这次机会",
+    "月亮说可以",
+    "诸事皆宜",
+    "大胆一点",
+    "心之所向，便是答案",
+    "旗开得胜",
+    "否极泰来",
+    "时来运转",
+    "鸿运当头",
+    "紫气东来",
+    "天佑善人",
+    "绝对没问题",
+    "前景一片光明",
+    "会得到意外之喜",
+    "放手一搏",
+    "宜动不宜静",
+    "吉星高照",
+    "守得云开见月明",
+    "车到山前必有路",
+    "船到桥头自然直",
+    "山重水复，后面你懂的",
+    "机会难得，抓住",
+    "运势正旺",
+    "东风正好",
+    "春暖花开",
+    "柳暗花明又一村",
+    "苦尽甘来",
+    "瑞气盈门",
+    /* —— 否定 —— */
+    "最好不要",
+    "现在还不是时候",
+    "重新考虑一下吧",
+    "别抱太大希望",
+    "答案是：不行",
     "暂时不要",
-    "试试看",
-    "先把风险列出来",
-    "答案在下一次尝试里",
-    "别把小事想成大事",
-    "这次先相信自己",
-    "慢慢来，比较快",
-    "不要急着给结论",
-    "先问清楚问题本身",
-    "这条路可以继续走",
-    "换个环境会有答案",
-    "少一点完美主义",
-    "从最简单的地方开始",
-    "这不是坏事",
-    "今天适合整理思路",
-    "把它交给时间一点点",
-    "答案会偏向温柔",
-    "先保护好自己的节奏",
-    "不要同时做太多决定",
-    "它需要一个备选方案",
-    "先和现实对齐",
-    "不要忽略身体的提醒",
-    "可以先小范围试验",
-    "这件事不用马上答复",
-    "把期待调低一点",
-    "你需要更多信息",
-    "这个选择会带来成长",
-    "先停下，再出发",
-    "保持简单就好",
-    "答案比你想的朴素",
-    "别让拖延伪装成思考",
-    "这次可以主动一点",
-    "别急，先喝口水",
-    "今晚适合早点收工",
-    "选择更清醒的那个",
-    "让明天的你再看一次",
-    "它值得一个认真开始",
-    "先把边界说清楚"
+    "再等等",
+    "时机未到",
+    "星星摇头了",
+    "宇宙说：再想想",
+    "恐怕不行",
+    "别冲动",
+    "冷静，先别动",
+    "现在做会后悔",
+    "另寻他路吧",
+    "此路不通",
+    "卦象示凶，慎行",
+    "逆风，不宜",
+    "水逆，请回避",
+    "今日忌大事",
+    "签文：凶",
+    "老天今天没点头",
+    "NO",
+    "全票否决",
+    "三思而后行",
+    "欲速则不达",
+    "过犹不及",
+    "塞翁失马，先别动",
+    "缘木求鱼",
+    "南辕北辙",
+    "镜花水月，别当真",
+    "不宜妄动",
+    "不宜强求",
+    "最好忘记",
+    "不会如你所愿",
+    "前景不明",
+    "别一意孤行",
+    "别因小失大",
+    "别飞蛾扑火",
+    "别守株待兔",
+    "不会如期发生",
+    "恐怕要失望",
+    "别指望太多",
+    "不是时候",
+    "缘分未到",
+    "胜算不大",
+    "阻力不小",
+    "风波四起",
+    "乌云未散",
+    "月缺不宜",
+    "门已紧闭",
+    "路已堵死",
+    "此计不通",
+    "此愿难成",
+    "此事作罢",
+    "今非良日",
+    "回头是岸",
+    "悬崖勒马",
+    "亡羊补牢，先停",
+    "前车之鉴，慎之",
+    "覆水难收，勿试",
+    "画地为牢，勿入",
+    "作茧自缚，勿为",
+    /* —— 中立 / 模糊 / 幽默 —— */
+    "顺其自然",
+    "再看看吧",
+    "也许，也许不",
+    "这需要时间",
+    "你其实已经知道了",
+    "命运今天休假",
+    "骰子投出了模棱两可",
+    "月老说再看看",
+    "风水师请假了",
+    "这题超纲了",
+    "答案之书也需要思考",
+    "别催，正在算",
+    "薛定谔的答案是",
+    "建议重摇一次",
+    "睡醒再来问",
+    "老天开了个玩笑",
+    "天机不可泄露太多",
+    "你问得太频繁了",
+    "答案在下一页",
+    "此书拒绝回答",
+    "命运正在输入中…",
+    "看心情",
+    "看缘分",
+    "看天意",
+    "看时机",
+    "看猫的脸色",
+    "抛硬币吧",
+    "宇宙正在加载，请稍候",
+    "猫说你得问问它",
+    "狗说：汪（翻译：随便）",
+    "星星说：你猜",
+    "风把答案吹跑了",
+    "签筒空了，改日",
+    "黄历：宜静不宜动",
+    "福星在路上堵车",
+    "答案之书摸了会儿鱼",
+    "命运键盘卡了",
+    "是又不是",
+    "对又不对",
+    "算了，随它",
+    "你定",
+    "听天由命",
+    "尽人事，听天命",
+    "不可说，不可说",
+    "天机只泄露一半",
+    "悟不到就再问",
+    "好了，翻页吧",
+    "问了也不一定答",
+    "答了也不一定信",
+    "或者：别问了，去生活",
+    "立起来就再问",
+    "今日额度已用完",
+    "凡人，请自重",
+    "你问得我心虚",
+    "门开了条缝，自己推",
+    "月亮还没圆，再等等",
+    "猫主子没睡醒",
+    "月老正在输入",
+    "信号不好，请重试",
+    "再问还是这句",
+    "树说：静一静",
+    "云说：飘哪算哪",
+    "三个直觉打平，重摇",
+    "另一半你自己悟",
+    "由心而定",
+    "问心无愧即可",
+    "宇宙略过此题",
+    "太阳打西边出来了？那再问",
+    "谋事在人，成事在天",
+    "天知地知，你知我知",
+    "所以：再问一次吧",
 };
 
 void answer_book_show_random_answer(void)
@@ -286,55 +388,6 @@ static bool pomodoro_screen_is_alive(void)
         && lv_scr_act() == guider_ui.screen_pomodoro;
 }
 
-#define POMODORO_LED_BAR_MAX        10
-#define POMODORO_LED_R              30
-#define POMODORO_LED_G              52
-#define POMODORO_LED_B              83
-
-static uint8_t s_pomodoro_led_last_lit = 0xFF;
-static uint32_t s_pomodoro_countdown_total_seconds = 0;
-
-/** 剩余 / 本次总时长 → 亮灯数（1~10，向上取整；已结束为 0） */
-static uint8_t pomodoro_countdown_leds_from_ratio(uint32_t remaining, uint32_t total)
-{
-    if (remaining == 0 || total == 0) {
-        return 0;
-    }
-    uint32_t lit = (remaining * POMODORO_LED_BAR_MAX + total - 1U) / total;
-    if (lit > POMODORO_LED_BAR_MAX) {
-        lit = POMODORO_LED_BAR_MAX;
-    }
-    return (uint8_t)lit;
-}
-
-void pomodoro_countdown_led_clear(void)
-{
-    s_pomodoro_led_last_lit = 0xFF;
-    s_pomodoro_countdown_total_seconds = 0;
-    clear_led_bar();
-}
-
-void pomodoro_countdown_led_refresh(void)
-{
-    if (!pomodoro_screen_is_alive()
-        || !pomodoro_countdown
-        || pomodoro_stopwatch
-        || !countdown_start_label
-        || timer_all_seconds == 0) {
-        pomodoro_countdown_led_clear();
-        return;
-    }
-
-    uint8_t lit = pomodoro_countdown_leds_from_ratio(
-        timer_all_seconds, s_pomodoro_countdown_total_seconds);
-
-    if (lit == s_pomodoro_led_last_lit) {
-        return;
-    }
-    s_pomodoro_led_last_lit = lit;
-    set_led_bar_level(lit, POMODORO_LED_R, POMODORO_LED_G, POMODORO_LED_B);
-}
-
 void pomodoro_timer_stop(void)
 {
     if (pomodoro_timer != NULL) {
@@ -342,7 +395,6 @@ void pomodoro_timer_stop(void)
         pomodoro_timer = NULL;
     }
     pomodoro_pause_icon_refresh();
-    pomodoro_countdown_led_refresh();
 }
 
 void pomodoro_pause_icon_refresh(void)
@@ -403,7 +455,6 @@ static void countdown_cb(lv_timer_t *t){
         countdown_start_label = 0;
         countdown_process_label = 0;
         pomodoro_pause_icon_refresh();
-        pomodoro_countdown_led_refresh();
         return;
     }
     timer_all_seconds -= 1;
@@ -414,18 +465,15 @@ static void countdown_cb(lv_timer_t *t){
     int minutes = (timer_all_seconds % 3600) / 60;
     int seconds = timer_all_seconds % 60;
     lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer,"%02d:%02d:%02d",hours,minutes,seconds);
-    pomodoro_countdown_led_refresh();
 }
 
 void countdown_start(int16_t minutes){
     pomodoro_timer_stop();
-    timer_all_seconds = (uint32_t)minutes * 60U;
-    s_pomodoro_countdown_total_seconds = timer_all_seconds;
+    timer_all_seconds = minutes * 60;
     if (focus_session_active) {
         focus_session_minutes = minutes;
     }
     pomodoro_timer = lv_timer_create(countdown_cb,1000,NULL);
-    s_pomodoro_led_last_lit = 0xFF;
 }
 //-----------------------pomodoro stopwatch------------------------//
 //-----------------------------------------------------------------//
@@ -949,13 +997,8 @@ void screen_timing_buttion_add(){
 static void pomodoro_pause_icon_after_guider(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
-    if (code == LV_EVENT_SCREEN_UNLOADED) {
-        pomodoro_countdown_led_clear();
-        return;
-    }
     if (code == LV_EVENT_CLICKED || code == LV_EVENT_SCREEN_LOADED) {
         pomodoro_pause_icon_refresh();
-        pomodoro_countdown_led_refresh();
     }
 }
 
@@ -973,7 +1016,6 @@ static void pomodoro_pause_icon_bind_hooks(void)
     bound_screen = scr;
 
     lv_obj_add_event_cb(scr, pomodoro_pause_icon_after_guider, LV_EVENT_SCREEN_LOADED, NULL);
-    lv_obj_add_event_cb(scr, pomodoro_pause_icon_after_guider, LV_EVENT_SCREEN_UNLOADED, NULL);
 
     lv_obj_t *btns[] = {
         guider_ui.screen_pomodoro_btn_start,
@@ -983,9 +1025,6 @@ static void pomodoro_pause_icon_bind_hooks(void)
         guider_ui.screen_pomodoro_btn_continue,
         guider_ui.screen_pomodoro_btn_stopwatch,
         guider_ui.screen_pomodoro_btn_countdown,
-        guider_ui.screen_pomodoro_btn_minus,
-        guider_ui.screen_pomodoro_btn_plus,
-        guider_ui.screen_pomodoro_btn_addnum,
         NULL,
     };
     for (int i = 0; btns[i] != NULL; i++) {
@@ -1091,6 +1130,67 @@ void wordcard_show_dog_cuo(void)
     lv_obj_clear_flag(guider_ui.screen_wordcard_dog_cuo, LV_OBJ_FLAG_HIDDEN);
 }
 
+static void wordcard_sync_dog_focus(void *unused)
+{
+    LV_UNUSED(unused);
+    if (guider_ui.screen_wordcard == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_wordcard) ||
+        lv_scr_act() != guider_ui.screen_wordcard ||
+        g == NULL) {
+        return;
+    }
+    lv_obj_t *focused = lv_group_get_focused(g);
+    if (focused == guider_ui.screen_wordcard_btn_dui) {
+        wordcard_show_dog_dui();
+    } else if (focused == guider_ui.screen_wordcard_btn_cuo) {
+        wordcard_show_dog_cuo();
+    }
+}
+
+static void reviewcard_hide_dog_dui(void)
+{
+    if (guider_ui.screen_reviewcard_dog_dui != NULL &&
+        lv_obj_is_valid(guider_ui.screen_reviewcard_dog_dui)) {
+        lv_obj_add_flag(guider_ui.screen_reviewcard_dog_dui, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
+void reviewcard_show_dog_dui(void)
+{
+    if (guider_ui.screen_reviewcard_dog_dui == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_reviewcard_dog_dui)) {
+        return;
+    }
+    lv_animimg_start(guider_ui.screen_reviewcard_dog_dui);
+    lv_obj_clear_flag(guider_ui.screen_reviewcard_dog_dui, LV_OBJ_FLAG_HIDDEN);
+}
+
+static void reviewcard_sync_dog_dui_focus(void *unused)
+{
+    LV_UNUSED(unused);
+    if (guider_ui.screen_reviewcard == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_reviewcard) ||
+        lv_scr_act() != guider_ui.screen_reviewcard ||
+        review_cards_num == 0) {
+        return;
+    }
+    if (g != NULL &&
+        lv_group_get_focused(g) == guider_ui.screen_reviewcard_btn_dui) {
+        reviewcard_show_dog_dui();
+    }
+}
+
+static void reviewcard_btn_dui_focus_cb(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_FOCUSED) {
+        if (review_cards_num > 0) {
+            reviewcard_show_dog_dui();
+        }
+    } else if (code == LV_EVENT_DEFOCUSED) {
+        reviewcard_hide_dog_dui();
+    }
+}
 void wordcard_screen_custom_init(lv_ui *ui)
 {
     wordcard_hide_dog_anims_on(ui);
@@ -1118,6 +1218,9 @@ void screen_wordcard_buttion_add(){
     clear_edge_box(guider_ui.screen_wordcard_btn_cuo);
     clear_edge_box(guider_ui.screen_wordcard_btn_back);
 
+    /* events_init 在 button_add 之后会 wordcard_hide_dog_anims()，延迟同步 focus 状态 */
+    lv_async_call(wordcard_sync_dog_focus, NULL);
+
     wordcard_session_start = 1;
     wordcard_change = 1;
 }
@@ -1142,6 +1245,10 @@ void screen_reviewcard_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_back); 
     clear_edge_box(guider_ui.screen_reviewcard_btn_dui);
     clear_edge_box(guider_ui.screen_reviewcard_btn_back);
+    lv_obj_add_event_cb(guider_ui.screen_reviewcard_btn_dui,
+                        reviewcard_btn_dui_focus_cb, LV_EVENT_ALL, NULL);
+    /* events_init 在 button_add 之后会再次 HIDDEN dog_dui，延迟同步 focus 状态 */
+    lv_async_call(reviewcard_sync_dog_dui_focus, NULL);
 
     reviewcard_session_start = 1;
     reviewcard_change = 1;

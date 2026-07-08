@@ -213,6 +213,15 @@ void setup_scr_screen_reviewcard(lv_ui *ui)
     lv_obj_set_pos(ui->screen_reviewcard_dog_dance, 245, 30);
     lv_obj_set_size(ui->screen_reviewcard_dog_dance, 34, 34);
 
+    //Write codes screen_reviewcard_dog_dui
+    ui->screen_reviewcard_dog_dui = lv_animimg_create(ui->screen_reviewcard);
+    lv_animimg_set_src(ui->screen_reviewcard_dog_dui, (const void **) screen_reviewcard_dog_dui_imgs, 3);
+    lv_animimg_set_duration(ui->screen_reviewcard_dog_dui, 100*3);
+    lv_animimg_set_repeat_count(ui->screen_reviewcard_dog_dui, LV_ANIM_REPEAT_INFINITE);
+    lv_animimg_start(ui->screen_reviewcard_dog_dui);
+    lv_obj_set_pos(ui->screen_reviewcard_dog_dui, 91, 114);
+    lv_obj_set_size(ui->screen_reviewcard_dog_dui, 34, 34);
+
     //The custom code of screen_reviewcard.
 
 

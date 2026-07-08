@@ -145,6 +145,7 @@ typedef struct
 	lv_obj_t *screen_reviewcard_btn_back;
 	lv_obj_t *screen_reviewcard_btn_back_label;
 	lv_obj_t *screen_reviewcard_dog_dance;
+	lv_obj_t *screen_reviewcard_dog_dui;
 	lv_obj_t *screen_pomodoro;
 	bool screen_pomodoro_del;
 	lv_obj_t *screen_pomodoro_img_pomorect1;
@@ -456,6 +457,10 @@ LV_IMG_DECLARE(_AAA_flashcards_review_bg_320x170);
 LV_IMG_DECLARE(screen_reviewcard_dog_danceAAA_dog_dance_0);
 LV_IMG_DECLARE(screen_reviewcard_dog_danceAAA_dog_dance_1);
 LV_IMG_DECLARE(screen_reviewcard_dog_danceAAA_dog_dance_2);
+#include "extra/widgets/animimg/lv_animimg.h"
+LV_IMG_DECLARE(screen_reviewcard_dog_duiAAA_dog_love_2_0);
+LV_IMG_DECLARE(screen_reviewcard_dog_duiAAA_dog_love_2_1);
+LV_IMG_DECLARE(screen_reviewcard_dog_duiAAA_dog_love_2_2);
 
 LV_IMG_DECLARE(_AAA_fanqie_bg_320x170);
 LV_IMG_DECLARE(_pomorect_alpha_257x52);

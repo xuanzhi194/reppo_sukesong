@@ -540,7 +540,6 @@ void setup_scr_screen_pomodoro(lv_ui *ui)
     lv_obj_set_style_img_opa(ui->screen_pomodoro_img_pause, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_pomodoro_img_pause, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_clip_corner(ui->screen_pomodoro_img_pause, true, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_add_flag(ui->screen_pomodoro_img_pause, LV_OBJ_FLAG_HIDDEN);
 
     //The custom code of screen_pomodoro.
 
