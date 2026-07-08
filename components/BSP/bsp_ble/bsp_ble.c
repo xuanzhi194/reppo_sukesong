@@ -1,4 +1,5 @@
 #include "bsp_ble.h"
+#include "reppo_demo_mode.h"
 #include "todo_storage.h"
 #include "badge_storage.h"
 #include "esp_attr.h"
@@ -45,6 +46,10 @@ static bool s_ble_active;
 static uint16_t gatt_chr_val_handle;
 static uint16_t active_conn_handle = BLE_HS_CONN_HANDLE_NONE;
 static bool notify_enabled;
+
+#if REPPO_DEMO_BLE_BOOT_GATE
+static volatile bool s_demo_boot_gate_released;
+#endif
 
 static char json_buffer[JSON_BUFFER_SIZE] EXT_RAM_BSS_ATTR;
 static uint16_t json_len;
@@ -254,6 +259,13 @@ static int device_write_cb(uint16_t conn_handle,
         }
         badge_notify_status(BADGE_STATUS_OK, 100);
         ESP_LOGI(TAG, "Badge image saved");
+    } else if (cmd == BLE_CMD_DEMO_BOOT_START) {
+#if REPPO_DEMO_BLE_BOOT_GATE
+        ESP_LOGI(TAG, "Demo boot START (0x30) — release normal boot");
+        bsp_ble_demo_boot_gate_release();
+#else
+        ESP_LOGW(TAG, "Demo boot cmd ignored (REPPO_DEMO_BLE_BOOT_GATE=0)");
+#endif
     }
 
     return 0;
@@ -563,7 +575,9 @@ void bsp_ble_init(void)
     ble_store_config_init();
     ble_att_set_preferred_mtu(BLE_PREFERRED_MTU);
 
+#if !REPPO_DEMO_BLE_BOOT_GATE
     ble_refresh_stored_read_bundle();
+#endif
     s_ble_active = true;
     ble_enabled = true;
     ble_ui_refresh_req = true;
@@ -599,3 +613,24 @@ void bsp_ble_deinit(void)
     ble_enabled = false;
     ble_ui_refresh_req = true;
 }
+
+#if REPPO_DEMO_BLE_BOOT_GATE
+void bsp_ble_demo_boot_gate_release(void)
+{
+    s_demo_boot_gate_released = true;
+}
+
+bool bsp_ble_demo_boot_gate_is_released(void)
+{
+    return s_demo_boot_gate_released;
+}
+
+void bsp_ble_demo_boot_gate_wait(void)
+{
+    ESP_LOGI(TAG, "Demo gate: waiting for BLE 0x30 or ENTER...");
+    while (!s_demo_boot_gate_released) {
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+    ESP_LOGI(TAG, "Demo gate: released, continuing normal boot");
+}
+#endif
