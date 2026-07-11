@@ -491,6 +491,7 @@ static void screen_todolist_event_handler (lv_event_t *e)
             lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
             lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
         }
+
         //focus state
         if(todosel_back) {
             todosel_back = 0;
@@ -818,14 +819,12 @@ static void screen_todolist_btn_nxtpage_event_handler (lv_event_t *e)
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
                 } else {
-                    /* remain_num == 4: 本页无任务，全部禁用 */
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
                     lv_obj_add_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
                 }
             } else {
-                /* 本页满员，全部启用 */
                 lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
                 lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
                 lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);

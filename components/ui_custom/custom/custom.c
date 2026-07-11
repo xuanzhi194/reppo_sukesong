@@ -449,7 +449,7 @@ static void countdown_cb(lv_timer_t *t){
         lv_obj_add_flag(guider_ui.screen_pomodoro_btn_start,LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_pomodoro_btn_reset,LV_OBJ_FLAG_HIDDEN);
         countdown_timeout_pending = 1;
-        if (focus_session_active && pomodoro_countdown) {
+        if (pomodoro_countdown) {
             focus_complete_pending = 1;
         }
         countdown_start_label = 0;
@@ -470,9 +470,7 @@ static void countdown_cb(lv_timer_t *t){
 void countdown_start(int16_t minutes){
     pomodoro_timer_stop();
     timer_all_seconds = minutes * 60;
-    if (focus_session_active) {
-        focus_session_minutes = minutes;
-    }
+    focus_session_minutes = minutes;
     pomodoro_timer = lv_timer_create(countdown_cb,1000,NULL);
 }
 //-----------------------pomodoro stopwatch------------------------//

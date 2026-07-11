@@ -495,11 +495,12 @@ void setup_scr_screen_ai(lv_ui *ui)
     //Write codes screen_ai_img_v10
     ui->screen_ai_img_v10 = lv_img_create(ui->screen_ai_ai_cont);
     lv_obj_add_flag(ui->screen_ai_img_v10, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_ai_img_v10, &_AAA_V10_alpha_304x158);
+    lv_img_set_src(ui->screen_ai_img_v10, &_AAA_Overview_v10_alpha_304x158);
     lv_img_set_pivot(ui->screen_ai_img_v10, 50,50);
     lv_img_set_angle(ui->screen_ai_img_v10, 0);
     lv_obj_set_pos(ui->screen_ai_img_v10, 8, 12);
     lv_obj_set_size(ui->screen_ai_img_v10, 304, 158);
+    lv_obj_add_flag(ui->screen_ai_img_v10, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_ai_img_v10, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_ai_img_v10, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -510,11 +511,12 @@ void setup_scr_screen_ai(lv_ui *ui)
     //Write codes screen_ai_img_v9
     ui->screen_ai_img_v9 = lv_img_create(ui->screen_ai_ai_cont);
     lv_obj_add_flag(ui->screen_ai_img_v9, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_ai_img_v9, &_AAA_V9_alpha_304x158);
+    lv_img_set_src(ui->screen_ai_img_v9, &_AAA_Overview_v9_alpha_304x158);
     lv_img_set_pivot(ui->screen_ai_img_v9, 50,50);
     lv_img_set_angle(ui->screen_ai_img_v9, 0);
     lv_obj_set_pos(ui->screen_ai_img_v9, 8, 12);
     lv_obj_set_size(ui->screen_ai_img_v9, 304, 158);
+    lv_obj_add_flag(ui->screen_ai_img_v9, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_ai_img_v9, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_ai_img_v9, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -525,11 +527,12 @@ void setup_scr_screen_ai(lv_ui *ui)
     //Write codes screen_ai_img_v8
     ui->screen_ai_img_v8 = lv_img_create(ui->screen_ai_ai_cont);
     lv_obj_add_flag(ui->screen_ai_img_v8, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_ai_img_v8, &_AAA_V8_alpha_304x158);
+    lv_img_set_src(ui->screen_ai_img_v8, &_AAA_Overview_v8_alpha_304x158);
     lv_img_set_pivot(ui->screen_ai_img_v8, 50,50);
     lv_img_set_angle(ui->screen_ai_img_v8, 0);
     lv_obj_set_pos(ui->screen_ai_img_v8, 8, 12);
     lv_obj_set_size(ui->screen_ai_img_v8, 304, 158);
+    lv_obj_add_flag(ui->screen_ai_img_v8, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_ai_img_v8, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_ai_img_v8, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -540,11 +543,12 @@ void setup_scr_screen_ai(lv_ui *ui)
     //Write codes screen_ai_img_v7
     ui->screen_ai_img_v7 = lv_img_create(ui->screen_ai_ai_cont);
     lv_obj_add_flag(ui->screen_ai_img_v7, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_ai_img_v7, &_AAA_V7_alpha_304x158);
+    lv_img_set_src(ui->screen_ai_img_v7, &_AAA_Overview_v7_alpha_304x158);
     lv_img_set_pivot(ui->screen_ai_img_v7, 50,50);
     lv_img_set_angle(ui->screen_ai_img_v7, 0);
     lv_obj_set_pos(ui->screen_ai_img_v7, 8, 12);
     lv_obj_set_size(ui->screen_ai_img_v7, 304, 158);
+    lv_obj_add_flag(ui->screen_ai_img_v7, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_ai_img_v7, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_ai_img_v7, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -555,11 +559,12 @@ void setup_scr_screen_ai(lv_ui *ui)
     //Write codes screen_ai_img_v6
     ui->screen_ai_img_v6 = lv_img_create(ui->screen_ai_ai_cont);
     lv_obj_add_flag(ui->screen_ai_img_v6, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_ai_img_v6, &_AAA_V6_alpha_304x158);
+    lv_img_set_src(ui->screen_ai_img_v6, &_AAA_Overview_v6_alpha_304x158);
     lv_img_set_pivot(ui->screen_ai_img_v6, 50,50);
     lv_img_set_angle(ui->screen_ai_img_v6, 0);
     lv_obj_set_pos(ui->screen_ai_img_v6, 8, 12);
     lv_obj_set_size(ui->screen_ai_img_v6, 304, 158);
+    lv_obj_add_flag(ui->screen_ai_img_v6, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_ai_img_v6, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_ai_img_v6, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -570,11 +575,12 @@ void setup_scr_screen_ai(lv_ui *ui)
     //Write codes screen_ai_img_v5
     ui->screen_ai_img_v5 = lv_img_create(ui->screen_ai_ai_cont);
     lv_obj_add_flag(ui->screen_ai_img_v5, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_ai_img_v5, &_AAA_V5_alpha_304x158);
+    lv_img_set_src(ui->screen_ai_img_v5, &_AAA_Overview_v5_alpha_304x158);
     lv_img_set_pivot(ui->screen_ai_img_v5, 50,50);
     lv_img_set_angle(ui->screen_ai_img_v5, 0);
-    lv_obj_set_pos(ui->screen_ai_img_v5, 8, 12);
+    lv_obj_set_pos(ui->screen_ai_img_v5, 6, 12);
     lv_obj_set_size(ui->screen_ai_img_v5, 304, 158);
+    lv_obj_add_flag(ui->screen_ai_img_v5, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_ai_img_v5, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_ai_img_v5, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -585,11 +591,12 @@ void setup_scr_screen_ai(lv_ui *ui)
     //Write codes screen_ai_img_v4
     ui->screen_ai_img_v4 = lv_img_create(ui->screen_ai_ai_cont);
     lv_obj_add_flag(ui->screen_ai_img_v4, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_ai_img_v4, &_AAA_V4_alpha_304x158);
+    lv_img_set_src(ui->screen_ai_img_v4, &_AAA_Overview_v4_alpha_304x158);
     lv_img_set_pivot(ui->screen_ai_img_v4, 50,50);
     lv_img_set_angle(ui->screen_ai_img_v4, 0);
-    lv_obj_set_pos(ui->screen_ai_img_v4, 8, 12);
+    lv_obj_set_pos(ui->screen_ai_img_v4, 8, 11);
     lv_obj_set_size(ui->screen_ai_img_v4, 304, 158);
+    lv_obj_add_flag(ui->screen_ai_img_v4, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_ai_img_v4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_ai_img_v4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -600,11 +607,12 @@ void setup_scr_screen_ai(lv_ui *ui)
     //Write codes screen_ai_img_v3
     ui->screen_ai_img_v3 = lv_img_create(ui->screen_ai_ai_cont);
     lv_obj_add_flag(ui->screen_ai_img_v3, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_ai_img_v3, &_AAA_V3_alpha_304x158);
+    lv_img_set_src(ui->screen_ai_img_v3, &_AAA_Overview_v3_alpha_304x158);
     lv_img_set_pivot(ui->screen_ai_img_v3, 50,50);
     lv_img_set_angle(ui->screen_ai_img_v3, 0);
     lv_obj_set_pos(ui->screen_ai_img_v3, 8, 12);
     lv_obj_set_size(ui->screen_ai_img_v3, 304, 158);
+    lv_obj_add_flag(ui->screen_ai_img_v3, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_ai_img_v3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_ai_img_v3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -615,11 +623,12 @@ void setup_scr_screen_ai(lv_ui *ui)
     //Write codes screen_ai_img_v2
     ui->screen_ai_img_v2 = lv_img_create(ui->screen_ai_ai_cont);
     lv_obj_add_flag(ui->screen_ai_img_v2, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_ai_img_v2, &_AAA_V2_alpha_304x158);
+    lv_img_set_src(ui->screen_ai_img_v2, &_AAA_Overview_v2_alpha_304x158);
     lv_img_set_pivot(ui->screen_ai_img_v2, 50,50);
     lv_img_set_angle(ui->screen_ai_img_v2, 0);
     lv_obj_set_pos(ui->screen_ai_img_v2, 8, 12);
     lv_obj_set_size(ui->screen_ai_img_v2, 304, 158);
+    lv_obj_add_flag(ui->screen_ai_img_v2, LV_OBJ_FLAG_HIDDEN);
 
     //Write style for screen_ai_img_v2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_img_recolor_opa(ui->screen_ai_img_v2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -630,7 +639,7 @@ void setup_scr_screen_ai(lv_ui *ui)
     //Write codes screen_ai_img_v1
     ui->screen_ai_img_v1 = lv_img_create(ui->screen_ai_ai_cont);
     lv_obj_add_flag(ui->screen_ai_img_v1, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_ai_img_v1, &_AAA_V1_alpha_304x158);
+    lv_img_set_src(ui->screen_ai_img_v1, &_AAA_Overview_v1_alpha_304x158);
     lv_img_set_pivot(ui->screen_ai_img_v1, 50,50);
     lv_img_set_angle(ui->screen_ai_img_v1, 0);
     lv_obj_set_pos(ui->screen_ai_img_v1, 8, 12);

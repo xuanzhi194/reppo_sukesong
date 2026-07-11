@@ -39,18 +39,18 @@ void focus_bridge_on_countdown_complete(void)
     }
     focus_complete_pending = 0;
 
-    if (!focus_session_active) {
-        return;
+    /* 任务专注会话：标记 todo 为完成 */
+    if (focus_session_active) {
+        focus_session_active = 0;
+        if (current_task_index < (int)ui_todo_list.count &&
+            ui_todo_list.items[current_task_index].done == 0) {
+            ui_todo_list.items[current_task_index].done = 1;
+            done_sum += 1;
+            todo_sum -= 1;
+        }
     }
-    focus_session_active = 0;
 
-    if (current_task_index < (int)ui_todo_list.count &&
-        ui_todo_list.items[current_task_index].done == 0) {
-        ui_todo_list.items[current_task_index].done = 1;
-        done_sum += 1;
-        todo_sum -= 1;
-    }
-
+    /* 任意倒计时完成均累积专注时长 */
     if (focus_session_minutes > 0) {
         all_focus_time += focus_session_minutes;
         focus_time_save();
