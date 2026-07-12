@@ -604,7 +604,8 @@ void brightness_update_icon(void)
 {
     static const lv_opa_t icon_opa[3] = { 90, 170, 255 };
 
-    if (guider_ui.screen_setting_img_brightness == NULL) {
+    if (guider_ui.screen_setting_img_brightness == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_setting_img_brightness)) {
         return;
     }
     lv_obj_set_style_img_opa(guider_ui.screen_setting_img_brightness,
@@ -2594,26 +2595,26 @@ void screen_setting_ble_refresh_icons(void)
 static void screen_setting_ble_icon_after_guider(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
-    if (code == LV_EVENT_CLICKED && ble_toggle_on_req) {
-        ble_enabled = true;
-    }
     if (code == LV_EVENT_FOCUSED || code == LV_EVENT_CLICKED) {
         screen_setting_ble_refresh_icons();
     }
 }
 
+static lv_obj_t *s_screen_setting_ble_bound_screen;
+static lv_obj_t *s_screen_setting_effect_bound_screen;
+
 static void screen_setting_ble_icon_bind_hooks(void)
 {
-    static lv_obj_t *bound_btn;
-
     lv_obj_t *btn = guider_ui.screen_setting_btn_ble;
-    if (btn == NULL || !lv_obj_is_valid(btn)) {
+    lv_obj_t *screen = guider_ui.screen_setting;
+    if (screen == NULL || !lv_obj_is_valid(screen) ||
+        btn == NULL || !lv_obj_is_valid(btn)) {
         return;
     }
-    if (bound_btn == btn) {
+    if (s_screen_setting_ble_bound_screen == screen) {
         return;
     }
-    bound_btn = btn;
+    s_screen_setting_ble_bound_screen = screen;
     lv_obj_add_event_cb(btn, screen_setting_ble_icon_after_guider, LV_EVENT_FOCUSED, NULL);
     lv_obj_add_event_cb(btn, screen_setting_ble_icon_after_guider, LV_EVENT_CLICKED, NULL);
 }
@@ -2780,8 +2781,23 @@ static void screen_setting_initial_effect_async(void *unused)
     }
 }
 
+static void screen_setting_effect_screen_event_cb(lv_event_t *e)
+{
+    if (lv_event_get_code(e) == LV_EVENT_SCREEN_UNLOADED) {
+        s_screen_setting_ble_bound_screen = NULL;
+        s_screen_setting_effect_bound_screen = NULL;
+    }
+}
+
 static void screen_setting_visual_effect_bind_hooks(void)
 {
+    lv_obj_t *screen = guider_ui.screen_setting;
+    if (screen == NULL || !lv_obj_is_valid(screen) ||
+        s_screen_setting_effect_bound_screen == screen) {
+        return;
+    }
+    s_screen_setting_effect_bound_screen = screen;
+
     lv_obj_t *buttons[] = {
         guider_ui.screen_setting_btn_wifi,
         guider_ui.screen_setting_btn_ble,
@@ -2798,6 +2814,8 @@ static void screen_setting_visual_effect_bind_hooks(void)
                                 LV_EVENT_CLICKED, NULL);
         }
     }
+    lv_obj_add_event_cb(screen, screen_setting_effect_screen_event_cb,
+                        LV_EVENT_SCREEN_UNLOADED, NULL);
     /* 首个 Wi-Fi 按钮在加入 group 时已自动 focus，延迟到 generated
      * SCREEN_LOAD_START 完成后再播放首次图标动画。 */
     lv_async_call(screen_setting_initial_effect_async, NULL);

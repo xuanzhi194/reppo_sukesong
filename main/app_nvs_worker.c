@@ -80,16 +80,17 @@ static void nvs_worker_handle_ble_requests(void)
 {
     if (ble_toggle_on_req) {
         ble_toggle_on_req = 0;
+        ble_toggle_off_req = 0;
         ble_enabled = true;
         ble_ui_refresh_req = true;
         bsp_ble_init();
         start_ble_flow_light();
-    }
-    if (ble_toggle_off_req) {
+    } else if (ble_toggle_off_req) {
         ble_toggle_off_req = 0;
+        ble_toggle_on_req = 0;
         stop_ble_flow_light();
-        start_flow_light_fast_async(80, 32, 33);
         bsp_ble_deinit();
+        start_flow_light_fast_async(80, 32, 33);
     }
     if (ble_disconnect_req) {
         ble_disconnect_req = 0;

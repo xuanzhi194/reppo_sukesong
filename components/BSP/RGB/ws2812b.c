@@ -1,5 +1,6 @@
 #include "ws2812b.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "freertos/task.h"
 
 extern bool ble_flow_led_en;
@@ -11,20 +12,43 @@ extern bool ble_flow_led_en;
 
 static led_strip_handle_t led_strip;
 static bool s_led_strip_ready = false;
+static SemaphoreHandle_t s_led_strip_mutex;
+
+#define LED_EFFECT_TASK_STACK 4096
+
+static bool led_strip_lock(void)
+{
+    return s_led_strip_mutex == NULL ||
+           xSemaphoreTake(s_led_strip_mutex, pdMS_TO_TICKS(250)) == pdTRUE;
+}
+
+static void led_strip_unlock(void)
+{
+    if (s_led_strip_mutex != NULL) {
+        xSemaphoreGive(s_led_strip_mutex);
+    }
+}
 
 /** 上电后立即点亮全部 LED，不等待流水动画 */
 static void led_strip_boot_instant_hint(void)
 {
+    if (!led_strip_lock()) {
+        return;
+    }
     for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
         led_strip_set_pixel(led_strip, i, 51, 64, 69);
     }
     led_strip_refresh(led_strip);
+    led_strip_unlock();
 }
 
 void init_led_strip(void)
 {
     if (s_led_strip_ready) {
         return;
+    }
+    if (s_led_strip_mutex == NULL) {
+        s_led_strip_mutex = xSemaphoreCreateMutex();
     }
 
     /* 1. LED strip general configuration */
@@ -63,6 +87,10 @@ static void boot_flow_light_once(uint32_t r, uint32_t g, uint32_t b)
     const int trail = BOOT_FLOW_TRAIL_LEN;
 
     for (int head = 0; head < LED_STRIP_NUM_LEDS + trail - 1; head++) {
+        if (!led_strip_lock()) {
+            vTaskDelay(pdMS_TO_TICKS(BOOT_FLOW_STEP_MS));
+            continue;
+        }
         for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
             int age = head - i;
             if (age >= 0 && age < trail) {
@@ -76,6 +104,7 @@ static void boot_flow_light_once(uint32_t r, uint32_t g, uint32_t b)
             }
         }
         led_strip_refresh(led_strip);
+        led_strip_unlock();
         vTaskDelay(pdMS_TO_TICKS(BOOT_FLOW_STEP_MS));
     }
 }
@@ -83,10 +112,16 @@ static void boot_flow_light_once(uint32_t r, uint32_t g, uint32_t b)
 static void flow_light_run(uint32_t r, uint32_t g, uint32_t b, uint32_t step_ms)
 {
     for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
-        led_strip_set_pixel(led_strip, i, r, g, b);
-        led_strip_refresh(led_strip);
+        if (led_strip_lock()) {
+            led_strip_set_pixel(led_strip, i, r, g, b);
+            led_strip_refresh(led_strip);
+            led_strip_unlock();
+        }
         vTaskDelay(pdMS_TO_TICKS(step_ms));
-        led_strip_clear(led_strip);
+        if (led_strip_lock()) {
+            led_strip_clear(led_strip);
+            led_strip_unlock();
+        }
     }
 }
 
@@ -121,14 +156,21 @@ void start_flow_light_fast_async(uint32_t r, uint32_t g, uint32_t b)
     if (s_hint_flow_task != NULL) {
         return;
     }
-    xTaskCreatePinnedToCore(hint_flow_light_task, "hint_flow", 2048, NULL, 4, &s_hint_flow_task, 0);
+    if (xTaskCreatePinnedToCore(hint_flow_light_task, "hint_flow",
+                                LED_EFFECT_TASK_STACK, NULL, 4,
+                                &s_hint_flow_task, 0) != pdPASS) {
+        s_hint_flow_task = NULL;
+    }
 }
 
 static void boot_led_blink_task(void *param)
 {
     (void)param;
-    led_strip_clear(led_strip);
-    led_strip_refresh(led_strip);
+    if (led_strip_lock()) {
+        led_strip_clear(led_strip);
+        led_strip_refresh(led_strip);
+        led_strip_unlock();
+    }
 
     boot_flow_light_once(51, 64, 69);
     vTaskDelay(pdMS_TO_TICKS(BOOT_FLOW_PASS_GAP_MS));
@@ -136,8 +178,11 @@ static void boot_led_blink_task(void *param)
     vTaskDelay(pdMS_TO_TICKS(BOOT_FLOW_PASS_GAP_MS));
     boot_flow_light_once(20, 20, 20);
 
-    led_strip_clear(led_strip);
-    led_strip_refresh(led_strip);
+    if (led_strip_lock()) {
+        led_strip_clear(led_strip);
+        led_strip_refresh(led_strip);
+        led_strip_unlock();
+    }
     vTaskDelete(NULL);
 }
 
@@ -146,7 +191,8 @@ void start_boot_led_blink(void)
     if (!s_led_strip_ready) {
         init_led_strip();
     }
-    xTaskCreatePinnedToCore(boot_led_blink_task, "boot_led", 2048, NULL, 8, NULL, 0);
+    xTaskCreatePinnedToCore(boot_led_blink_task, "boot_led",
+                            LED_EFFECT_TASK_STACK, NULL, 8, NULL, 0);
 }
 
 static TaskHandle_t s_ble_flow_task = NULL;
@@ -157,13 +203,19 @@ static void ble_flow_light_once(uint32_t r, uint32_t g, uint32_t b)
         if (!ble_flow_led_en) {
             return;
         }
-        led_strip_set_pixel(led_strip, i, r, g, b);
-        led_strip_refresh(led_strip);
+        if (led_strip_lock()) {
+            led_strip_set_pixel(led_strip, i, r, g, b);
+            led_strip_refresh(led_strip);
+            led_strip_unlock();
+        }
         vTaskDelay(pdMS_TO_TICKS(50));
         if (!ble_flow_led_en) {
             return;
         }
-        led_strip_clear(led_strip);
+        if (led_strip_lock()) {
+            led_strip_clear(led_strip);
+            led_strip_unlock();
+        }
     }
 }
 
@@ -178,8 +230,11 @@ static void ble_flow_led_task(void *param)
     if (ble_flow_led_en) {
         ble_flow_light_once(20, 20, 20);
     }
-    led_strip_clear(led_strip);
-    led_strip_refresh(led_strip);
+    if (led_strip_lock()) {
+        led_strip_clear(led_strip);
+        led_strip_refresh(led_strip);
+        led_strip_unlock();
+    }
     s_ble_flow_task = NULL;
     vTaskDelete(NULL);
 }
@@ -190,7 +245,12 @@ void start_ble_flow_light(void)
         return;
     }
     ble_flow_led_en = true;
-    xTaskCreatePinnedToCore(ble_flow_led_task, "ble_flow_led", 2048, NULL, 5, &s_ble_flow_task, 0);
+    if (xTaskCreatePinnedToCore(ble_flow_led_task, "ble_flow_led",
+                                LED_EFFECT_TASK_STACK, NULL, 5,
+                                &s_ble_flow_task, 0) != pdPASS) {
+        s_ble_flow_task = NULL;
+        ble_flow_led_en = false;
+    }
 }
 
 void stop_ble_flow_light(void)
@@ -208,6 +268,9 @@ void set_led_bar_level(uint8_t lit_count, uint32_t r, uint32_t g, uint32_t b)
     }
     /* 从条带末端向前点亮：剩余时间减少时先熄第一颗 */
     uint8_t first_on = LED_STRIP_NUM_LEDS - lit_count;
+    if (!led_strip_lock()) {
+        return;
+    }
     for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
         if (i >= first_on) {
             led_strip_set_pixel(led_strip, i, r, g, b);
@@ -216,6 +279,7 @@ void set_led_bar_level(uint8_t lit_count, uint32_t r, uint32_t g, uint32_t b)
         }
     }
     led_strip_refresh(led_strip);
+    led_strip_unlock();
 }
 
 void clear_led_bar(void)
@@ -223,6 +287,9 @@ void clear_led_bar(void)
     if (!s_led_strip_ready) {
         return;
     }
-    led_strip_clear(led_strip);
-    led_strip_refresh(led_strip);
+    if (led_strip_lock()) {
+        led_strip_clear(led_strip);
+        led_strip_refresh(led_strip);
+        led_strip_unlock();
+    }
 }

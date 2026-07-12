@@ -1991,6 +1991,10 @@ static void screen_setting_btn_ble_event_handler (lv_event_t *e)
     }
     case LV_EVENT_CLICKED:
     {
+        /* BLE 启停由后台任务串行执行，处理完成前忽略重复点击。 */
+        if (ble_toggle_on_req || ble_toggle_off_req || ble_disconnect_req) {
+            break;
+        }
         if (ble_success) {
             ble_disconnect_req = 1;
         } else if (!ble_enabled) {

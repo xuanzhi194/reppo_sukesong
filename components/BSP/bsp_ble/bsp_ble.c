@@ -412,10 +412,16 @@ static int send_todo_json_via_notify(void)
 
 static void sync_notify_delayed_task(void *arg)
 {
-    vTaskDelay(pdMS_TO_TICKS(BLE_SYNC_NOTIFY_DELAY_MS));
+    /*
+     * A notification wakes this task early when BLE is being shut down.
+     * This prevents delayed GATT calls from racing nimble_port_deinit().
+     */
+    bool cancelled =
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(BLE_SYNC_NOTIFY_DELAY_MS)) > 0;
     sync_notify_task_handle = NULL;
 
-    if (!notify_enabled || active_conn_handle == BLE_HS_CONN_HANDLE_NONE) {
+    if (cancelled || !s_ble_active || !notify_enabled ||
+        active_conn_handle == BLE_HS_CONN_HANDLE_NONE) {
         ESP_LOGW(TAG, "Todo pull 0x06: delayed send skipped (conn/notify not ready)");
         vTaskDelete(NULL);
         return;
@@ -429,6 +435,9 @@ static void sync_notify_delayed_task(void *arg)
 
 static void schedule_sync_notify_delayed(void)
 {
+    if (!s_ble_active) {
+        return;
+    }
     if (sync_notify_task_handle != NULL) {
         ESP_LOGW(TAG, "Todo pull 0x06: sync notify already scheduled");
         return;
@@ -592,6 +601,10 @@ void bsp_ble_deinit(void)
     }
 
     s_ble_active = false;
+
+    if (sync_notify_task_handle != NULL) {
+        xTaskNotifyGive(sync_notify_task_handle);
+    }
 
     if (active_conn_handle != BLE_HS_CONN_HANDLE_NONE) {
         ble_gap_terminate(active_conn_handle, BLE_ERR_REM_USER_CONN_TERM);
