@@ -35,7 +35,7 @@ static void app_ui_main_battery_arc_update(lv_obj_t *arc, const battery_info_t *
     lv_arc_set_value(arc, pct);
 
     uint32_t color_hex = BAT_ARC_COLOR_NORMAL;
-    if (info->plugged) {
+    if (info->plugged_ui) {
         color_hex = BAT_ARC_COLOR_CHARGING;
     } else if (pct < BAT_ARC_LOW_PERCENT) {
         color_hex = BAT_ARC_COLOR_LOW;
@@ -238,15 +238,16 @@ void app_ui_timing_status_update(bool wifi_connected)
     battery_info_t bat_info;
     battery_monitor_get(&bat_info);
 
+    int bat = bat_info.display_percent;
+    if (bat < 0) {
+        bat = 0;
+    }
+    if (bat > 100) {
+        bat = 100;
+    }
+
     if (bar != NULL && lv_obj_is_valid(bar) &&
         lv_obj_get_parent(bar) == guider_ui.screen_timing) {
-        int bat = bat_info.display_percent;
-        if (bat < 0) {
-            bat = 0;
-        }
-        if (bat > 100) {
-            bat = 100;
-        }
         lv_bar_set_value(bar, bat, LV_ANIM_OFF);
     }
 
@@ -254,10 +255,50 @@ void app_ui_timing_status_update(bool wifi_connected)
     lv_obj_t *baticon = guider_ui.screen_timing_img_baticon;
     if (baticon != NULL && lv_obj_is_valid(baticon) &&
         lv_obj_get_parent(baticon) == guider_ui.screen_timing) {
-        if (bat_info.plugged) {
+        if (bar != NULL && lv_obj_is_valid(bar)) {
+            lv_coord_t icon_x = lv_obj_get_x(bar) +
+                                lv_obj_get_width(bar) * bat / 100 -
+                                lv_obj_get_width(baticon) / 2;
+            lv_obj_set_x(baticon, icon_x);
+        }
+        if (bat_info.plugged_ui) {
             lv_obj_clear_flag(baticon, LV_OBJ_FLAG_HIDDEN);
         } else {
             lv_obj_add_flag(baticon, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+}
+
+void app_ui_battery_poll_plug_change(void)
+{
+    static bool s_last_plugged_ui;
+    static bool s_have_last;
+
+    battery_info_t bat_info;
+    battery_monitor_get(&bat_info);
+    if (s_have_last && bat_info.plugged_ui == s_last_plugged_ui) {
+        return;
+    }
+    s_last_plugged_ui = bat_info.plugged_ui;
+    s_have_last = true;
+
+    lv_obj_t *act_scr = lv_scr_act();
+    if (act_scr == NULL) {
+        return;
+    }
+    if (guider_ui.screen_main != NULL &&
+        lv_obj_is_valid(guider_ui.screen_main) &&
+        act_scr == guider_ui.screen_main) {
+        app_ui_main_battery_arc_update(guider_ui.screen_main_arc_battery, &bat_info);
+        if (bat_timer != NULL) {
+            lv_timer_reset(bat_timer);
+        }
+    } else if (guider_ui.screen_timing != NULL &&
+               lv_obj_is_valid(guider_ui.screen_timing) &&
+               act_scr == guider_ui.screen_timing) {
+        app_ui_timing_status_update(is_wifi_connected());
+        if (bat_timer != NULL) {
+            lv_timer_reset(bat_timer);
         }
     }
 }
@@ -297,12 +338,8 @@ void app_ui_init_clock_label_static(void)
     lv_label_set_text_static(guider_ui.screen_main_btn_realtime_label, "--:--");
 }
 
-void app_ui_realtime_clock_timer_cb(lv_timer_t *timer)
+static void app_ui_main_clock_update(bool force)
 {
-    (void)timer;
-    if (lv_scr_act() != guider_ui.screen_main) {
-        return;
-    }
     if (guider_ui.screen_main_btn_realtime_label == NULL ||
         !lv_obj_is_valid(guider_ui.screen_main_btn_realtime_label)) {
         return;
@@ -311,12 +348,9 @@ void app_ui_realtime_clock_timer_cb(lv_timer_t *timer)
     if (rx8130_get_time(I2C_NUM_0, &now) != ESP_OK) {
         return;
     }
-    /* Cache last displayed time: only update LVGL when the minute changes.
-     * Using lv_label_set_text_static avoids repeated alloc/free on the LVGL
-     * heap for what is effectively a fixed-length 5-char string. */
     static uint8_t s_last_hour = 0xff;
     static uint8_t s_last_min  = 0xff;
-    if (now.hour == s_last_hour && now.minute == s_last_min) {
+    if (!force && now.hour == s_last_hour && now.minute == s_last_min) {
         return;
     }
     s_last_hour = now.hour;
@@ -324,4 +358,44 @@ void app_ui_realtime_clock_timer_cb(lv_timer_t *timer)
     static char s_clock_buf[8];
     snprintf(s_clock_buf, sizeof(s_clock_buf), "%02d:%02d", now.hour, now.minute);
     lv_label_set_text_static(guider_ui.screen_main_btn_realtime_label, s_clock_buf);
+    screen_main_realtime_card_sync(s_clock_buf);
+}
+
+void app_ui_main_refresh_now(void)
+{
+    if (guider_ui.screen_main == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_main) ||
+        lv_scr_act() != guider_ui.screen_main) {
+        return;
+    }
+
+    if (guider_ui.screen_main_arc_battery != NULL &&
+        lv_obj_is_valid(guider_ui.screen_main_arc_battery)) {
+        battery_info_t bat_info;
+        battery_monitor_get(&bat_info);
+        app_ui_main_battery_arc_update(guider_ui.screen_main_arc_battery, &bat_info);
+    }
+
+    app_ui_main_clock_update(true);
+
+    if (bat_timer != NULL) {
+        lv_timer_reset(bat_timer);
+    }
+    if (clock_timer != NULL) {
+        lv_timer_reset(clock_timer);
+    }
+}
+
+void main_screen_status_refresh(void)
+{
+    app_ui_main_refresh_now();
+}
+
+void app_ui_realtime_clock_timer_cb(lv_timer_t *timer)
+{
+    (void)timer;
+    if (lv_scr_act() != guider_ui.screen_main) {
+        return;
+    }
+    app_ui_main_clock_update(false);
 }

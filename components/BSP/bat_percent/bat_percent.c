@@ -28,7 +28,9 @@ static const char *TAG = "BAT_MONITOR";
 #define BAT_GPIO_VOTE_SAMPLES     7      /* 每次轮询对 GPIO 做多数表决 */
 #define BAT_CHARGE_DEBOUNCE_CNT   15     /* CHRG 去抖：连续 15 次（3s） */
 #define BAT_PLUGGED_ENTER_CNT     3      /* 插线认定：CHRG|STDBY 任低 连续 3 次（0.6s） */
-#define BAT_PLUGGED_EXIT_CNT      50     /* 拔线认定：两脚都高 连续 50 次（10s） */
+#define BAT_PLUGGED_EXIT_CNT      50     /* 拔线认定：两脚都高 连续 50 次（10s，状态机用） */
+#define BAT_PLUGGED_UI_ENTER_CNT  3      /* UI 插线：0.6s */
+#define BAT_PLUGGED_UI_EXIT_CNT   5      /* UI 拔线：1.0s（颜色/图标快释放） */
 #define BAT_FULL_STABLE_MS        15000  /* FULL 稳定 15s 才认满电 */
 #define BAT_RECOVERY_MS           45000  /* 拔线后电压恢复期 45s */
 #define BAT_CHARGE_RAMP_MS        45000  /* 充电时显示值上涨速率：+1%/45s */
@@ -56,6 +58,7 @@ static battery_info_t s_info = {
     .charging = false,
     .full = false,
     .plugged = false,
+    .plugged_ui = false,
     .state = BATTERY_STATE_DISCHARGING,
 };
 static bool s_has_sample = false;
@@ -208,8 +211,10 @@ static void battery_monitor_task(void *arg)
     int charge_cnt = 0, no_charge_cnt = 0;
     int full_cnt = 0, no_full_cnt = 0;
     int plugged_enter_cnt = 0, plugged_exit_cnt = 0;
+    int plugged_ui_enter_cnt = 0, plugged_ui_exit_cnt = 0;
     bool charge_stable = false;
     bool plugged_latched = false;
+    bool plugged_ui_latched = false;
     bool full_raw_stable = false;
     TickType_t full_since = 0;
     bool full_latched = false;
@@ -240,6 +245,19 @@ static void battery_monitor_task(void *arg)
             plugged_latched = true;
         } else if (plugged_exit_cnt >= BAT_PLUGGED_EXIT_CNT) {
             plugged_latched = false;
+        }
+
+        if (tp4056_usb_present_raw()) {
+            plugged_ui_enter_cnt++;
+            plugged_ui_exit_cnt = 0;
+        } else {
+            plugged_ui_exit_cnt++;
+            plugged_ui_enter_cnt = 0;
+        }
+        if (plugged_ui_enter_cnt >= BAT_PLUGGED_UI_ENTER_CNT) {
+            plugged_ui_latched = true;
+        } else if (plugged_ui_exit_cnt >= BAT_PLUGGED_UI_EXIT_CNT) {
+            plugged_ui_latched = false;
         }
 
         /* --- 2. CHRG / STDBY 各自去抖（驱动百分比状态机） --- */
@@ -367,6 +385,7 @@ static void battery_monitor_task(void *arg)
         s_info.charging = charge_stable && !full_latched;
         s_info.full = full_latched;
         s_info.plugged = plugged_latched;
+        s_info.plugged_ui = plugged_ui_latched;
         s_info.state = state;
         taskEXIT_CRITICAL(&s_info_mux);
 

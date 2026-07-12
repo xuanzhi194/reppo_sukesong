@@ -235,6 +235,15 @@ static void main_loop_handle_donelist_reload(void)
     xSemaphoreGive(lvgl_mutex);
 }
 
+static void main_loop_handle_battery_plug_ui(void)
+{
+    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(20)) != pdTRUE) {
+        return;
+    }
+    app_ui_battery_poll_plug_change();
+    xSemaphoreGive(lvgl_mutex);
+}
+
 void app_main_loop_once(void)
 {
     main_loop_handle_wordcard_ui();
@@ -242,6 +251,7 @@ void app_main_loop_once(void)
     main_loop_handle_answer_loading_led();
     main_loop_handle_countdown_timeout();
     focus_bridge_on_countdown_complete();
+    main_loop_handle_battery_plug_ui();
     main_loop_handle_ai_requests();
     main_loop_handle_ai_results();
     main_loop_handle_ai_failure();

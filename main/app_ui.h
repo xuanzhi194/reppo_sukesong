@@ -19,6 +19,13 @@ void app_ui_battery_timer_cb(lv_timer_t *timer);
 
 /** 主屏 RTC 时间标签定时刷新（LVGL timer 回调） */
 void app_ui_realtime_clock_timer_cb(lv_timer_t *timer);
+
+/** 进入主屏时立即刷新电量与时间（调用前须已持有 lvgl_mutex 或在 LVGL 线程内） */
+void app_ui_main_refresh_now(void);
+
+/** 充电插拔 UI 状态变化时立即刷新主屏 arc / timing 图标（须在 lvgl_mutex 内） */
+void app_ui_battery_poll_plug_change(void);
+
 void app_ui_init_clock_label_static(void);
 
 /** 从 SPIFFS 统计初始化单词卡计数（app_init 调用） */

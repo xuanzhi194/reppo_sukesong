@@ -936,6 +936,538 @@ void screen_todolist_buttion_add(){
 
 }
 //buttion add function screen_main
+static void screen_main_status_refresh_async(void *unused);
+
+static const lv_coord_t s_main_nav_icon_x[] = {
+    77, 98, 120, 142, 163, 187, 211, 232
+};
+static const lv_coord_t s_main_nav_point_x[] = {
+    83, 103, 125, 147, 168, 193, 216, 236
+};
+static int8_t s_main_nav_prev_index = -1;
+
+static lv_obj_t *screen_main_nav_icon_at(uint8_t index)
+{
+    lv_obj_t *icons[] = {
+        guider_ui.screen_main_img_todo_icon,
+        guider_ui.screen_main_img_done_icon,
+        guider_ui.screen_main_img_book_icon,
+        guider_ui.screen_main_img_timer_icon,
+        guider_ui.screen_main_img_ai_icon,
+        guider_ui.screen_main_img_fun_icon,
+        guider_ui.screen_main_img_photo_icon,
+        guider_ui.screen_main_img_setting_icon,
+    };
+    return index < sizeof(icons) / sizeof(icons[0]) ? icons[index] : NULL;
+}
+
+static int8_t screen_main_nav_index_from_btn(lv_obj_t *btn)
+{
+    lv_obj_t *buttons[] = {
+        guider_ui.screen_main_btn_todolist,
+        guider_ui.screen_main_btn_done,
+        guider_ui.screen_main_btn_word,
+        guider_ui.screen_main_btn_timer,
+        guider_ui.screen_main_btn_ai,
+        guider_ui.screen_main_btn_fun,
+        guider_ui.screen_main_btn_photo,
+        guider_ui.screen_main_btn_setting,
+    };
+    for (uint8_t i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
+        if (btn == buttons[i]) {
+            return (int8_t)i;
+        }
+    }
+    return -1;
+}
+
+static void screen_main_nav_x_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_x((lv_obj_t *)obj, (lv_coord_t)value);
+    }
+}
+
+static void screen_main_nav_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_img_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void screen_main_nav_reset_icons(void)
+{
+    for (uint8_t i = 0; i < sizeof(s_main_nav_icon_x) / sizeof(s_main_nav_icon_x[0]); i++) {
+        lv_obj_t *icon = screen_main_nav_icon_at(i);
+        if (icon == NULL || !lv_obj_is_valid(icon)) {
+            continue;
+        }
+        lv_anim_del(icon, screen_main_nav_x_exec);
+        lv_anim_del(icon, screen_main_nav_opa_exec);
+        lv_obj_set_x(icon, s_main_nav_icon_x[i]);
+        lv_obj_set_style_img_opa(icon, LV_OPA_COVER,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void screen_main_nav_slide_to(uint8_t index)
+{
+    if (index >= sizeof(s_main_nav_icon_x) / sizeof(s_main_nav_icon_x[0])) {
+        return;
+    }
+
+    lv_obj_t *icon = screen_main_nav_icon_at(index);
+    lv_obj_t *point = guider_ui.screen_main_img_point_icon;
+    if (icon == NULL || !lv_obj_is_valid(icon) ||
+        point == NULL || !lv_obj_is_valid(point)) {
+        return;
+    }
+
+    lv_coord_t icon_from = s_main_nav_icon_x[index];
+    lv_coord_t point_from = s_main_nav_point_x[index];
+    if (s_main_nav_prev_index >= 0 &&
+        s_main_nav_prev_index < (int8_t)(sizeof(s_main_nav_icon_x) /
+                                         sizeof(s_main_nav_icon_x[0]))) {
+        icon_from = s_main_nav_icon_x[s_main_nav_prev_index];
+        point_from = s_main_nav_point_x[s_main_nav_prev_index];
+    }
+
+    screen_main_nav_reset_icons();
+    lv_anim_del(point, screen_main_nav_x_exec);
+
+    lv_obj_set_x(icon, icon_from);
+    lv_obj_set_style_img_opa(icon, 80, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_x(point, point_from);
+
+    lv_anim_t slide;
+    lv_anim_init(&slide);
+    lv_anim_set_var(&slide, icon);
+    lv_anim_set_exec_cb(&slide, screen_main_nav_x_exec);
+    lv_anim_set_values(&slide, icon_from, s_main_nav_icon_x[index]);
+    lv_anim_set_time(&slide, 220);
+    lv_anim_set_path_cb(&slide, lv_anim_path_ease_out);
+    lv_anim_start(&slide);
+
+    lv_anim_t fade;
+    lv_anim_init(&fade);
+    lv_anim_set_var(&fade, icon);
+    lv_anim_set_exec_cb(&fade, screen_main_nav_opa_exec);
+    lv_anim_set_values(&fade, 80, LV_OPA_COVER);
+    lv_anim_set_time(&fade, 170);
+    lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+    lv_anim_start(&fade);
+
+    lv_anim_t point_slide;
+    lv_anim_init(&point_slide);
+    lv_anim_set_var(&point_slide, point);
+    lv_anim_set_exec_cb(&point_slide, screen_main_nav_x_exec);
+    lv_anim_set_values(&point_slide, point_from, s_main_nav_point_x[index]);
+    lv_anim_set_time(&point_slide, 240);
+    lv_anim_set_path_cb(&point_slide, lv_anim_path_ease_in_out);
+    lv_anim_start(&point_slide);
+
+    s_main_nav_prev_index = (int8_t)index;
+}
+
+static void screen_main_nav_focus_effect_cb(lv_event_t *e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_FOCUSED) {
+        return;
+    }
+
+    lv_obj_t *target = lv_event_get_target(e);
+    int8_t index = screen_main_nav_index_from_btn(target);
+    if (index >= 0) {
+        screen_main_nav_slide_to((uint8_t)index);
+    } else if (target == guider_ui.screen_main_btn_realtime) {
+        /* Real Time 使用独立的长条选中图，不参与小图标滑动。 */
+        screen_main_nav_reset_icons();
+        s_main_nav_prev_index = -1;
+    }
+}
+
+static void screen_main_nav_effect_init_async(void *unused)
+{
+    LV_UNUSED(unused);
+    if (guider_ui.screen_main == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_main) ||
+        lv_scr_act() != guider_ui.screen_main) {
+        return;
+    }
+
+    screen_main_nav_reset_icons();
+    int8_t index = g != NULL
+        ? screen_main_nav_index_from_btn(lv_group_get_focused(g))
+        : -1;
+    s_main_nav_prev_index = index >= 0 ? index : 0;
+}
+
+static void screen_main_nav_effect_bind_hooks(void)
+{
+    lv_obj_t *buttons[] = {
+        guider_ui.screen_main_btn_todolist,
+        guider_ui.screen_main_btn_done,
+        guider_ui.screen_main_btn_word,
+        guider_ui.screen_main_btn_timer,
+        guider_ui.screen_main_btn_ai,
+        guider_ui.screen_main_btn_fun,
+        guider_ui.screen_main_btn_photo,
+        guider_ui.screen_main_btn_setting,
+        guider_ui.screen_main_btn_realtime,
+    };
+    for (size_t i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
+        if (buttons[i] != NULL && lv_obj_is_valid(buttons[i])) {
+            lv_obj_add_event_cb(buttons[i], screen_main_nav_focus_effect_cb,
+                                LV_EVENT_FOCUSED, NULL);
+        }
+    }
+    s_main_nav_prev_index = -1;
+    lv_async_call(screen_main_nav_effect_init_async, NULL);
+}
+
+static lv_obj_t *s_main_realtime_card;
+static lv_obj_t *s_main_realtime_card_time;
+static char s_main_realtime_card_text[8] = "--:--";
+
+static void screen_main_realtime_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void screen_main_realtime_y_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_y((lv_obj_t *)obj, (lv_coord_t)value);
+    }
+}
+
+static void screen_main_realtime_width_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_width((lv_obj_t *)obj, (lv_coord_t)value);
+    }
+}
+
+static void screen_main_realtime_height_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_height((lv_obj_t *)obj, (lv_coord_t)value);
+    }
+}
+
+static void screen_main_realtime_text_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_text_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                                  LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void screen_main_realtime_hide_ready(lv_anim_t *anim)
+{
+    lv_obj_t *obj = (lv_obj_t *)anim->var;
+    if (obj != NULL && lv_obj_is_valid(obj)) {
+        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
+void screen_main_realtime_card_sync(const char *time_text)
+{
+    if (time_text == NULL) {
+        return;
+    }
+    snprintf(s_main_realtime_card_text, sizeof(s_main_realtime_card_text),
+             "%.5s", time_text);
+    if (s_main_realtime_card_time != NULL &&
+        lv_obj_is_valid(s_main_realtime_card_time)) {
+        lv_label_set_text_static(s_main_realtime_card_time,
+                                 s_main_realtime_card_text);
+    }
+}
+
+static void screen_main_realtime_card_create(void)
+{
+    if (guider_ui.screen_main == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_main)) {
+        return;
+    }
+
+    s_main_realtime_card = lv_obj_create(guider_ui.screen_main);
+    lv_obj_set_pos(s_main_realtime_card, 57, 43);
+    lv_obj_set_size(s_main_realtime_card, 206, 86);
+    lv_obj_clear_flag(s_main_realtime_card, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(s_main_realtime_card, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_style_radius(s_main_realtime_card, 15,
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(s_main_realtime_card, lv_color_hex(0xeaf3fb),
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(s_main_realtime_card, 200,
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(s_main_realtime_card, 1,
+                                  LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(s_main_realtime_card, lv_color_hex(0xffffff),
+                                  LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(s_main_realtime_card, 210,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(s_main_realtime_card, 22,
+                                  LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_color(s_main_realtime_card, lv_color_hex(0x6689aa),
+                                  LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_opa(s_main_realtime_card, 65,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_spread(s_main_realtime_card, 2,
+                                   LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(s_main_realtime_card, 0,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    s_main_realtime_card_time = lv_label_create(guider_ui.screen_main);
+    lv_label_set_text_static(s_main_realtime_card_time,
+                             s_main_realtime_card_text);
+    lv_obj_set_pos(s_main_realtime_card_time, 90, 61);
+    lv_obj_set_size(s_main_realtime_card_time, 140, 42);
+    lv_obj_set_style_text_align(s_main_realtime_card_time, LV_TEXT_ALIGN_CENTER,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(s_main_realtime_card_time,
+                               &lv_font_SourceHanSansSC_Medium_28,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(s_main_realtime_card_time, lv_color_hex(0x173c5c),
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(s_main_realtime_card_time, LV_OPA_TRANSP,
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_add_flag(s_main_realtime_card, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(s_main_realtime_card_time, LV_OBJ_FLAG_HIDDEN);
+}
+
+static void screen_main_realtime_time_progress_exec(void *obj, int32_t progress)
+{
+    lv_obj_t *label = (lv_obj_t *)obj;
+    if (label == NULL || !lv_obj_is_valid(label)) {
+        return;
+    }
+
+    if (progress < 0) {
+        progress = 0;
+    } else if (progress > 1000) {
+        progress = 1000;
+    }
+
+    /* smoothstep：运动开始与结束都柔和，中段速度明显。 */
+    int32_t eased = (int32_t)(((int64_t)progress * progress *
+                              (3000 - 2 * progress)) / 1000000);
+    /* 从右下角原始时钟附近飞入卡片中央。 */
+    int32_t x = 220 + (90 - 220) * eased / 1000;
+    int32_t y = 128 + (61 - 128) * eased / 1000;
+
+    /* 只用坐标制造落地回弹，避免硬件端文字变换图层不显示。 */
+    if (progress >= 700 && progress < 850) {
+        y += (progress - 700) * 10 / 150;
+    } else if (progress >= 850) {
+        y += (1000 - progress) * 10 / 150;
+    }
+
+    lv_obj_clear_flag(label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_pos(label, (lv_coord_t)x, (lv_coord_t)y);
+    lv_obj_set_style_transform_zoom(label, 256,
+                                    LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_transform_angle(label, 0,
+                                     LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(label,
+                                       (lv_coord_t)(9 - 8 * eased / 1000),
+                                       LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(label, LV_OPA_COVER,
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
+static void screen_main_realtime_time_start(void)
+{
+    if (s_main_realtime_card_time == NULL ||
+        !lv_obj_is_valid(s_main_realtime_card_time) ||
+        g == NULL ||
+        lv_group_get_focused(g) != guider_ui.screen_main_btn_realtime) {
+        return;
+    }
+
+    lv_anim_del(s_main_realtime_card_time, NULL);
+    lv_obj_clear_flag(s_main_realtime_card_time, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(s_main_realtime_card_time);
+    screen_main_realtime_time_progress_exec(s_main_realtime_card_time, 0);
+
+    lv_anim_t time_fly;
+    lv_anim_init(&time_fly);
+    lv_anim_set_var(&time_fly, s_main_realtime_card_time);
+    lv_anim_set_exec_cb(&time_fly, screen_main_realtime_time_progress_exec);
+    lv_anim_set_values(&time_fly, 0, 1000);
+    lv_anim_set_time(&time_fly, 600);
+    lv_anim_set_path_cb(&time_fly, lv_anim_path_linear);
+    lv_anim_start(&time_fly);
+}
+
+static void screen_main_realtime_card_open_ready(lv_anim_t *anim)
+{
+    LV_UNUSED(anim);
+    screen_main_realtime_time_start();
+}
+
+static void screen_main_realtime_card_show(void)
+{
+    if (s_main_realtime_card == NULL ||
+        !lv_obj_is_valid(s_main_realtime_card) ||
+        s_main_realtime_card_time == NULL ||
+        !lv_obj_is_valid(s_main_realtime_card_time)) {
+        return;
+    }
+
+    if (guider_ui.screen_main_btn_realtime_label != NULL &&
+        lv_obj_is_valid(guider_ui.screen_main_btn_realtime_label)) {
+        screen_main_realtime_card_sync(
+            lv_label_get_text(guider_ui.screen_main_btn_realtime_label));
+    }
+
+    lv_anim_del(s_main_realtime_card, NULL);
+    lv_anim_del(s_main_realtime_card_time, NULL);
+    lv_obj_clear_flag(s_main_realtime_card, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(s_main_realtime_card_time, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(s_main_realtime_card);
+
+    /* 卡片从左上角的一个小点扩展到屏幕中央。 */
+    lv_obj_set_pos(s_main_realtime_card, 18, 18);
+    lv_obj_set_size(s_main_realtime_card, 4, 4);
+    lv_obj_set_style_opa(s_main_realtime_card, LV_OPA_TRANSP,
+                         LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_transform_zoom(s_main_realtime_card, 256,
+                                    LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_anim_t card_fade;
+    lv_anim_init(&card_fade);
+    lv_anim_set_var(&card_fade, s_main_realtime_card);
+    lv_anim_set_exec_cb(&card_fade, screen_main_realtime_opa_exec);
+    lv_anim_set_values(&card_fade, LV_OPA_TRANSP, LV_OPA_COVER);
+    lv_anim_set_time(&card_fade, 300);
+    lv_anim_set_path_cb(&card_fade, lv_anim_path_ease_out);
+    lv_anim_start(&card_fade);
+
+    lv_anim_t card_x;
+    lv_anim_init(&card_x);
+    lv_anim_set_var(&card_x, s_main_realtime_card);
+    lv_anim_set_exec_cb(&card_x, screen_main_nav_x_exec);
+    lv_anim_set_values(&card_x, 18, 57);
+    lv_anim_set_time(&card_x, 430);
+    lv_anim_set_path_cb(&card_x, lv_anim_path_ease_out);
+    lv_anim_start(&card_x);
+
+    lv_anim_t card_y;
+    lv_anim_init(&card_y);
+    lv_anim_set_var(&card_y, s_main_realtime_card);
+    lv_anim_set_exec_cb(&card_y, screen_main_realtime_y_exec);
+    lv_anim_set_values(&card_y, 18, 43);
+    lv_anim_set_time(&card_y, 430);
+    lv_anim_set_path_cb(&card_y, lv_anim_path_ease_out);
+    lv_anim_start(&card_y);
+
+    lv_anim_t card_w;
+    lv_anim_init(&card_w);
+    lv_anim_set_var(&card_w, s_main_realtime_card);
+    lv_anim_set_exec_cb(&card_w, screen_main_realtime_width_exec);
+    lv_anim_set_values(&card_w, 4, 206);
+    lv_anim_set_time(&card_w, 430);
+    lv_anim_set_path_cb(&card_w, lv_anim_path_overshoot);
+    lv_anim_set_ready_cb(&card_w, screen_main_realtime_card_open_ready);
+    lv_anim_start(&card_w);
+
+    lv_anim_t card_h;
+    lv_anim_init(&card_h);
+    lv_anim_set_var(&card_h, s_main_realtime_card);
+    lv_anim_set_exec_cb(&card_h, screen_main_realtime_height_exec);
+    lv_anim_set_values(&card_h, 4, 86);
+    lv_anim_set_time(&card_h, 430);
+    lv_anim_set_path_cb(&card_h, lv_anim_path_overshoot);
+    lv_anim_start(&card_h);
+
+}
+
+static void screen_main_realtime_card_hide(void)
+{
+    if (s_main_realtime_card == NULL ||
+        !lv_obj_is_valid(s_main_realtime_card) ||
+        s_main_realtime_card_time == NULL ||
+        !lv_obj_is_valid(s_main_realtime_card_time) ||
+        lv_obj_has_flag(s_main_realtime_card, LV_OBJ_FLAG_HIDDEN)) {
+        return;
+    }
+
+    lv_anim_del(s_main_realtime_card, NULL);
+    lv_anim_del(s_main_realtime_card_time, NULL);
+
+    lv_anim_t card_fade;
+    lv_anim_init(&card_fade);
+    lv_anim_set_var(&card_fade, s_main_realtime_card);
+    lv_anim_set_exec_cb(&card_fade, screen_main_realtime_opa_exec);
+    lv_anim_set_values(&card_fade,
+                       lv_obj_get_style_opa(s_main_realtime_card,
+                                            LV_PART_MAIN),
+                       LV_OPA_TRANSP);
+    lv_anim_set_time(&card_fade, 240);
+    lv_anim_set_ready_cb(&card_fade, screen_main_realtime_hide_ready);
+    lv_anim_start(&card_fade);
+
+    lv_anim_t card_w;
+    lv_anim_init(&card_w);
+    lv_anim_set_var(&card_w, s_main_realtime_card);
+    lv_anim_set_exec_cb(&card_w, screen_main_realtime_width_exec);
+    lv_anim_set_values(&card_w, lv_obj_get_width(s_main_realtime_card), 4);
+    lv_anim_set_time(&card_w, 240);
+    lv_anim_set_path_cb(&card_w, lv_anim_path_ease_in);
+    lv_anim_start(&card_w);
+
+    lv_anim_t card_h;
+    lv_anim_init(&card_h);
+    lv_anim_set_var(&card_h, s_main_realtime_card);
+    lv_anim_set_exec_cb(&card_h, screen_main_realtime_height_exec);
+    lv_anim_set_values(&card_h, lv_obj_get_height(s_main_realtime_card), 4);
+    lv_anim_set_time(&card_h, 240);
+    lv_anim_set_path_cb(&card_h, lv_anim_path_ease_in);
+    lv_anim_start(&card_h);
+
+    lv_anim_t time_fade;
+    lv_anim_init(&time_fade);
+    lv_anim_set_var(&time_fade, s_main_realtime_card_time);
+    lv_anim_set_exec_cb(&time_fade, screen_main_realtime_text_opa_exec);
+    lv_anim_set_values(&time_fade,
+                       lv_obj_get_style_text_opa(s_main_realtime_card_time,
+                                                 LV_PART_MAIN),
+                       LV_OPA_TRANSP);
+    lv_anim_set_time(&time_fade, 150);
+    lv_anim_set_ready_cb(&time_fade, screen_main_realtime_hide_ready);
+    lv_anim_start(&time_fade);
+}
+
+static void screen_main_realtime_card_event_cb(lv_event_t *e)
+{
+    if (lv_event_get_code(e) == LV_EVENT_FOCUSED) {
+        screen_main_realtime_card_show();
+    } else if (lv_event_get_code(e) == LV_EVENT_DEFOCUSED) {
+        screen_main_realtime_card_hide();
+    }
+}
+
+static void screen_main_realtime_card_bind_hook(void)
+{
+    lv_obj_t *button = guider_ui.screen_main_btn_realtime;
+    if (button == NULL || !lv_obj_is_valid(button)) {
+        return;
+    }
+    screen_main_realtime_card_create();
+    lv_obj_add_event_cb(button, screen_main_realtime_card_event_cb,
+                        LV_EVENT_FOCUSED, NULL);
+    lv_obj_add_event_cb(button, screen_main_realtime_card_event_cb,
+                        LV_EVENT_DEFOCUSED, NULL);
+}
+
 void screen_main_buttion_add(){
     if(g == NULL) {
         g = lv_group_create();
@@ -970,7 +1502,127 @@ void screen_main_buttion_add(){
     clear_focus_box(guider_ui.screen_main_btn_photo);
     clear_focus_box(guider_ui.screen_main_btn_setting);
     clear_focus_box(guider_ui.screen_main_btn_realtime);
+    screen_main_nav_effect_bind_hooks();
+    screen_main_realtime_card_bind_hook();
+    lv_async_call(screen_main_status_refresh_async, NULL);
 }
+
+static void screen_main_status_refresh_async(void *unused)
+{
+    LV_UNUSED(unused);
+    main_screen_status_refresh();
+}
+
+/* GUI Guider 模拟器用弱符号占位；ESP-IDF 固件由 main/app_ui.c 强符号覆盖 */
+__attribute__((weak)) void main_screen_status_refresh(void)
+{
+}
+
+static void screen_timing_enter_obj(lv_obj_t *obj,
+                                    lv_coord_t start_x, lv_coord_t start_y,
+                                    lv_coord_t end_x, lv_coord_t end_y,
+                                    uint32_t delay, uint32_t duration)
+{
+    if (obj == NULL || !lv_obj_is_valid(obj)) {
+        return;
+    }
+
+    lv_anim_del(obj, NULL);
+    lv_obj_set_pos(obj, start_x, start_y);
+    lv_obj_set_style_opa(obj, LV_OPA_TRANSP,
+                         LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_anim_t x_anim;
+    lv_anim_init(&x_anim);
+    lv_anim_set_var(&x_anim, obj);
+    lv_anim_set_exec_cb(&x_anim, screen_main_nav_x_exec);
+    lv_anim_set_values(&x_anim, start_x, end_x);
+    lv_anim_set_delay(&x_anim, delay);
+    lv_anim_set_time(&x_anim, duration);
+    lv_anim_set_path_cb(&x_anim, lv_anim_path_ease_out);
+    lv_anim_start(&x_anim);
+
+    lv_anim_t y_anim;
+    lv_anim_init(&y_anim);
+    lv_anim_set_var(&y_anim, obj);
+    lv_anim_set_exec_cb(&y_anim, screen_main_realtime_y_exec);
+    lv_anim_set_values(&y_anim, start_y, end_y);
+    lv_anim_set_delay(&y_anim, delay);
+    lv_anim_set_time(&y_anim, duration);
+    lv_anim_set_path_cb(&y_anim, lv_anim_path_ease_out);
+    lv_anim_start(&y_anim);
+
+    lv_anim_t fade_anim;
+    lv_anim_init(&fade_anim);
+    lv_anim_set_var(&fade_anim, obj);
+    lv_anim_set_exec_cb(&fade_anim, screen_main_realtime_opa_exec);
+    lv_anim_set_values(&fade_anim, LV_OPA_TRANSP, LV_OPA_COVER);
+    lv_anim_set_delay(&fade_anim, delay);
+    lv_anim_set_time(&fade_anim, duration > 300 ? 300 : duration);
+    lv_anim_set_path_cb(&fade_anim, lv_anim_path_ease_out);
+    lv_anim_start(&fade_anim);
+}
+
+static void screen_timing_prepare_obj(lv_obj_t *obj,
+                                      lv_coord_t x, lv_coord_t y)
+{
+    if (obj == NULL || !lv_obj_is_valid(obj)) {
+        return;
+    }
+    lv_anim_del(obj, NULL);
+    lv_obj_set_pos(obj, x, y);
+    lv_obj_set_style_opa(obj, LV_OPA_TRANSP,
+                         LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
+static void screen_timing_prepare_enter_state(void)
+{
+    /* SCREEN_LOAD_START 阶段先摆到动画起点，避免最终布局闪现一帧。 */
+    screen_timing_prepare_obj(guider_ui.screen_timing_label_realtime, -145, 43);
+    screen_timing_prepare_obj(guider_ui.screen_timing_label_date, 320, 49);
+    screen_timing_prepare_obj(guider_ui.screen_timing_label_day, 320, 72);
+    screen_timing_prepare_obj(guider_ui.screen_timing_bar_battery, 32, 151);
+    screen_timing_prepare_obj(guider_ui.screen_timing_img_baticon, 326, 109);
+    screen_timing_prepare_obj(guider_ui.screen_timing_img_wificonnect, 288, -18);
+    screen_timing_prepare_obj(guider_ui.screen_timing_img_wifidis, 288, -18);
+}
+
+static void screen_timing_enter_event_cb(lv_event_t *e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_SCREEN_LOADED) {
+        return;
+    }
+
+    /* 主时钟先从左侧进入，日期信息随后从右侧依次进入。 */
+    screen_timing_enter_obj(guider_ui.screen_timing_label_realtime,
+                            -145, 43, 17, 43, 0, 520);
+    screen_timing_enter_obj(guider_ui.screen_timing_label_date,
+                            320, 49, 195, 49, 80, 400);
+    screen_timing_enter_obj(guider_ui.screen_timing_label_day,
+                            320, 72, 198, 72, 150, 400);
+
+    /* 底部状态组件从下方与右侧收拢，形成分层入场。 */
+    screen_timing_enter_obj(guider_ui.screen_timing_bar_battery,
+                            32, 151, 32, 127, 230, 420);
+    int32_t battery_percent = 50;
+    if (guider_ui.screen_timing_bar_battery != NULL &&
+        lv_obj_is_valid(guider_ui.screen_timing_bar_battery)) {
+        battery_percent = lv_bar_get_value(guider_ui.screen_timing_bar_battery);
+    }
+    if (battery_percent < 0) {
+        battery_percent = 0;
+    } else if (battery_percent > 100) {
+        battery_percent = 100;
+    }
+    lv_coord_t baticon_x = (lv_coord_t)(28 + 257 * battery_percent / 100);
+    screen_timing_enter_obj(guider_ui.screen_timing_img_baticon,
+                            326, 109, baticon_x, 109, 300, 330);
+    screen_timing_enter_obj(guider_ui.screen_timing_img_wificonnect,
+                            288, -18, 288, 7, 360, 320);
+    screen_timing_enter_obj(guider_ui.screen_timing_img_wifidis,
+                            288, -18, 288, 7, 360, 320);
+}
+
 //buttion add function screen_pomodoro
 void screen_timing_buttion_add(){
     if(g == NULL) {
@@ -989,6 +1641,9 @@ void screen_timing_buttion_add(){
     }
     lv_group_add_obj(g, guider_ui.screen_timing_btn_main);  
     clear_focus_box(guider_ui.screen_timing_btn_main);
+    screen_timing_prepare_enter_state();
+    lv_obj_add_event_cb(guider_ui.screen_timing, screen_timing_enter_event_cb,
+                        LV_EVENT_SCREEN_LOADED, NULL);
 
 }
 
@@ -1329,6 +1984,191 @@ static void screen_setting_ble_icon_bind_hooks(void)
     lv_obj_add_event_cb(btn, screen_setting_ble_icon_after_guider, LV_EVENT_CLICKED, NULL);
 }
 
+static void screen_setting_icon_zoom_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_img_set_zoom((lv_obj_t *)obj, (uint16_t)value);
+    }
+}
+
+static void screen_setting_icon_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_img_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void screen_setting_label_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_text_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                                  LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void screen_setting_icon_pop(lv_obj_t *icon)
+{
+    if (icon == NULL || !lv_obj_is_valid(icon) ||
+        lv_obj_has_flag(icon, LV_OBJ_FLAG_HIDDEN)) {
+        return;
+    }
+
+    lv_anim_del(icon, screen_setting_icon_zoom_exec);
+    lv_anim_del(icon, screen_setting_icon_opa_exec);
+    lv_img_set_zoom(icon, 214);
+    lv_obj_set_style_img_opa(icon, LV_OPA_TRANSP,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_anim_t zoom;
+    lv_anim_init(&zoom);
+    lv_anim_set_var(&zoom, icon);
+    lv_anim_set_exec_cb(&zoom, screen_setting_icon_zoom_exec);
+    lv_anim_set_values(&zoom, 214, 256);
+    lv_anim_set_time(&zoom, 260);
+    lv_anim_set_path_cb(&zoom, lv_anim_path_overshoot);
+    lv_anim_start(&zoom);
+
+    lv_anim_t fade;
+    lv_anim_init(&fade);
+    lv_anim_set_var(&fade, icon);
+    lv_anim_set_exec_cb(&fade, screen_setting_icon_opa_exec);
+    lv_anim_set_values(&fade, LV_OPA_TRANSP, LV_OPA_COVER);
+    lv_anim_set_time(&fade, 150);
+    lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+    lv_anim_start(&fade);
+}
+
+static void screen_setting_icon_pulse(lv_obj_t *icon)
+{
+    if (icon == NULL || !lv_obj_is_valid(icon) ||
+        lv_obj_has_flag(icon, LV_OBJ_FLAG_HIDDEN)) {
+        return;
+    }
+
+    lv_anim_del(icon, screen_setting_icon_zoom_exec);
+    lv_obj_set_style_img_opa(icon, LV_OPA_COVER,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_anim_t pulse;
+    lv_anim_init(&pulse);
+    lv_anim_set_var(&pulse, icon);
+    lv_anim_set_exec_cb(&pulse, screen_setting_icon_zoom_exec);
+    lv_anim_set_values(&pulse, 256, 232);
+    lv_anim_set_time(&pulse, 90);
+    lv_anim_set_playback_time(&pulse, 150);
+    lv_anim_set_path_cb(&pulse, lv_anim_path_ease_in_out);
+    lv_anim_start(&pulse);
+}
+
+static void screen_setting_animate_visible_icons(bool clicked)
+{
+    lv_obj_t *icons[] = {
+        guider_ui.screen_setting_img_wifi_open,
+        guider_ui.screen_setting_img_wifi_close,
+        guider_ui.screen_setting_img_ble,
+        guider_ui.screen_setting_img_ble_dis,
+        guider_ui.screen_setting_img_volume_open,
+        guider_ui.screen_setting_img_volume_close,
+        guider_ui.screen_setting_img_brightness,
+    };
+
+    for (size_t i = 0; i < sizeof(icons) / sizeof(icons[0]); i++) {
+        if (clicked) {
+            screen_setting_icon_pulse(icons[i]);
+        } else {
+            screen_setting_icon_pop(icons[i]);
+        }
+    }
+}
+
+static void screen_setting_general_content_animate(void)
+{
+    lv_obj_t *labels[] = {
+        guider_ui.screen_setting_label_about,
+        guider_ui.screen_setting_label_txt1,
+        guider_ui.screen_setting_label_info1,
+        guider_ui.screen_setting_label_txt2,
+        guider_ui.screen_setting_label_info2,
+        guider_ui.screen_setting_label_txt3,
+        guider_ui.screen_setting_label_info3,
+        guider_ui.screen_setting_label_txt4,
+        guider_ui.screen_setting_label_info4,
+    };
+
+    for (size_t i = 0; i < sizeof(labels) / sizeof(labels[0]); i++) {
+        lv_obj_t *label = labels[i];
+        if (label == NULL || !lv_obj_is_valid(label) ||
+            lv_obj_has_flag(label, LV_OBJ_FLAG_HIDDEN)) {
+            continue;
+        }
+        lv_anim_del(label, screen_setting_label_opa_exec);
+        lv_obj_set_style_text_opa(label, LV_OPA_TRANSP,
+                                  LV_PART_MAIN | LV_STATE_DEFAULT);
+
+        lv_anim_t fade;
+        lv_anim_init(&fade);
+        lv_anim_set_var(&fade, label);
+        lv_anim_set_exec_cb(&fade, screen_setting_label_opa_exec);
+        lv_anim_set_values(&fade, LV_OPA_TRANSP, LV_OPA_COVER);
+        lv_anim_set_delay(&fade, (uint32_t)i * 24U);
+        lv_anim_set_time(&fade, 180);
+        lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+        lv_anim_start(&fade);
+    }
+}
+
+static void screen_setting_visual_effect_cb(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t *target = lv_event_get_target(e);
+
+    if (code == LV_EVENT_FOCUSED) {
+        if (target == guider_ui.screen_setting_btn_general) {
+            screen_setting_general_content_animate();
+        } else {
+            screen_setting_animate_visible_icons(false);
+        }
+    } else if (code == LV_EVENT_CLICKED &&
+               target != guider_ui.screen_setting_btn_wifi &&
+               target != guider_ui.screen_setting_btn_general) {
+        screen_setting_animate_visible_icons(true);
+    }
+}
+
+static void screen_setting_initial_effect_async(void *unused)
+{
+    LV_UNUSED(unused);
+    if (guider_ui.screen_setting != NULL &&
+        lv_obj_is_valid(guider_ui.screen_setting) &&
+        lv_scr_act() == guider_ui.screen_setting) {
+        screen_setting_animate_visible_icons(false);
+    }
+}
+
+static void screen_setting_visual_effect_bind_hooks(void)
+{
+    lv_obj_t *buttons[] = {
+        guider_ui.screen_setting_btn_wifi,
+        guider_ui.screen_setting_btn_ble,
+        guider_ui.screen_setting_btn_volume,
+        guider_ui.screen_setting_btn_brightness,
+        guider_ui.screen_setting_btn_general,
+    };
+
+    for (size_t i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
+        if (buttons[i] != NULL && lv_obj_is_valid(buttons[i])) {
+            lv_obj_add_event_cb(buttons[i], screen_setting_visual_effect_cb,
+                                LV_EVENT_FOCUSED, NULL);
+            lv_obj_add_event_cb(buttons[i], screen_setting_visual_effect_cb,
+                                LV_EVENT_CLICKED, NULL);
+        }
+    }
+    /* 首个 Wi-Fi 按钮在加入 group 时已自动 focus，延迟到 generated
+     * SCREEN_LOAD_START 完成后再播放首次图标动画。 */
+    lv_async_call(screen_setting_initial_effect_async, NULL);
+}
+
 //buttion add function screen_setting
 void screen_setting_buttion_add(){
     if(g == NULL) {
@@ -1358,6 +2198,7 @@ void screen_setting_buttion_add(){
     clear_edge_box(guider_ui.screen_setting_btn_general);
     clear_edge_box(guider_ui.screen_setting_btn_back);
     screen_setting_ble_icon_bind_hooks();
+    screen_setting_visual_effect_bind_hooks();
 }
 
 //buttion add function screen_wificfg

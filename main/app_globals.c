@@ -17,6 +17,7 @@ const char *week_days[7] = {
 lv_ui guider_ui;
 SemaphoreHandle_t lvgl_mutex = NULL;
 lv_timer_t *bat_timer = NULL;
+lv_timer_t *clock_timer = NULL;
 bool init_ntp = false;
 bool buzzer_timeout_task_running = false;
 volatile bool ai_request_pending = false;

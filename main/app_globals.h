@@ -22,6 +22,9 @@ extern SemaphoreHandle_t lvgl_mutex;
 /** 主屏 / timing 屏电量定时刷新 */
 extern lv_timer_t *bat_timer;
 
+/** 主屏 RTC 时间标签定时刷新 */
+extern lv_timer_t *clock_timer;
+
 /** SNTP 是否已初始化（AI 任务会按需触发） */
 extern bool init_ntp;
 

@@ -101,7 +101,7 @@ void app_init_lvgl_ui(void)
     app_ui_init_clock_label_static();
 
     bat_timer = lv_timer_create(app_ui_battery_timer_cb, 5000, NULL);
-    lv_timer_create(app_ui_realtime_clock_timer_cb, 3000, NULL);
+    clock_timer = lv_timer_create(app_ui_realtime_clock_timer_cb, 3000, NULL);
 }
 
 void app_init_start_workers(void)

@@ -43,7 +43,8 @@ typedef struct {
     int  display_percent;     /* 平滑后的显示值，UI 只用这个 */
     bool charging;            /* CHRG 去抖后：正在充电 */
     bool full;                /* STDBY 去抖且稳定后：已充满 */
-    bool plugged;             /* Type-C 已插入（CHRG|STDBY 任一为低，慢释放锁存） */
+    bool plugged;             /* Type-C 已插入（慢释放锁存，供百分比状态机） */
+    bool plugged_ui;            /* Type-C 已插入（快释放锁存，供 UI 颜色/图标） */
     battery_state_t state;
 } battery_info_t;
 
