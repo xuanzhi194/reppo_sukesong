@@ -131,11 +131,11 @@ static const char * const answer_book_answers[] = {
     "时机已到",
     "值得尝试",
     "勇敢迈出一步",
-    "命运说：行",
+    "命运说:行",
     "星星眨眼表示同意",
     "宇宙给你点了赞",
-    "签文：大吉",
-    "卦象：可行",
+    "签文:大吉",
+    "卦象:可行",
     "前景看好",
     "会得到支持",
     "结果会比你想的好",
@@ -166,7 +166,7 @@ static const char * const answer_book_answers[] = {
     "月亮说可以",
     "诸事皆宜",
     "大胆一点",
-    "心之所向，便是答案",
+    "心之所向,便是答案",
     "旗开得胜",
     "否极泰来",
     "时来运转",
@@ -182,8 +182,8 @@ static const char * const answer_book_answers[] = {
     "守得云开见月明",
     "车到山前必有路",
     "船到桥头自然直",
-    "山重水复，后面你懂的",
-    "机会难得，抓住",
+    "山重水复,后面你懂的",
+    "机会难得,抓住",
     "运势正旺",
     "东风正好",
     "春暖花开",
@@ -195,33 +195,33 @@ static const char * const answer_book_answers[] = {
     "现在还不是时候",
     "重新考虑一下吧",
     "别抱太大希望",
-    "答案是：不行",
+    "答案是:不行",
     "暂时不要",
     "再等等",
     "时机未到",
     "星星摇头了",
-    "宇宙说：再想想",
+    "宇宙说:再想想",
     "恐怕不行",
     "别冲动",
-    "冷静，先别动",
+    "冷静,先别动",
     "现在做会后悔",
     "另寻他路吧",
     "此路不通",
-    "卦象示凶，慎行",
-    "逆风，不宜",
-    "水逆，请回避",
+    "卦象示凶,慎行",
+    "逆风,不宜",
+    "水逆,请回避",
     "今日忌大事",
-    "签文：凶",
+    "签文:凶",
     "老天今天没点头",
     "NO",
     "全票否决",
     "三思而后行",
     "欲速则不达",
     "过犹不及",
-    "塞翁失马，先别动",
+    "塞翁失马,先别动",
     "缘木求鱼",
     "南辕北辙",
-    "镜花水月，别当真",
+    "镜花水月,别当真",
     "不宜妄动",
     "不宜强求",
     "最好忘记",
@@ -249,15 +249,15 @@ static const char * const answer_book_answers[] = {
     "今非良日",
     "回头是岸",
     "悬崖勒马",
-    "亡羊补牢，先停",
-    "前车之鉴，慎之",
-    "覆水难收，勿试",
-    "画地为牢，勿入",
-    "作茧自缚，勿为",
+    "亡羊补牢,先停",
+    "前车之鉴,慎之",
+    "覆水难收,勿试",
+    "画地为牢,勿入",
+    "作茧自缚,勿为",
     /* —— 中立 / 模糊 / 幽默 —— */
     "顺其自然",
     "再看看吧",
-    "也许，也许不",
+    "也许,也许不",
     "这需要时间",
     "你其实已经知道了",
     "命运今天休假",
@@ -266,7 +266,7 @@ static const char * const answer_book_answers[] = {
     "风水师请假了",
     "这题超纲了",
     "答案之书也需要思考",
-    "别催，正在算",
+    "别催,正在算",
     "薛定谔的答案是",
     "建议重摇一次",
     "睡醒再来问",
@@ -275,57 +275,57 @@ static const char * const answer_book_answers[] = {
     "你问得太频繁了",
     "答案在下一页",
     "此书拒绝回答",
-    "命运正在输入中…",
+    "命运正在输入中...",
     "看心情",
     "看缘分",
     "看天意",
     "看时机",
     "看猫的脸色",
     "抛硬币吧",
-    "宇宙正在加载，请稍候",
+    "宇宙正在加载,请稍候",
     "猫说你得问问它",
-    "狗说：汪（翻译：随便）",
-    "星星说：你猜",
+    "狗说:汪(翻译:随便)",
+    "星星说:你猜",
     "风把答案吹跑了",
-    "签筒空了，改日",
-    "黄历：宜静不宜动",
+    "签筒空了,改日",
+    "黄历:宜静不宜动",
     "福星在路上堵车",
     "答案之书摸了会儿鱼",
     "命运键盘卡了",
     "是又不是",
     "对又不对",
-    "算了，随它",
+    "算了,随它",
     "你定",
     "听天由命",
-    "尽人事，听天命",
-    "不可说，不可说",
+    "尽人事,听天命",
+    "不可说,不可说",
     "天机只泄露一半",
     "悟不到就再问",
-    "好了，翻页吧",
+    "好了,翻页吧",
     "问了也不一定答",
     "答了也不一定信",
-    "或者：别问了，去生活",
+    "或者:别问了,去生活",
     "立起来就再问",
     "今日额度已用完",
-    "凡人，请自重",
+    "凡人,请自重",
     "你问得我心虚",
-    "门开了条缝，自己推",
-    "月亮还没圆，再等等",
+    "门开了条缝,自己推",
+    "月亮还没圆,再等等",
     "猫主子没睡醒",
     "月老正在输入",
-    "信号不好，请重试",
+    "信号不好,请重试",
     "再问还是这句",
-    "树说：静一静",
-    "云说：飘哪算哪",
-    "三个直觉打平，重摇",
+    "树说:静一静",
+    "云说:飘哪算哪",
+    "三个直觉打平,重摇",
     "另一半你自己悟",
     "由心而定",
     "问心无愧即可",
     "宇宙略过此题",
-    "太阳打西边出来了？那再问",
-    "谋事在人，成事在天",
-    "天知地知，你知我知",
-    "所以：再问一次吧",
+    "太阳打西边出来了?那再问",
+    "谋事在人,成事在天",
+    "天知地知,你知我知",
+    "所以:再问一次吧",
 };
 
 void answer_book_show_random_answer(void)
@@ -388,18 +388,24 @@ static bool pomodoro_screen_is_alive(void)
         && lv_scr_act() == guider_ui.screen_pomodoro;
 }
 
-void pomodoro_timer_stop(void)
+static void pomodoro_timer_delete_only(void)
 {
     if (pomodoro_timer != NULL) {
         lv_timer_del(pomodoro_timer);
         pomodoro_timer = NULL;
     }
+}
+
+void pomodoro_timer_stop(void)
+{
+    pomodoro_timer_delete_only();
     pomodoro_pause_icon_refresh();
 }
 
 void pomodoro_pause_icon_refresh(void)
 {
     lv_obj_t *img = guider_ui.screen_pomodoro_img_pause;
+    lv_obj_t *btn = guider_ui.screen_pomodoro_btn_start;
     if (img == NULL || !lv_obj_is_valid(img)) {
         return;
     }
@@ -417,8 +423,16 @@ void pomodoro_pause_icon_refresh(void)
 
     if (running) {
         lv_obj_clear_flag(img, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(img, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_move_foreground(img);
     } else {
         lv_obj_add_flag(img, LV_OBJ_FLAG_HIDDEN);
+    }
+
+    if (btn != NULL && lv_obj_is_valid(btn)) {
+        lv_opa_t btn_bg_opa = running ? 0 : 34;
+        lv_obj_set_style_bg_opa(btn, btn_bg_opa, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(btn, btn_bg_opa, LV_PART_MAIN | LV_STATE_FOCUSED);
     }
 }
 
@@ -468,7 +482,8 @@ static void countdown_cb(lv_timer_t *t){
 }
 
 void countdown_start(int16_t minutes){
-    pomodoro_timer_stop();
+    /* 仅删旧 timer，勿刷新 pause 图标：此时 countdown_* 标志尚未置位。 */
+    pomodoro_timer_delete_only();
     timer_all_seconds = minutes * 60;
     focus_session_minutes = minutes;
     pomodoro_timer = lv_timer_create(countdown_cb,1000,NULL);
@@ -489,7 +504,7 @@ static void stopwatch_cb(lv_timer_t *t){
 }
 
 void stopwatch_start(){
-    pomodoro_timer_stop();
+    pomodoro_timer_delete_only();
     timer_all_seconds = 0;
     pomodoro_timer = lv_timer_create(stopwatch_cb,1000,NULL);
 }
@@ -1647,28 +1662,45 @@ void screen_timing_buttion_add(){
 
 }
 
+static void pomodoro_pause_icon_refresh_async(void *unused)
+{
+    LV_UNUSED(unused);
+    pomodoro_pause_icon_refresh();
+}
+
 static void pomodoro_pause_icon_after_guider(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
-    if (code == LV_EVENT_CLICKED || code == LV_EVENT_SCREEN_LOADED) {
+    if (code == LV_EVENT_CLICKED || code == LV_EVENT_SHORT_CLICKED) {
+        /* 等 events_init 里 btn_start 逻辑跑完后再刷新，避免时序竞态。 */
+        lv_async_call(pomodoro_pause_icon_refresh_async, NULL);
+    } else if (code == LV_EVENT_SCREEN_LOADED) {
         pomodoro_pause_icon_refresh();
+    }
+}
+
+static lv_obj_t *s_pomodoro_pause_bound_screen;
+
+static void pomodoro_pause_icon_screen_unloaded(lv_event_t *e)
+{
+    if (lv_event_get_code(e) == LV_EVENT_SCREEN_UNLOADED) {
+        s_pomodoro_pause_bound_screen = NULL;
     }
 }
 
 static void pomodoro_pause_icon_bind_hooks(void)
 {
-    static lv_obj_t *bound_screen;
-
     lv_obj_t *scr = guider_ui.screen_pomodoro;
     if (scr == NULL || !lv_obj_is_valid(scr)) {
         return;
     }
-    if (bound_screen == scr) {
+    if (s_pomodoro_pause_bound_screen == scr) {
         return;
     }
-    bound_screen = scr;
+    s_pomodoro_pause_bound_screen = scr;
 
     lv_obj_add_event_cb(scr, pomodoro_pause_icon_after_guider, LV_EVENT_SCREEN_LOADED, NULL);
+    lv_obj_add_event_cb(scr, pomodoro_pause_icon_screen_unloaded, LV_EVENT_SCREEN_UNLOADED, NULL);
 
     lv_obj_t *btns[] = {
         guider_ui.screen_pomodoro_btn_start,
@@ -1682,6 +1714,7 @@ static void pomodoro_pause_icon_bind_hooks(void)
     };
     for (int i = 0; btns[i] != NULL; i++) {
         lv_obj_add_event_cb(btns[i], pomodoro_pause_icon_after_guider, LV_EVENT_CLICKED, NULL);
+        lv_obj_add_event_cb(btns[i], pomodoro_pause_icon_after_guider, LV_EVENT_SHORT_CLICKED, NULL);
     }
 }
 
