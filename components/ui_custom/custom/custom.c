@@ -436,6 +436,8 @@ void pomodoro_pause_icon_refresh(void)
     }
 }
 
+static void pomodoro_timeout_effect_play(void);
+
 static void countdown_cb(lv_timer_t *t){
     if (!pomodoro_screen_is_alive()) {
         pomodoro_timer_stop();
@@ -462,6 +464,8 @@ static void countdown_cb(lv_timer_t *t){
         lv_obj_add_state(guider_ui.screen_pomodoro_btn_stopwatch,LV_STATE_DISABLED);
         lv_obj_add_flag(guider_ui.screen_pomodoro_btn_start,LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_pomodoro_btn_reset,LV_OBJ_FLAG_HIDDEN);
+        /* 先完成按钮状态切换，再弹出超时层并聚焦 Complete。 */
+        pomodoro_timeout_effect_play();
         countdown_timeout_pending = 1;
         if (pomodoro_countdown) {
             focus_complete_pending = 1;
@@ -917,6 +921,158 @@ void group_focus_obj(lv_obj_t *obj)
 }
 
 
+static lv_obj_t *s_todolist_effect_screen = NULL;
+static int8_t s_todolist_effect_page = -1;
+
+static lv_obj_t *todolist_todo_btn(uint8_t index)
+{
+    lv_obj_t *buttons[] = {
+        guider_ui.screen_todolist_btn_todo1,
+        guider_ui.screen_todolist_btn_todo2,
+        guider_ui.screen_todolist_btn_todo3,
+        guider_ui.screen_todolist_btn_todo4,
+    };
+    return index < 4 ? buttons[index] : NULL;
+}
+
+static lv_obj_t *todolist_todo_label(uint8_t index)
+{
+    lv_obj_t *labels[] = {
+        guider_ui.screen_todolist_btn_todo1_label,
+        guider_ui.screen_todolist_btn_todo2_label,
+        guider_ui.screen_todolist_btn_todo3_label,
+        guider_ui.screen_todolist_btn_todo4_label,
+    };
+    return index < 4 ? labels[index] : NULL;
+}
+
+static void todolist_effect_x_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_x((lv_obj_t *)obj, (lv_coord_t)value);
+    }
+}
+
+static void todolist_effect_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+/*
+ * direction: 0 = 页面进入（两侧汇入），1 = 下一页（右侧进入），
+ *           -1 = 上一页（左侧进入）。
+ * 只给当前确实有内容且可用的 todo 按钮播放，空项始终保持隐藏。
+ * 动画只修改 X/透明度，不会干扰原有 focus 弹跳使用的 Y 坐标。
+ */
+static void todolist_effect_play(int8_t direction)
+{
+    static const lv_coord_t final_x[] = {19, 177, 19, 177};
+
+    for (uint8_t i = 0; i < 4; i++) {
+        lv_obj_t *btn = todolist_todo_btn(i);
+        lv_obj_t *label = todolist_todo_label(i);
+        if (btn == NULL || label == NULL ||
+            !lv_obj_is_valid(btn) || !lv_obj_is_valid(label)) {
+            continue;
+        }
+
+        lv_anim_del(btn, todolist_effect_x_exec);
+        lv_anim_del(btn, todolist_effect_opa_exec);
+        lv_obj_set_x(btn, final_x[i]);
+
+        const char *text = lv_label_get_text(label);
+        bool has_content = text != NULL && text[0] != '\0';
+        bool enabled = !lv_obj_has_state(btn, LV_STATE_DISABLED);
+        if (!enabled || !has_content) {
+            lv_obj_set_style_opa(btn, LV_OPA_TRANSP,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+            continue;
+        }
+
+        lv_coord_t start_x;
+        if (direction > 0) {
+            start_x = final_x[i] + 34;
+        } else if (direction < 0) {
+            start_x = final_x[i] - 34;
+        } else {
+            start_x = final_x[i] + ((i & 1U) ? 30 : -30);
+        }
+
+        lv_obj_set_x(btn, start_x);
+        lv_obj_set_style_opa(btn, LV_OPA_TRANSP,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+
+        lv_anim_t move;
+        lv_anim_init(&move);
+        lv_anim_set_var(&move, btn);
+        lv_anim_set_exec_cb(&move, todolist_effect_x_exec);
+        lv_anim_set_values(&move, start_x, final_x[i]);
+        lv_anim_set_time(&move, 240);
+        lv_anim_set_delay(&move, i * 55);
+        lv_anim_set_path_cb(&move, lv_anim_path_ease_out);
+        lv_anim_start(&move);
+
+        lv_anim_t fade;
+        lv_anim_init(&fade);
+        lv_anim_set_var(&fade, btn);
+        lv_anim_set_exec_cb(&fade, todolist_effect_opa_exec);
+        lv_anim_set_values(&fade, LV_OPA_TRANSP, LV_OPA_COVER);
+        lv_anim_set_time(&fade, 150);
+        lv_anim_set_delay(&fade, i * 55);
+        lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+        lv_anim_start(&fade);
+    }
+}
+
+static void todolist_effect_play_async(void *direction_ptr)
+{
+    if (guider_ui.screen_todolist == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_todolist) ||
+        lv_scr_act() != guider_ui.screen_todolist) {
+        return;
+    }
+    todolist_effect_play((int8_t)(intptr_t)direction_ptr);
+    s_todolist_effect_page = page_cur;
+}
+
+static void todolist_effect_screen_cb(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_SCREEN_LOADED) {
+        lv_async_call(todolist_effect_play_async, NULL);
+    } else if (code == LV_EVENT_SCREEN_UNLOADED) {
+        s_todolist_effect_screen = NULL;
+        s_todolist_effect_page = -1;
+    }
+}
+
+static void todolist_effect_page_cb(lv_event_t *e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED ||
+        page_cur == s_todolist_effect_page) {
+        return;
+    }
+
+    lv_obj_t *target = lv_event_get_target(e);
+    int8_t direction =
+        target == guider_ui.screen_todolist_btn_nxtpage ? 1 : -1;
+    lv_async_call(todolist_effect_play_async, (void *)(intptr_t)direction);
+}
+
+static void todolist_effect_prepare(void)
+{
+    for (uint8_t i = 0; i < 4; i++) {
+        lv_obj_t *btn = todolist_todo_btn(i);
+        if (btn != NULL && lv_obj_is_valid(btn)) {
+            lv_obj_set_style_opa(btn, LV_OPA_TRANSP,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+    }
+}
+
 void screen_todolist_buttion_add(){
     if(g == NULL) {
         g = lv_group_create();
@@ -948,6 +1104,18 @@ void screen_todolist_buttion_add(){
     clear_edge_box(guider_ui.screen_todolist_btn_lastpage);
     clear_edge_box(guider_ui.screen_todolist_btn_nxtpage);
     clear_edge_box(guider_ui.screen_todolist_btn_back);
+
+    if (s_todolist_effect_screen != guider_ui.screen_todolist) {
+        s_todolist_effect_screen = guider_ui.screen_todolist;
+        s_todolist_effect_page = -1;
+        todolist_effect_prepare();
+        lv_obj_add_event_cb(guider_ui.screen_todolist,
+                            todolist_effect_screen_cb, LV_EVENT_ALL, NULL);
+        lv_obj_add_event_cb(guider_ui.screen_todolist_btn_lastpage,
+                            todolist_effect_page_cb, LV_EVENT_CLICKED, NULL);
+        lv_obj_add_event_cb(guider_ui.screen_todolist_btn_nxtpage,
+                            todolist_effect_page_cb, LV_EVENT_CLICKED, NULL);
+    }
 
 }
 //buttion add function screen_main
@@ -1668,6 +1836,246 @@ static void pomodoro_pause_icon_refresh_async(void *unused)
     pomodoro_pause_icon_refresh();
 }
 
+typedef enum {
+    POMODORO_EFFECT_ENTER = 0,
+    POMODORO_EFFECT_MODE,
+    POMODORO_EFFECT_TIMER,
+    POMODORO_EFFECT_START,
+} pomodoro_effect_t;
+
+static lv_obj_t *s_pomodoro_effect_screen;
+static pomodoro_effect_t s_pomodoro_pending_effect;
+
+static void pomodoro_effect_x_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_x((lv_obj_t *)obj, (lv_coord_t)value);
+    }
+}
+
+static void pomodoro_effect_y_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_y((lv_obj_t *)obj, (lv_coord_t)value);
+    }
+}
+
+static void pomodoro_effect_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void pomodoro_effect_animate(lv_obj_t *obj,
+                                    lv_coord_t start_x, lv_coord_t start_y,
+                                    lv_coord_t end_x, lv_coord_t end_y,
+                                    uint32_t delay, uint32_t duration)
+{
+    if (obj == NULL || !lv_obj_is_valid(obj) ||
+        lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN)) {
+        return;
+    }
+
+    lv_anim_del(obj, pomodoro_effect_x_exec);
+    lv_anim_del(obj, pomodoro_effect_y_exec);
+    lv_anim_del(obj, pomodoro_effect_opa_exec);
+    lv_obj_set_pos(obj, start_x, start_y);
+    lv_obj_set_style_opa(obj, LV_OPA_TRANSP,
+                         LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_anim_t x_anim;
+    lv_anim_init(&x_anim);
+    lv_anim_set_var(&x_anim, obj);
+    lv_anim_set_exec_cb(&x_anim, pomodoro_effect_x_exec);
+    lv_anim_set_values(&x_anim, start_x, end_x);
+    lv_anim_set_delay(&x_anim, delay);
+    lv_anim_set_time(&x_anim, duration);
+    lv_anim_set_path_cb(&x_anim, lv_anim_path_ease_out);
+    lv_anim_start(&x_anim);
+
+    lv_anim_t y_anim;
+    lv_anim_init(&y_anim);
+    lv_anim_set_var(&y_anim, obj);
+    lv_anim_set_exec_cb(&y_anim, pomodoro_effect_y_exec);
+    lv_anim_set_values(&y_anim, start_y, end_y);
+    lv_anim_set_delay(&y_anim, delay);
+    lv_anim_set_time(&y_anim, duration);
+    lv_anim_set_path_cb(&y_anim, lv_anim_path_ease_out);
+    lv_anim_start(&y_anim);
+
+    lv_anim_t fade;
+    lv_anim_init(&fade);
+    lv_anim_set_var(&fade, obj);
+    lv_anim_set_exec_cb(&fade, pomodoro_effect_opa_exec);
+    lv_anim_set_values(&fade, LV_OPA_TRANSP, LV_OPA_COVER);
+    lv_anim_set_delay(&fade, delay);
+    lv_anim_set_time(&fade, duration > 200 ? 200 : duration);
+    lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+    lv_anim_start(&fade);
+}
+
+static void pomodoro_effect_play(pomodoro_effect_t effect)
+{
+    if (guider_ui.screen_pomodoro == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_pomodoro) ||
+        lv_scr_act() != guider_ui.screen_pomodoro) {
+        return;
+    }
+
+    if (effect == POMODORO_EFFECT_ENTER) {
+        pomodoro_effect_animate(guider_ui.screen_pomodoro_label_pomodoro,
+                                60, -15, 60, 5, 0, 330);
+        pomodoro_effect_animate(guider_ui.screen_pomodoro_label_timer,
+                                150, 40, 94, 40, 45, 380);
+        pomodoro_effect_animate(guider_ui.screen_pomodoro_img_countdown,
+                                276, 47, 252, 47, 90, 290);
+        pomodoro_effect_animate(guider_ui.screen_pomodoro_img_stopwatch,
+                                276, 47, 252, 47, 90, 290);
+    } else if (effect == POMODORO_EFFECT_MODE) {
+        pomodoro_effect_animate(guider_ui.screen_pomodoro_label_timer,
+                                124, 40, 94, 40, 0, 260);
+        pomodoro_effect_animate(guider_ui.screen_pomodoro_img_countdown,
+                                276, 47, 252, 47, 30, 240);
+        pomodoro_effect_animate(guider_ui.screen_pomodoro_img_stopwatch,
+                                276, 47, 252, 47, 30, 240);
+    } else if (effect == POMODORO_EFFECT_TIMER) {
+        pomodoro_effect_animate(guider_ui.screen_pomodoro_label_timer,
+                                94, 34, 94, 40, 0, 220);
+    } else {
+        pomodoro_effect_animate(guider_ui.screen_pomodoro_label_timer,
+                                94, 35, 94, 40, 0, 190);
+    }
+}
+
+static void pomodoro_timeout_effect_play(void)
+{
+    lv_obj_t *timeout = guider_ui.screen_pomodoro_img_timeout;
+    if (timeout == NULL || !lv_obj_is_valid(timeout) ||
+        lv_obj_has_flag(timeout, LV_OBJ_FLAG_HIDDEN)) {
+        return;
+    }
+
+    lv_anim_del(timeout, pomodoro_effect_y_exec);
+    lv_anim_del(timeout, pomodoro_effect_opa_exec);
+    lv_obj_set_pos(timeout, 20, 58);
+    lv_obj_set_style_opa(timeout, LV_OPA_TRANSP,
+                         LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_anim_t pop;
+    lv_anim_init(&pop);
+    lv_anim_set_var(&pop, timeout);
+    lv_anim_set_exec_cb(&pop, pomodoro_effect_y_exec);
+    lv_anim_set_values(&pop, 58, 22);
+    lv_anim_set_time(&pop, 420);
+    lv_anim_set_path_cb(&pop, lv_anim_path_overshoot);
+    lv_anim_start(&pop);
+
+    lv_anim_t fade;
+    lv_anim_init(&fade);
+    lv_anim_set_var(&fade, timeout);
+    lv_anim_set_exec_cb(&fade, pomodoro_effect_opa_exec);
+    lv_anim_set_values(&fade, LV_OPA_TRANSP, LV_OPA_COVER);
+    lv_anim_set_time(&fade, 220);
+    lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+    lv_anim_start(&fade);
+
+    /* 超时图片作为背景，操作按钮必须位于其上方才能显示焦点状态。 */
+    if (guider_ui.screen_pomodoro_btn_complete != NULL &&
+        lv_obj_is_valid(guider_ui.screen_pomodoro_btn_complete)) {
+        lv_obj_move_foreground(guider_ui.screen_pomodoro_btn_complete);
+    }
+    if (guider_ui.screen_pomodoro_btn_continue != NULL &&
+        lv_obj_is_valid(guider_ui.screen_pomodoro_btn_continue)) {
+        lv_obj_move_foreground(guider_ui.screen_pomodoro_btn_continue);
+    }
+    group_focus_obj(guider_ui.screen_pomodoro_btn_complete);
+}
+
+static void pomodoro_effect_async(void *unused)
+{
+    LV_UNUSED(unused);
+    pomodoro_effect_play(s_pomodoro_pending_effect);
+}
+
+static void pomodoro_effect_event_cb(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t *target = lv_event_get_target(e);
+    if (code == LV_EVENT_SCREEN_LOADED) {
+        s_pomodoro_pending_effect = POMODORO_EFFECT_ENTER;
+    } else if (code == LV_EVENT_SCREEN_UNLOADED) {
+        s_pomodoro_effect_screen = NULL;
+        return;
+    } else if (code == LV_EVENT_CLICKED) {
+        if (target == guider_ui.screen_pomodoro_btn_countdown ||
+            target == guider_ui.screen_pomodoro_btn_stopwatch) {
+            s_pomodoro_pending_effect = POMODORO_EFFECT_MODE;
+        } else if (target == guider_ui.screen_pomodoro_btn_plus ||
+                   target == guider_ui.screen_pomodoro_btn_minus ||
+                   target == guider_ui.screen_pomodoro_btn_addnum ||
+                   target == guider_ui.screen_pomodoro_btn_reset) {
+            s_pomodoro_pending_effect = POMODORO_EFFECT_TIMER;
+        } else if (target == guider_ui.screen_pomodoro_btn_start) {
+            s_pomodoro_pending_effect = POMODORO_EFFECT_START;
+        } else {
+            return;
+        }
+    } else {
+        return;
+    }
+
+    /* 等 generated 回调完成状态和文字更新后再播放。 */
+    lv_async_call(pomodoro_effect_async, NULL);
+}
+
+static void pomodoro_effect_bind_hooks(void)
+{
+    lv_obj_t *scr = guider_ui.screen_pomodoro;
+    if (scr == NULL || !lv_obj_is_valid(scr) ||
+        s_pomodoro_effect_screen == scr) {
+        return;
+    }
+    s_pomodoro_effect_screen = scr;
+
+    lv_obj_t *entrance_objects[] = {
+        guider_ui.screen_pomodoro_label_pomodoro,
+        guider_ui.screen_pomodoro_label_timer,
+        guider_ui.screen_pomodoro_img_countdown,
+        guider_ui.screen_pomodoro_img_stopwatch,
+    };
+    for (size_t i = 0;
+         i < sizeof(entrance_objects) / sizeof(entrance_objects[0]); i++) {
+        if (entrance_objects[i] != NULL &&
+            lv_obj_is_valid(entrance_objects[i])) {
+            lv_obj_set_style_opa(entrance_objects[i], LV_OPA_TRANSP,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+    }
+
+    lv_obj_add_event_cb(scr, pomodoro_effect_event_cb,
+                        LV_EVENT_SCREEN_LOADED, NULL);
+    lv_obj_add_event_cb(scr, pomodoro_effect_event_cb,
+                        LV_EVENT_SCREEN_UNLOADED, NULL);
+
+    lv_obj_t *buttons[] = {
+        guider_ui.screen_pomodoro_btn_countdown,
+        guider_ui.screen_pomodoro_btn_stopwatch,
+        guider_ui.screen_pomodoro_btn_plus,
+        guider_ui.screen_pomodoro_btn_minus,
+        guider_ui.screen_pomodoro_btn_addnum,
+        guider_ui.screen_pomodoro_btn_reset,
+        guider_ui.screen_pomodoro_btn_start,
+    };
+    for (size_t i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
+        if (buttons[i] != NULL && lv_obj_is_valid(buttons[i])) {
+            lv_obj_add_event_cb(buttons[i], pomodoro_effect_event_cb,
+                                LV_EVENT_CLICKED, NULL);
+        }
+    }
+}
+
 static void pomodoro_pause_icon_after_guider(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -1756,6 +2164,7 @@ void screen_pomodoro_buttion_add(){
     clear_edge_box(guider_ui.screen_pomodoro_btn_continue);
 
     pomodoro_pause_icon_bind_hooks();
+    pomodoro_effect_bind_hooks();
 }
 //buttion add function screen_wordmeun
 void screen_wordmenu_buttion_add(){
@@ -1877,6 +2286,111 @@ static void reviewcard_btn_dui_focus_cb(lv_event_t *e)
         reviewcard_hide_dog_dui();
     }
 }
+
+static void wordcard_content_x_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_x((lv_obj_t *)obj, (lv_coord_t)value);
+    }
+}
+
+static void wordcard_content_text_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_text_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                                  LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void wordcard_content_animate_label(lv_obj_t *label,
+                                           lv_coord_t end_x,
+                                           lv_opa_t end_opa,
+                                           uint32_t delay)
+{
+    if (label == NULL || !lv_obj_is_valid(label)) {
+        return;
+    }
+
+    lv_anim_del(label, wordcard_content_x_exec);
+    lv_anim_del(label, wordcard_content_text_opa_exec);
+    lv_obj_set_x(label, end_x + 58);
+    lv_obj_set_style_text_opa(label, LV_OPA_TRANSP,
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_anim_t slide;
+    lv_anim_init(&slide);
+    lv_anim_set_var(&slide, label);
+    lv_anim_set_exec_cb(&slide, wordcard_content_x_exec);
+    lv_anim_set_values(&slide, end_x + 58, end_x);
+    lv_anim_set_delay(&slide, delay);
+    lv_anim_set_time(&slide, 320);
+    lv_anim_set_path_cb(&slide, lv_anim_path_ease_out);
+    lv_anim_start(&slide);
+
+    lv_anim_t fade;
+    lv_anim_init(&fade);
+    lv_anim_set_var(&fade, label);
+    lv_anim_set_exec_cb(&fade, wordcard_content_text_opa_exec);
+    lv_anim_set_values(&fade, LV_OPA_TRANSP, end_opa);
+    lv_anim_set_delay(&fade, delay);
+    lv_anim_set_time(&fade, 190);
+    lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+    lv_anim_start(&fade);
+}
+
+void wordcard_content_change_effect(bool review_mode)
+{
+    lv_obj_t *screen = review_mode
+        ? guider_ui.screen_reviewcard
+        : guider_ui.screen_wordcard;
+    if (screen == NULL || !lv_obj_is_valid(screen) || lv_scr_act() != screen) {
+        return;
+    }
+
+    if (review_mode) {
+        wordcard_content_animate_label(
+            guider_ui.screen_reviewcard_label_spelling, 32, LV_OPA_COVER, 0);
+        wordcard_content_animate_label(
+            guider_ui.screen_reviewcard_label_phonetic, 32, 143, 55);
+        wordcard_content_animate_label(
+            guider_ui.screen_reviewcard_label_meaning, 31, LV_OPA_COVER, 110);
+        wordcard_content_animate_label(
+            guider_ui.screen_reviewcard_label_index, 219, 207, 145);
+    } else {
+        wordcard_content_animate_label(
+            guider_ui.screen_wordcard_label_spelling, 32, LV_OPA_COVER, 0);
+        wordcard_content_animate_label(
+            guider_ui.screen_wordcard_label_phonetic, 32, 143, 55);
+        wordcard_content_animate_label(
+            guider_ui.screen_wordcard_label_meaning, 32, LV_OPA_COVER, 110);
+        wordcard_content_animate_label(
+            guider_ui.screen_wordcard_label_index, 222, 207, 145);
+    }
+}
+
+static void wordcard_content_prepare(bool review_mode)
+{
+    lv_obj_t *labels[4];
+    if (review_mode) {
+        labels[0] = guider_ui.screen_reviewcard_label_spelling;
+        labels[1] = guider_ui.screen_reviewcard_label_phonetic;
+        labels[2] = guider_ui.screen_reviewcard_label_meaning;
+        labels[3] = guider_ui.screen_reviewcard_label_index;
+    } else {
+        labels[0] = guider_ui.screen_wordcard_label_spelling;
+        labels[1] = guider_ui.screen_wordcard_label_phonetic;
+        labels[2] = guider_ui.screen_wordcard_label_meaning;
+        labels[3] = guider_ui.screen_wordcard_label_index;
+    }
+
+    for (uint8_t i = 0; i < 4; i++) {
+        if (labels[i] != NULL && lv_obj_is_valid(labels[i])) {
+            lv_obj_set_style_text_opa(labels[i], LV_OPA_TRANSP,
+                                      LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+    }
+}
+
 void wordcard_screen_custom_init(lv_ui *ui)
 {
     wordcard_hide_dog_anims_on(ui);
@@ -1903,6 +2417,7 @@ void screen_wordcard_buttion_add(){
     clear_edge_box(guider_ui.screen_wordcard_btn_dui);
     clear_edge_box(guider_ui.screen_wordcard_btn_cuo);
     clear_edge_box(guider_ui.screen_wordcard_btn_back);
+    wordcard_content_prepare(false);
 
     /* events_init 在 button_add 之后会 wordcard_hide_dog_anims()，延迟同步 focus 状态 */
     lv_async_call(wordcard_sync_dog_focus, NULL);
@@ -1931,6 +2446,7 @@ void screen_reviewcard_buttion_add(){
     lv_group_add_obj(g, guider_ui.screen_reviewcard_btn_back); 
     clear_edge_box(guider_ui.screen_reviewcard_btn_dui);
     clear_edge_box(guider_ui.screen_reviewcard_btn_back);
+    wordcard_content_prepare(true);
     lv_obj_add_event_cb(guider_ui.screen_reviewcard_btn_dui,
                         reviewcard_btn_dui_focus_cb, LV_EVENT_ALL, NULL);
     /* events_init 在 button_add 之后会再次 HIDDEN dog_dui，延迟同步 focus 状态 */
@@ -1963,6 +2479,7 @@ void todo_ble_sync_ui_refresh(void)
         lv_obj_is_valid(guider_ui.screen_todolist_btn_todo1_label)) {
         page_cur = 1;
         lv_event_send(guider_ui.screen_todolist, LV_EVENT_SCREEN_LOAD_START, NULL);
+        lv_async_call(todolist_effect_play_async, NULL);
     }
 }
 
@@ -2324,6 +2841,223 @@ void screen_ai_buttion_add(){
     clear_edge_box(guider_ui.screen_ai_btn_sum);
     clear_edge_box(guider_ui.screen_ai_btn_back);
 }
+typedef enum {
+    DONELIST_EFFECT_ENTER = 0,
+    DONELIST_EFFECT_NEXT,
+    DONELIST_EFFECT_PREVIOUS,
+    DONELIST_EFFECT_SAVE,
+} donelist_effect_t;
+
+static lv_obj_t *s_donelist_effect_screen;
+static donelist_effect_t s_donelist_pending_effect;
+
+static void donelist_effect_pos_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_x((lv_obj_t *)obj, (lv_coord_t)value);
+    }
+}
+
+static void donelist_effect_y_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_y((lv_obj_t *)obj, (lv_coord_t)value);
+    }
+}
+
+static void donelist_effect_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void donelist_effect_animate_obj(lv_obj_t *obj,
+                                        lv_coord_t end_x, lv_coord_t end_y,
+                                        int8_t direction, uint32_t delay)
+{
+    if (obj == NULL || !lv_obj_is_valid(obj)) {
+        return;
+    }
+
+    lv_coord_t start_x = end_x;
+    lv_coord_t start_y = end_y;
+    if (direction > 0) {
+        start_x += 54;
+    } else if (direction < 0) {
+        start_x -= 54;
+    } else {
+        start_y += 10;
+    }
+
+    lv_anim_del(obj, NULL);
+    lv_obj_set_pos(obj, start_x, start_y);
+    lv_obj_set_style_opa(obj, LV_OPA_TRANSP,
+                         LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_anim_t move;
+    lv_anim_init(&move);
+    lv_anim_set_var(&move, obj);
+    lv_anim_set_exec_cb(&move, direction == 0
+                               ? donelist_effect_y_exec
+                               : donelist_effect_pos_exec);
+    lv_anim_set_values(&move, direction == 0 ? start_y : start_x,
+                              direction == 0 ? end_y : end_x);
+    lv_anim_set_delay(&move, delay);
+    lv_anim_set_time(&move, 300);
+    lv_anim_set_path_cb(&move, lv_anim_path_ease_out);
+    lv_anim_start(&move);
+
+    lv_anim_t fade;
+    lv_anim_init(&fade);
+    lv_anim_set_var(&fade, obj);
+    lv_anim_set_exec_cb(&fade, donelist_effect_opa_exec);
+    lv_anim_set_values(&fade, LV_OPA_TRANSP, LV_OPA_COVER);
+    lv_anim_set_delay(&fade, delay);
+    lv_anim_set_time(&fade, 190);
+    lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+    lv_anim_start(&fade);
+}
+
+static void donelist_effect_play(donelist_effect_t effect)
+{
+    if (guider_ui.screen_donelist == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_donelist) ||
+        lv_scr_act() != guider_ui.screen_donelist) {
+        return;
+    }
+
+    lv_obj_t *names[] = {
+        guider_ui.screen_donelist_label_done1,
+        guider_ui.screen_donelist_label_done2,
+        guider_ui.screen_donelist_label_done3,
+        guider_ui.screen_donelist_label_done4,
+    };
+    lv_obj_t *dates[] = {
+        guider_ui.screen_donelist_label_date1,
+        guider_ui.screen_donelist_label_date2,
+        guider_ui.screen_donelist_label_date3,
+        guider_ui.screen_donelist_label_date4,
+    };
+    lv_obj_t *focus[] = {
+        guider_ui.screen_donelist_label_focus1,
+        guider_ui.screen_donelist_label_focus2,
+        guider_ui.screen_donelist_label_focus3,
+        guider_ui.screen_donelist_label_focus4,
+    };
+    lv_obj_t *lines[] = {
+        guider_ui.screen_donelist_line_1,
+        guider_ui.screen_donelist_line_2,
+        guider_ui.screen_donelist_line_3,
+        guider_ui.screen_donelist_line_4,
+    };
+    static const lv_coord_t row_y[] = {38, 65, 91, 118};
+    static const lv_coord_t date_y[] = {39, 66, 93, 119};
+    static const lv_coord_t line_y[] = {45, 72, 99, 125};
+
+    int8_t direction = effect == DONELIST_EFFECT_PREVIOUS ? -1 :
+                       effect == DONELIST_EFFECT_SAVE ? 0 : 1;
+    for (uint8_t i = 0; i < 4; i++) {
+        uint32_t delay = (uint32_t)i * 55U;
+        donelist_effect_animate_obj(names[i], 28, row_y[i],
+                                    direction, delay);
+        donelist_effect_animate_obj(dates[i], 205, date_y[i],
+                                    direction, delay + 18U);
+        donelist_effect_animate_obj(focus[i], 268, date_y[i],
+                                    direction, delay + 30U);
+        if (!lv_obj_has_flag(lines[i], LV_OBJ_FLAG_HIDDEN)) {
+            donelist_effect_animate_obj(lines[i], 25, line_y[i],
+                                        direction, delay + 38U);
+        }
+    }
+
+    donelist_effect_animate_obj(guider_ui.screen_donelist_label_page,
+                                117, 147, 0, 190);
+}
+
+static void donelist_effect_async(void *unused)
+{
+    LV_UNUSED(unused);
+    donelist_effect_play(s_donelist_pending_effect);
+}
+
+static void donelist_effect_event_cb(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t *target = lv_event_get_target(e);
+
+    if (code == LV_EVENT_SCREEN_LOADED) {
+        s_donelist_pending_effect = DONELIST_EFFECT_ENTER;
+        lv_async_call(donelist_effect_async, NULL);
+    } else if (code == LV_EVENT_SCREEN_UNLOADED) {
+        s_donelist_effect_screen = NULL;
+    } else if (code == LV_EVENT_CLICKED) {
+        if (target == guider_ui.screen_donelist_btn_lastpage) {
+            s_donelist_pending_effect = DONELIST_EFFECT_PREVIOUS;
+        } else if (target == guider_ui.screen_donelist_btn_nxtpage) {
+            s_donelist_pending_effect = DONELIST_EFFECT_NEXT;
+        } else if (target == guider_ui.screen_donelist_btn_save) {
+            s_donelist_pending_effect = DONELIST_EFFECT_SAVE;
+        } else {
+            return;
+        }
+        /* generated event 已完成翻页/保存状态更新后再播放。 */
+        lv_async_call(donelist_effect_async, NULL);
+    }
+}
+
+static void donelist_effect_prepare(void)
+{
+    lv_obj_t *objects[] = {
+        guider_ui.screen_donelist_label_done1,
+        guider_ui.screen_donelist_label_done2,
+        guider_ui.screen_donelist_label_done3,
+        guider_ui.screen_donelist_label_done4,
+        guider_ui.screen_donelist_label_date1,
+        guider_ui.screen_donelist_label_date2,
+        guider_ui.screen_donelist_label_date3,
+        guider_ui.screen_donelist_label_date4,
+        guider_ui.screen_donelist_label_focus1,
+        guider_ui.screen_donelist_label_focus2,
+        guider_ui.screen_donelist_label_focus3,
+        guider_ui.screen_donelist_label_focus4,
+        guider_ui.screen_donelist_line_1,
+        guider_ui.screen_donelist_line_2,
+        guider_ui.screen_donelist_line_3,
+        guider_ui.screen_donelist_line_4,
+        guider_ui.screen_donelist_label_page,
+    };
+    for (size_t i = 0; i < sizeof(objects) / sizeof(objects[0]); i++) {
+        if (objects[i] != NULL && lv_obj_is_valid(objects[i])) {
+            lv_obj_set_style_opa(objects[i], LV_OPA_TRANSP,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+    }
+}
+
+static void donelist_effect_bind_hooks(void)
+{
+    lv_obj_t *scr = guider_ui.screen_donelist;
+    if (scr == NULL || !lv_obj_is_valid(scr) ||
+        s_donelist_effect_screen == scr) {
+        return;
+    }
+    s_donelist_effect_screen = scr;
+    donelist_effect_prepare();
+
+    lv_obj_add_event_cb(scr, donelist_effect_event_cb,
+                        LV_EVENT_SCREEN_LOADED, NULL);
+    lv_obj_add_event_cb(scr, donelist_effect_event_cb,
+                        LV_EVENT_SCREEN_UNLOADED, NULL);
+    lv_obj_add_event_cb(guider_ui.screen_donelist_btn_lastpage,
+                        donelist_effect_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(guider_ui.screen_donelist_btn_nxtpage,
+                        donelist_effect_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(guider_ui.screen_donelist_btn_save,
+                        donelist_effect_event_cb, LV_EVENT_CLICKED, NULL);
+}
+
 //buttion add function screen_donelist
 void screen_donelist_buttion_add(){
     if(g == NULL) {
@@ -2348,6 +3082,7 @@ void screen_donelist_buttion_add(){
     clear_edge_box(guider_ui.screen_donelist_btn_nxtpage);
     clear_edge_box(guider_ui.screen_donelist_btn_back);
     clear_edge_box(guider_ui.screen_donelist_btn_save);
+    donelist_effect_bind_hooks();
 }
 //buttion add function screen_todooback
 void screen_todoback_buttion_add(){

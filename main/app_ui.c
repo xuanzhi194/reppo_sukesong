@@ -101,6 +101,7 @@ static void wordcard_render(const word_session_state_t *st)
     lv_label_set_text(guider_ui.screen_wordcard_label_spelling, st->word.word);
     lv_label_set_text(guider_ui.screen_wordcard_label_phonetic, st->word.phonetic);
     lv_label_set_text(guider_ui.screen_wordcard_label_meaning, st->word.definition);
+    wordcard_content_change_effect(false);
 }
 
 static void reviewcard_render(const word_session_state_t *st)
@@ -118,6 +119,7 @@ static void reviewcard_render(const word_session_state_t *st)
             lv_obj_is_valid(guider_ui.screen_reviewcard_dog_dance)) {
             lv_obj_clear_flag(guider_ui.screen_reviewcard_dog_dance, LV_OBJ_FLAG_HIDDEN);
         }
+        wordcard_content_change_effect(true);
         return;
     }
     if (guider_ui.screen_reviewcard_dog_dance != NULL &&
@@ -127,6 +129,7 @@ static void reviewcard_render(const word_session_state_t *st)
     lv_label_set_text(guider_ui.screen_reviewcard_label_spelling, st->word.word);
     lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic, st->word.phonetic);
     lv_label_set_text(guider_ui.screen_reviewcard_label_meaning, st->word.definition);
+    wordcard_content_change_effect(true);
 }
 
 void app_ui_wordcard_process_change(void)

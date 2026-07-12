@@ -180,6 +180,7 @@ void wordcard_show_dog_dui(void);
 void wordcard_show_dog_cuo(void);
 void wordcard_hide_dog_anims(void);
 void reviewcard_show_dog_dui(void);
+void wordcard_content_change_effect(bool review_mode);
 void screen_wordmenu_buttion_add();
 void screen_reviewcard_buttion_add();
 void screen_setting_buttion_add();
