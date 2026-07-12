@@ -1311,7 +1311,9 @@ static void screen_main_nav_effect_bind_hooks(void)
 
 static lv_obj_t *s_main_realtime_card;
 static lv_obj_t *s_main_realtime_card_time;
+static lv_obj_t *s_main_realtime_card_date;
 static char s_main_realtime_card_text[8] = "--:--";
+static char s_main_realtime_card_date_text[16] = "---- -- --";
 
 static void screen_main_realtime_opa_exec(void *obj, int32_t value)
 {
@@ -1358,17 +1360,28 @@ static void screen_main_realtime_hide_ready(lv_anim_t *anim)
     }
 }
 
-void screen_main_realtime_card_sync(const char *time_text)
+void screen_main_realtime_card_sync(const char *time_text,
+                                    const char *date_text)
 {
-    if (time_text == NULL) {
-        return;
+    if (time_text != NULL) {
+        snprintf(s_main_realtime_card_text, sizeof(s_main_realtime_card_text),
+                 "%.5s", time_text);
+        if (s_main_realtime_card_time != NULL &&
+            lv_obj_is_valid(s_main_realtime_card_time)) {
+            lv_label_set_text_static(s_main_realtime_card_time,
+                                     s_main_realtime_card_text);
+        }
     }
-    snprintf(s_main_realtime_card_text, sizeof(s_main_realtime_card_text),
-             "%.5s", time_text);
-    if (s_main_realtime_card_time != NULL &&
-        lv_obj_is_valid(s_main_realtime_card_time)) {
-        lv_label_set_text_static(s_main_realtime_card_time,
-                                 s_main_realtime_card_text);
+
+    if (date_text != NULL) {
+        snprintf(s_main_realtime_card_date_text,
+                 sizeof(s_main_realtime_card_date_text),
+                 "%.10s", date_text);
+        if (s_main_realtime_card_date != NULL &&
+            lv_obj_is_valid(s_main_realtime_card_date)) {
+            lv_label_set_text_static(s_main_realtime_card_date,
+                                     s_main_realtime_card_date_text);
+        }
     }
 }
 
@@ -1422,8 +1435,26 @@ static void screen_main_realtime_card_create(void)
     lv_obj_set_style_bg_opa(s_main_realtime_card_time, LV_OPA_TRANSP,
                             LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    s_main_realtime_card_date = lv_label_create(guider_ui.screen_main);
+    lv_label_set_text_static(s_main_realtime_card_date,
+                             s_main_realtime_card_date_text);
+    lv_obj_set_pos(s_main_realtime_card_date, 90, 102);
+    lv_obj_set_size(s_main_realtime_card_date, 140, 20);
+    lv_obj_set_style_text_align(s_main_realtime_card_date, LV_TEXT_ALIGN_CENTER,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(s_main_realtime_card_date,
+                               &lv_font_SourceHanSansSC_Medium_14,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(s_main_realtime_card_date, lv_color_hex(0x55738d),
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(s_main_realtime_card_date, 1,
+                                       LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(s_main_realtime_card_date, LV_OPA_TRANSP,
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+
     lv_obj_add_flag(s_main_realtime_card, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(s_main_realtime_card_time, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(s_main_realtime_card_date, LV_OBJ_FLAG_HIDDEN);
 }
 
 static void screen_main_realtime_time_progress_exec(void *obj, int32_t progress)
@@ -1488,6 +1519,39 @@ static void screen_main_realtime_time_start(void)
     lv_anim_set_time(&time_fly, 600);
     lv_anim_set_path_cb(&time_fly, lv_anim_path_linear);
     lv_anim_start(&time_fly);
+
+    if (s_main_realtime_card_date == NULL ||
+        !lv_obj_is_valid(s_main_realtime_card_date)) {
+        return;
+    }
+
+    lv_anim_del(s_main_realtime_card_date, NULL);
+    lv_obj_clear_flag(s_main_realtime_card_date, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(s_main_realtime_card_date);
+    lv_obj_set_y(s_main_realtime_card_date, 116);
+    lv_obj_set_style_text_opa(s_main_realtime_card_date, LV_OPA_TRANSP,
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    /* 日期在时间飞入后从下方轻盈跟随，形成清晰的信息层级。 */
+    lv_anim_t date_move;
+    lv_anim_init(&date_move);
+    lv_anim_set_var(&date_move, s_main_realtime_card_date);
+    lv_anim_set_exec_cb(&date_move, screen_main_realtime_y_exec);
+    lv_anim_set_values(&date_move, 116, 102);
+    lv_anim_set_delay(&date_move, 300);
+    lv_anim_set_time(&date_move, 300);
+    lv_anim_set_path_cb(&date_move, lv_anim_path_overshoot);
+    lv_anim_start(&date_move);
+
+    lv_anim_t date_fade;
+    lv_anim_init(&date_fade);
+    lv_anim_set_var(&date_fade, s_main_realtime_card_date);
+    lv_anim_set_exec_cb(&date_fade, screen_main_realtime_text_opa_exec);
+    lv_anim_set_values(&date_fade, LV_OPA_TRANSP, LV_OPA_COVER);
+    lv_anim_set_delay(&date_fade, 300);
+    lv_anim_set_time(&date_fade, 180);
+    lv_anim_set_path_cb(&date_fade, lv_anim_path_ease_out);
+    lv_anim_start(&date_fade);
 }
 
 static void screen_main_realtime_card_open_ready(lv_anim_t *anim)
@@ -1501,20 +1565,25 @@ static void screen_main_realtime_card_show(void)
     if (s_main_realtime_card == NULL ||
         !lv_obj_is_valid(s_main_realtime_card) ||
         s_main_realtime_card_time == NULL ||
-        !lv_obj_is_valid(s_main_realtime_card_time)) {
+        !lv_obj_is_valid(s_main_realtime_card_time) ||
+        s_main_realtime_card_date == NULL ||
+        !lv_obj_is_valid(s_main_realtime_card_date)) {
         return;
     }
 
     if (guider_ui.screen_main_btn_realtime_label != NULL &&
         lv_obj_is_valid(guider_ui.screen_main_btn_realtime_label)) {
         screen_main_realtime_card_sync(
-            lv_label_get_text(guider_ui.screen_main_btn_realtime_label));
+            lv_label_get_text(guider_ui.screen_main_btn_realtime_label),
+            NULL);
     }
 
     lv_anim_del(s_main_realtime_card, NULL);
     lv_anim_del(s_main_realtime_card_time, NULL);
+    lv_anim_del(s_main_realtime_card_date, NULL);
     lv_obj_clear_flag(s_main_realtime_card, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(s_main_realtime_card_time, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(s_main_realtime_card_date, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(s_main_realtime_card);
 
     /* 卡片从左上角的一个小点扩展到屏幕中央。 */
@@ -1579,12 +1648,15 @@ static void screen_main_realtime_card_hide(void)
         !lv_obj_is_valid(s_main_realtime_card) ||
         s_main_realtime_card_time == NULL ||
         !lv_obj_is_valid(s_main_realtime_card_time) ||
+        s_main_realtime_card_date == NULL ||
+        !lv_obj_is_valid(s_main_realtime_card_date) ||
         lv_obj_has_flag(s_main_realtime_card, LV_OBJ_FLAG_HIDDEN)) {
         return;
     }
 
     lv_anim_del(s_main_realtime_card, NULL);
     lv_anim_del(s_main_realtime_card_time, NULL);
+    lv_anim_del(s_main_realtime_card_date, NULL);
 
     lv_anim_t card_fade;
     lv_anim_init(&card_fade);
@@ -1627,6 +1699,18 @@ static void screen_main_realtime_card_hide(void)
     lv_anim_set_time(&time_fade, 150);
     lv_anim_set_ready_cb(&time_fade, screen_main_realtime_hide_ready);
     lv_anim_start(&time_fade);
+
+    lv_anim_t date_fade;
+    lv_anim_init(&date_fade);
+    lv_anim_set_var(&date_fade, s_main_realtime_card_date);
+    lv_anim_set_exec_cb(&date_fade, screen_main_realtime_text_opa_exec);
+    lv_anim_set_values(&date_fade,
+                       lv_obj_get_style_text_opa(s_main_realtime_card_date,
+                                                LV_PART_MAIN),
+                       LV_OPA_TRANSP);
+    lv_anim_set_time(&date_fade, 120);
+    lv_anim_set_ready_cb(&date_fade, screen_main_realtime_hide_ready);
+    lv_anim_start(&date_fade);
 }
 
 static void screen_main_realtime_card_event_cb(lv_event_t *e)

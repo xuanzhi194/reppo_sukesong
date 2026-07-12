@@ -196,7 +196,8 @@ void screen_picture_custom_init();
 /** 弱符号默认在 custom.c；固件强符号见 main/picture_bridge.c */
 void picture_bridge_screen_on_load(void);
 void main_screen_status_refresh(void);
-void screen_main_realtime_card_sync(const char *time_text);
+void screen_main_realtime_card_sync(const char *time_text,
+                                    const char *date_text);
 void answer_book_show_random_answer(void);
 
 void my_kb_event_cb(lv_event_t * e);

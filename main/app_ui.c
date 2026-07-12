@@ -353,15 +353,29 @@ static void app_ui_main_clock_update(bool force)
     }
     static uint8_t s_last_hour = 0xff;
     static uint8_t s_last_min  = 0xff;
-    if (!force && now.hour == s_last_hour && now.minute == s_last_min) {
+    static uint8_t s_last_date = 0xff;
+    static uint8_t s_last_month = 0xff;
+    static uint16_t s_last_year = 0xffff;
+    if (!force &&
+        now.hour == s_last_hour &&
+        now.minute == s_last_min &&
+        now.date == s_last_date &&
+        now.month == s_last_month &&
+        now.year == s_last_year) {
         return;
     }
     s_last_hour = now.hour;
     s_last_min  = now.minute;
+    s_last_date = now.date;
+    s_last_month = now.month;
+    s_last_year = now.year;
     static char s_clock_buf[8];
+    static char s_date_buf[16];
     snprintf(s_clock_buf, sizeof(s_clock_buf), "%02d:%02d", now.hour, now.minute);
+    snprintf(s_date_buf, sizeof(s_date_buf), "%04d-%02d-%02d",
+             now.year, now.month, now.date);
     lv_label_set_text_static(guider_ui.screen_main_btn_realtime_label, s_clock_buf);
-    screen_main_realtime_card_sync(s_clock_buf);
+    screen_main_realtime_card_sync(s_clock_buf, s_date_buf);
 }
 
 void app_ui_main_refresh_now(void)
