@@ -3132,6 +3132,78 @@ typedef enum {
 
 static lv_obj_t *s_donelist_effect_screen;
 static donelist_effect_t s_donelist_pending_effect;
+static lv_timer_t *s_donelist_restore_timer;
+static lv_obj_t *s_donelist_rows[4];
+
+static void donelist_effect_restore_layout(void)
+{
+    lv_obj_t *names[] = {
+        guider_ui.screen_donelist_label_done1,
+        guider_ui.screen_donelist_label_done2,
+        guider_ui.screen_donelist_label_done3,
+        guider_ui.screen_donelist_label_done4,
+    };
+    lv_obj_t *dates[] = {
+        guider_ui.screen_donelist_label_date1,
+        guider_ui.screen_donelist_label_date2,
+        guider_ui.screen_donelist_label_date3,
+        guider_ui.screen_donelist_label_date4,
+    };
+    lv_obj_t *focus[] = {
+        guider_ui.screen_donelist_label_focus1,
+        guider_ui.screen_donelist_label_focus2,
+        guider_ui.screen_donelist_label_focus3,
+        guider_ui.screen_donelist_label_focus4,
+    };
+    lv_obj_t *lines[] = {
+        guider_ui.screen_donelist_line_1,
+        guider_ui.screen_donelist_line_2,
+        guider_ui.screen_donelist_line_3,
+        guider_ui.screen_donelist_line_4,
+    };
+    static const lv_coord_t container_y[] = {32, 59, 85, 112};
+
+    for (uint8_t i = 0; i < 4; i++) {
+        if (s_donelist_rows[i] != NULL &&
+            lv_obj_is_valid(s_donelist_rows[i])) {
+            lv_obj_set_pos(s_donelist_rows[i], 0, container_y[i]);
+            lv_obj_set_style_opa(s_donelist_rows[i], LV_OPA_COVER,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        if (names[i] != NULL && lv_obj_is_valid(names[i])) {
+            lv_obj_set_pos(names[i], 28, 6);
+        }
+        if (dates[i] != NULL && lv_obj_is_valid(dates[i])) {
+            lv_obj_set_pos(dates[i], 205, 7);
+        }
+        if (focus[i] != NULL && lv_obj_is_valid(focus[i])) {
+            lv_obj_set_pos(focus[i], 268, 7);
+        }
+        if (lines[i] != NULL && lv_obj_is_valid(lines[i])) {
+            lv_obj_set_pos(lines[i], 25, 13);
+        }
+    }
+
+    if (guider_ui.screen_donelist_label_page != NULL &&
+        lv_obj_is_valid(guider_ui.screen_donelist_label_page)) {
+        lv_obj_set_pos(guider_ui.screen_donelist_label_page, 117, 147);
+        lv_obj_set_style_opa(guider_ui.screen_donelist_label_page, LV_OPA_COVER,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void donelist_effect_restore_timer_cb(lv_timer_t *timer)
+{
+    LV_UNUSED(timer);
+    s_donelist_restore_timer = NULL;
+    if (guider_ui.screen_donelist == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_donelist) ||
+        lv_scr_act() != guider_ui.screen_donelist) {
+        return;
+    }
+    /* 动画结束后强制归位，避免连续异步刷新留下坐标或透明度残值。 */
+    donelist_effect_restore_layout();
+}
 
 static void donelist_effect_pos_exec(void *obj, int32_t value)
 {
@@ -3210,6 +3282,87 @@ static void donelist_effect_play(donelist_effect_t effect)
         return;
     }
 
+    static const lv_coord_t container_y[] = {32, 59, 85, 112};
+
+    int8_t direction = effect == DONELIST_EFFECT_PREVIOUS ? -1 :
+                       effect == DONELIST_EFFECT_SAVE ? 0 : 1;
+    for (uint8_t i = 0; i < 4; i++) {
+        uint32_t delay = (uint32_t)i * 55U;
+        if (s_donelist_rows[i] != NULL &&
+            lv_obj_is_valid(s_donelist_rows[i])) {
+            donelist_effect_animate_obj(s_donelist_rows[i], 0,
+                                        container_y[i], direction, delay);
+        }
+    }
+
+    donelist_effect_animate_obj(guider_ui.screen_donelist_label_page,
+                                117, 147, 0, 190);
+
+    if (s_donelist_restore_timer != NULL) {
+        lv_timer_del(s_donelist_restore_timer);
+    }
+    s_donelist_restore_timer =
+        lv_timer_create(donelist_effect_restore_timer_cb, 650, NULL);
+    lv_timer_set_repeat_count(s_donelist_restore_timer, 1);
+}
+
+static void donelist_effect_async(void *unused)
+{
+    LV_UNUSED(unused);
+    donelist_effect_play(s_donelist_pending_effect);
+}
+
+static void donelist_effect_event_cb(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t *target = lv_event_get_target(e);
+
+    if (code == LV_EVENT_SCREEN_LOADED) {
+        s_donelist_pending_effect = DONELIST_EFFECT_ENTER;
+        lv_async_call(donelist_effect_async, NULL);
+    } else if (code == LV_EVENT_SCREEN_UNLOADED) {
+        if (s_donelist_restore_timer != NULL) {
+            lv_timer_del(s_donelist_restore_timer);
+            s_donelist_restore_timer = NULL;
+        }
+        for (uint8_t i = 0; i < 4; i++) {
+            s_donelist_rows[i] = NULL;
+        }
+        s_donelist_effect_screen = NULL;
+    } else if (code == LV_EVENT_CLICKED) {
+        if (target == guider_ui.screen_donelist_btn_lastpage) {
+            s_donelist_pending_effect = DONELIST_EFFECT_PREVIOUS;
+        } else if (target == guider_ui.screen_donelist_btn_nxtpage) {
+            s_donelist_pending_effect = DONELIST_EFFECT_NEXT;
+        } else if (target == guider_ui.screen_donelist_btn_save) {
+            s_donelist_pending_effect = DONELIST_EFFECT_SAVE;
+        } else {
+            return;
+        }
+        /* generated event 已完成翻页/保存状态更新后再播放。 */
+        lv_async_call(donelist_effect_async, NULL);
+    }
+}
+
+static void donelist_effect_prepare(void)
+{
+    lv_obj_t *objects[] = {
+        s_donelist_rows[0],
+        s_donelist_rows[1],
+        s_donelist_rows[2],
+        s_donelist_rows[3],
+        guider_ui.screen_donelist_label_page,
+    };
+    for (size_t i = 0; i < sizeof(objects) / sizeof(objects[0]); i++) {
+        if (objects[i] != NULL && lv_obj_is_valid(objects[i])) {
+            lv_obj_set_style_opa(objects[i], LV_OPA_TRANSP,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+    }
+}
+
+static void donelist_effect_create_rows(void)
+{
     lv_obj_t *names[] = {
         guider_ui.screen_donelist_label_done1,
         guider_ui.screen_donelist_label_done2,
@@ -3234,88 +3387,29 @@ static void donelist_effect_play(donelist_effect_t effect)
         guider_ui.screen_donelist_line_3,
         guider_ui.screen_donelist_line_4,
     };
-    static const lv_coord_t row_y[] = {38, 65, 91, 118};
-    static const lv_coord_t date_y[] = {39, 66, 93, 119};
-    static const lv_coord_t line_y[] = {45, 72, 99, 125};
+    static const lv_coord_t container_y[] = {32, 59, 85, 112};
 
-    int8_t direction = effect == DONELIST_EFFECT_PREVIOUS ? -1 :
-                       effect == DONELIST_EFFECT_SAVE ? 0 : 1;
     for (uint8_t i = 0; i < 4; i++) {
-        uint32_t delay = (uint32_t)i * 55U;
-        donelist_effect_animate_obj(names[i], 28, row_y[i],
-                                    direction, delay);
-        donelist_effect_animate_obj(dates[i], 205, date_y[i],
-                                    direction, delay + 18U);
-        donelist_effect_animate_obj(focus[i], 268, date_y[i],
-                                    direction, delay + 30U);
-        if (!lv_obj_has_flag(lines[i], LV_OBJ_FLAG_HIDDEN)) {
-            donelist_effect_animate_obj(lines[i], 25, line_y[i],
-                                        direction, delay + 38U);
-        }
-    }
-
-    donelist_effect_animate_obj(guider_ui.screen_donelist_label_page,
-                                117, 147, 0, 190);
-}
-
-static void donelist_effect_async(void *unused)
-{
-    LV_UNUSED(unused);
-    donelist_effect_play(s_donelist_pending_effect);
-}
-
-static void donelist_effect_event_cb(lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    lv_obj_t *target = lv_event_get_target(e);
-
-    if (code == LV_EVENT_SCREEN_LOADED) {
-        s_donelist_pending_effect = DONELIST_EFFECT_ENTER;
-        lv_async_call(donelist_effect_async, NULL);
-    } else if (code == LV_EVENT_SCREEN_UNLOADED) {
-        s_donelist_effect_screen = NULL;
-    } else if (code == LV_EVENT_CLICKED) {
-        if (target == guider_ui.screen_donelist_btn_lastpage) {
-            s_donelist_pending_effect = DONELIST_EFFECT_PREVIOUS;
-        } else if (target == guider_ui.screen_donelist_btn_nxtpage) {
-            s_donelist_pending_effect = DONELIST_EFFECT_NEXT;
-        } else if (target == guider_ui.screen_donelist_btn_save) {
-            s_donelist_pending_effect = DONELIST_EFFECT_SAVE;
-        } else {
-            return;
-        }
-        /* generated event 已完成翻页/保存状态更新后再播放。 */
-        lv_async_call(donelist_effect_async, NULL);
-    }
-}
-
-static void donelist_effect_prepare(void)
-{
-    lv_obj_t *objects[] = {
-        guider_ui.screen_donelist_label_done1,
-        guider_ui.screen_donelist_label_done2,
-        guider_ui.screen_donelist_label_done3,
-        guider_ui.screen_donelist_label_done4,
-        guider_ui.screen_donelist_label_date1,
-        guider_ui.screen_donelist_label_date2,
-        guider_ui.screen_donelist_label_date3,
-        guider_ui.screen_donelist_label_date4,
-        guider_ui.screen_donelist_label_focus1,
-        guider_ui.screen_donelist_label_focus2,
-        guider_ui.screen_donelist_label_focus3,
-        guider_ui.screen_donelist_label_focus4,
-        guider_ui.screen_donelist_line_1,
-        guider_ui.screen_donelist_line_2,
-        guider_ui.screen_donelist_line_3,
-        guider_ui.screen_donelist_line_4,
-        guider_ui.screen_donelist_label_page,
-    };
-    for (size_t i = 0; i < sizeof(objects) / sizeof(objects[0]); i++) {
-        if (objects[i] != NULL && lv_obj_is_valid(objects[i])) {
-            lv_obj_set_style_opa(objects[i], LV_OPA_TRANSP,
+        lv_obj_t *row = lv_obj_create(guider_ui.screen_donelist);
+        s_donelist_rows[i] = row;
+        lv_obj_set_pos(row, 0, container_y[i]);
+        lv_obj_set_size(row, 320, 27);
+        lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_clear_flag(row, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_width(row, 0,
+                                      LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_all(row, 0,
                                  LV_PART_MAIN | LV_STATE_DEFAULT);
-        }
+
+        lv_obj_set_parent(names[i], row);
+        lv_obj_set_parent(dates[i], row);
+        lv_obj_set_parent(focus[i], row);
+        lv_obj_set_parent(lines[i], row);
     }
+
+    donelist_effect_restore_layout();
 }
 
 static void donelist_effect_bind_hooks(void)
@@ -3326,6 +3420,11 @@ static void donelist_effect_bind_hooks(void)
         return;
     }
     s_donelist_effect_screen = scr;
+    /*
+     * 数据标签保持固定坐标和样式，仅动画整行透明容器。
+     * 避免动画期间反复刷新名称文本，也保证日期始终处于标准位置。
+     */
+    donelist_effect_create_rows();
     donelist_effect_prepare();
 
     lv_obj_add_event_cb(scr, donelist_effect_event_cb,
