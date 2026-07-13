@@ -1517,7 +1517,7 @@ static void screen_main_realtime_time_start(void)
     lv_anim_set_var(&time_fly, s_main_realtime_card_time);
     lv_anim_set_exec_cb(&time_fly, screen_main_realtime_time_progress_exec);
     lv_anim_set_values(&time_fly, 0, 1000);
-    lv_anim_set_time(&time_fly, 600);
+    lv_anim_set_time(&time_fly, 360);
     lv_anim_set_path_cb(&time_fly, lv_anim_path_linear);
     lv_anim_start(&time_fly);
 
@@ -1539,8 +1539,8 @@ static void screen_main_realtime_time_start(void)
     lv_anim_set_var(&date_move, s_main_realtime_card_date);
     lv_anim_set_exec_cb(&date_move, screen_main_realtime_y_exec);
     lv_anim_set_values(&date_move, 116, 102);
-    lv_anim_set_delay(&date_move, 300);
-    lv_anim_set_time(&date_move, 300);
+    lv_anim_set_delay(&date_move, 170);
+    lv_anim_set_time(&date_move, 220);
     lv_anim_set_path_cb(&date_move, lv_anim_path_overshoot);
     lv_anim_start(&date_move);
 
@@ -1549,8 +1549,8 @@ static void screen_main_realtime_time_start(void)
     lv_anim_set_var(&date_fade, s_main_realtime_card_date);
     lv_anim_set_exec_cb(&date_fade, screen_main_realtime_text_opa_exec);
     lv_anim_set_values(&date_fade, LV_OPA_TRANSP, LV_OPA_COVER);
-    lv_anim_set_delay(&date_fade, 300);
-    lv_anim_set_time(&date_fade, 180);
+    lv_anim_set_delay(&date_fade, 170);
+    lv_anim_set_time(&date_fade, 130);
     lv_anim_set_path_cb(&date_fade, lv_anim_path_ease_out);
     lv_anim_start(&date_fade);
 }
@@ -2921,7 +2921,13 @@ typedef enum {
     AI_EFFECT_SUMMARY,
 } ai_effect_page_t;
 
+#define AI_LEVEL_EFFECT_OBJ_COUNT (FOCUS_LEVEL_COUNT + 2)
+#define AI_LEVEL_EFFECT_DROP_OFFSET 170
+
 static lv_obj_t *s_ai_effect_screen;
+static lv_obj_t *s_ai_level_effect_objs[AI_LEVEL_EFFECT_OBJ_COUNT];
+static lv_coord_t s_ai_level_effect_target_y[AI_LEVEL_EFFECT_OBJ_COUNT];
+static lv_opa_t s_ai_day_focus_shadow_opa = LV_OPA_COVER;
 
 static void ai_effect_x_exec(void *obj, int32_t value)
 {
@@ -2949,6 +2955,128 @@ static void ai_effect_arc_exec(void *obj, int32_t value)
 {
     if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
         lv_arc_set_value((lv_obj_t *)obj, (int16_t)value);
+    }
+}
+
+static void ai_effect_img_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_img_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
+static void ai_effect_focus_shadow_opa_exec(void *obj, int32_t value)
+{
+    if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+        lv_obj_set_style_shadow_opa((lv_obj_t *)obj, (lv_opa_t)value,
+                                    LV_PART_MAIN | LV_STATE_FOCUSED);
+    }
+}
+
+static void ai_effect_level_header_ready(lv_anim_t *anim)
+{
+    LV_UNUSED(anim);
+    lv_obj_t *btn = guider_ui.screen_ai_btn_day;
+    if (btn == NULL || !lv_obj_is_valid(btn)) {
+        return;
+    }
+
+    lv_anim_del(btn, ai_effect_focus_shadow_opa_exec);
+    lv_anim_t focus_fade;
+    lv_anim_init(&focus_fade);
+    lv_anim_set_var(&focus_fade, btn);
+    lv_anim_set_exec_cb(&focus_fade, ai_effect_focus_shadow_opa_exec);
+    lv_anim_set_values(&focus_fade, LV_OPA_TRANSP,
+                       s_ai_day_focus_shadow_opa);
+    lv_anim_set_time(&focus_fade, 140);
+    lv_anim_set_path_cb(&focus_fade, lv_anim_path_ease_out);
+    lv_anim_start(&focus_fade);
+}
+
+static void ai_effect_prepare_level_header(void)
+{
+    lv_obj_t *effect_objs[AI_LEVEL_EFFECT_OBJ_COUNT] = {
+        guider_ui.screen_ai_img_v1,
+        guider_ui.screen_ai_img_v2,
+        guider_ui.screen_ai_img_v3,
+        guider_ui.screen_ai_img_v4,
+        guider_ui.screen_ai_img_v5,
+        guider_ui.screen_ai_img_v6,
+        guider_ui.screen_ai_img_v7,
+        guider_ui.screen_ai_img_v8,
+        guider_ui.screen_ai_img_v9,
+        guider_ui.screen_ai_img_v10,
+        guider_ui.screen_ai_bar_focus,
+        guider_ui.screen_ai_label_duration,
+    };
+
+    for (uint8_t i = 0; i < AI_LEVEL_EFFECT_OBJ_COUNT; i++) {
+        lv_obj_t *obj = effect_objs[i];
+        s_ai_level_effect_objs[i] = obj;
+        if (obj == NULL || !lv_obj_is_valid(obj)) {
+            continue;
+        }
+
+        s_ai_level_effect_target_y[i] = lv_obj_get_y(obj);
+        lv_anim_del(obj, ai_effect_y_exec);
+        lv_obj_set_y(obj, s_ai_level_effect_target_y[i] -
+                          AI_LEVEL_EFFECT_DROP_OFFSET);
+
+        if (i < FOCUS_LEVEL_COUNT) {
+            lv_anim_del(obj, ai_effect_img_opa_exec);
+            lv_obj_set_style_img_opa(obj, LV_OPA_TRANSP,
+                                     LV_PART_MAIN | LV_STATE_DEFAULT);
+        } else {
+            lv_anim_del(obj, ai_effect_opa_exec);
+            lv_obj_set_style_opa(obj, LV_OPA_TRANSP,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+    }
+
+    lv_obj_t *btn = guider_ui.screen_ai_btn_day;
+    if (btn != NULL && lv_obj_is_valid(btn)) {
+        s_ai_day_focus_shadow_opa =
+            lv_obj_get_style_shadow_opa(btn, LV_PART_MAIN);
+        lv_anim_del(btn, ai_effect_focus_shadow_opa_exec);
+        lv_obj_set_style_shadow_opa(btn, LV_OPA_TRANSP,
+                                    LV_PART_MAIN | LV_STATE_FOCUSED);
+    }
+}
+
+static void ai_effect_play_level_header(void)
+{
+    for (uint8_t i = 0; i < AI_LEVEL_EFFECT_OBJ_COUNT; i++) {
+        lv_obj_t *obj = s_ai_level_effect_objs[i];
+        if (obj == NULL || !lv_obj_is_valid(obj) ||
+            (i < FOCUS_LEVEL_COUNT &&
+             lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN))) {
+            continue;
+        }
+
+        lv_anim_t drop;
+        lv_anim_init(&drop);
+        lv_anim_set_var(&drop, obj);
+        lv_anim_set_exec_cb(&drop, ai_effect_y_exec);
+        lv_anim_set_values(&drop, lv_obj_get_y(obj),
+                           s_ai_level_effect_target_y[i]);
+        lv_anim_set_time(&drop, 420);
+        lv_anim_set_path_cb(&drop, lv_anim_path_overshoot);
+        if (i == AI_LEVEL_EFFECT_OBJ_COUNT - 1) {
+            lv_anim_set_ready_cb(&drop, ai_effect_level_header_ready);
+        }
+        lv_anim_start(&drop);
+
+        lv_anim_t fade;
+        lv_anim_init(&fade);
+        lv_anim_set_var(&fade, obj);
+        lv_anim_set_exec_cb(&fade, i < FOCUS_LEVEL_COUNT
+                                       ? ai_effect_img_opa_exec
+                                       : ai_effect_opa_exec);
+        lv_anim_set_values(&fade, LV_OPA_TRANSP, LV_OPA_COVER);
+        lv_anim_set_time(&fade, 140);
+        lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+        lv_anim_start(&fade);
     }
 }
 
@@ -3091,7 +3219,10 @@ static void ai_effect_focus_cb(lv_event_t *e)
 
 static void ai_effect_screen_cb(lv_event_t *e)
 {
-    if (lv_event_get_code(e) == LV_EVENT_SCREEN_UNLOADED) {
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_SCREEN_LOADED) {
+        ai_effect_play_level_header();
+    } else if (code == LV_EVENT_SCREEN_UNLOADED) {
         s_ai_effect_screen = NULL;
     }
 }
@@ -3105,6 +3236,8 @@ static void ai_effect_bind_hooks(void)
     }
 
     s_ai_effect_screen = screen;
+    lv_obj_add_event_cb(screen, ai_effect_screen_cb,
+                        LV_EVENT_SCREEN_LOADED, NULL);
     lv_obj_add_event_cb(screen, ai_effect_screen_cb,
                         LV_EVENT_SCREEN_UNLOADED, NULL);
     lv_obj_add_event_cb(guider_ui.screen_ai_btn_cat, ai_effect_focus_cb,
@@ -3140,6 +3273,7 @@ void screen_ai_buttion_add(){
     clear_edge_box(guider_ui.screen_ai_btn_sum);
     clear_edge_box(guider_ui.screen_ai_btn_back);
     ai_effect_bind_hooks();
+    ai_effect_prepare_level_header();
 }
 typedef enum {
     DONELIST_EFFECT_ENTER = 0,
@@ -3584,4 +3718,3 @@ void custom_init(lv_ui *ui)
 {
 
 }
-
