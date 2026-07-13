@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #ifdef ESP_PLATFORM
 #include "word_storage.h"
+#include "ws2812b.h"
+#include "lcd.h"
 #endif
 
 //lv group define
@@ -392,6 +394,136 @@ static bool pomodoro_screen_is_alive(void)
         && lv_scr_act() == guider_ui.screen_pomodoro;
 }
 
+#define POMODORO_BLACK_LED_COUNT 10U
+
+static bool s_pomodoro_black_active;
+static uint32_t s_pomodoro_black_total_seconds;
+static lv_obj_t *s_pomodoro_black_hit;
+static lv_obj_t *s_pomodoro_black_bound_screen;
+
+static void pomodoro_black_update_leds(void)
+{
+#ifdef ESP_PLATFORM
+    if (!s_pomodoro_black_active) {
+        return;
+    }
+
+    uint8_t lit_count = 0;
+    if (s_pomodoro_black_total_seconds > 0 && timer_all_seconds > 0) {
+        /* 向上取整：开始时 10 颗全亮，剩余时间归零时全灭。 */
+        lit_count = (uint8_t)(
+            (timer_all_seconds * POMODORO_BLACK_LED_COUNT +
+             s_pomodoro_black_total_seconds - 1U) /
+            s_pomodoro_black_total_seconds);
+        if (lit_count > POMODORO_BLACK_LED_COUNT) {
+            lit_count = POMODORO_BLACK_LED_COUNT;
+        }
+    }
+    set_led_bar_level(lit_count, 34, 80, 120);
+#endif
+}
+
+static void pomodoro_black_exit(bool focus_start)
+{
+    bool was_active = s_pomodoro_black_active;
+    s_pomodoro_black_active = false;
+
+    if (g != NULL) {
+        lv_group_focus_freeze(g, false);
+    }
+    if (s_pomodoro_black_hit != NULL &&
+        lv_obj_is_valid(s_pomodoro_black_hit)) {
+        lv_obj_add_flag(s_pomodoro_black_hit, LV_OBJ_FLAG_HIDDEN);
+        if (g != NULL) {
+            lv_group_remove_obj(s_pomodoro_black_hit);
+        }
+    }
+
+#ifdef ESP_PLATFORM
+    if (was_active) {
+        clear_led_bar();
+        /* 直接恢复用户保存的亮度，避免先闪到 100% 再回落。 */
+        lcd_backlight_set_level(brightness_level);
+    }
+#else
+    LV_UNUSED(was_active);
+#endif
+
+    if (focus_start && pomodoro_screen_is_alive() && g != NULL &&
+        guider_ui.screen_pomodoro_btn_start != NULL &&
+        lv_obj_is_valid(guider_ui.screen_pomodoro_btn_start)) {
+        lv_group_focus_obj(guider_ui.screen_pomodoro_btn_start);
+    }
+    if (pomodoro_screen_is_alive()) {
+        pomodoro_pause_icon_refresh();
+    }
+}
+
+static void pomodoro_black_hit_cb(lv_event_t *e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED ||
+        !s_pomodoro_black_active) {
+        return;
+    }
+
+    /* 只退出黑屏，不暂停 timer，也不修改 countdown_process_label。 */
+    pomodoro_black_exit(true);
+}
+
+static bool pomodoro_black_ensure_hit(void)
+{
+    lv_obj_t *screen = guider_ui.screen_pomodoro;
+    if (screen == NULL || !lv_obj_is_valid(screen)) {
+        return false;
+    }
+    if (s_pomodoro_black_hit != NULL &&
+        lv_obj_is_valid(s_pomodoro_black_hit)) {
+        return true;
+    }
+
+    s_pomodoro_black_hit = lv_btn_create(screen);
+    lv_obj_remove_style_all(s_pomodoro_black_hit);
+    lv_obj_set_pos(s_pomodoro_black_hit, 0, 0);
+    lv_obj_set_size(s_pomodoro_black_hit, 320, 170);
+    lv_obj_set_style_bg_color(s_pomodoro_black_hit, lv_color_hex(0x000000),
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(s_pomodoro_black_hit, LV_OPA_COVER,
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_add_flag(s_pomodoro_black_hit, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag(s_pomodoro_black_hit, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_event_cb(s_pomodoro_black_hit, pomodoro_black_hit_cb,
+                        LV_EVENT_CLICKED, NULL);
+    return true;
+}
+
+static void pomodoro_black_enter(void)
+{
+    if (s_pomodoro_black_active || !pomodoro_screen_is_alive() ||
+        !pomodoro_countdown || !countdown_start_label ||
+        !countdown_process_label || !pomodoro_black_ensure_hit()) {
+        return;
+    }
+
+    if (s_pomodoro_black_total_seconds == 0) {
+        s_pomodoro_black_total_seconds = timer_all_seconds;
+    }
+
+    lv_obj_clear_flag(s_pomodoro_black_hit, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(s_pomodoro_black_hit);
+    if (g != NULL) {
+        lv_group_add_obj(g, s_pomodoro_black_hit);
+        lv_group_focus_obj(s_pomodoro_black_hit);
+        /* 黑屏期间旋转按键也不会把焦点移回普通控件。 */
+        lv_group_focus_freeze(g, true);
+    }
+
+    s_pomodoro_black_active = true;
+#ifdef ESP_PLATFORM
+    lcd_off();
+#endif
+    pomodoro_black_update_leds();
+}
+
 static void pomodoro_timer_delete_only(void)
 {
     if (pomodoro_timer != NULL) {
@@ -402,6 +534,8 @@ static void pomodoro_timer_delete_only(void)
 
 void pomodoro_timer_stop(void)
 {
+    pomodoro_black_exit(false);
+    s_pomodoro_black_total_seconds = 0;
     pomodoro_timer_delete_only();
     pomodoro_pause_icon_refresh();
 }
@@ -450,6 +584,8 @@ static void countdown_cb(lv_timer_t *t){
     if(timer_all_seconds == 0){
         lv_timer_del(t);
         pomodoro_timer = NULL;
+        pomodoro_black_exit(false);
+        s_pomodoro_black_total_seconds = 0;
         if (!pomodoro_screen_is_alive()) {
             countdown_timeout_pending = 1;
             return;
@@ -487,12 +623,14 @@ static void countdown_cb(lv_timer_t *t){
     int minutes = (timer_all_seconds % 3600) / 60;
     int seconds = timer_all_seconds % 60;
     lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer,"%02d:%02d:%02d",hours,minutes,seconds);
+    pomodoro_black_update_leds();
 }
 
 void countdown_start(int16_t minutes){
     /* 仅删旧 timer，勿刷新 pause 图标：此时 countdown_* 标志尚未置位。 */
     pomodoro_timer_delete_only();
     timer_all_seconds = minutes * 60;
+    s_pomodoro_black_total_seconds = timer_all_seconds;
     focus_session_minutes = minutes;
     pomodoro_timer = lv_timer_create(countdown_cb,1000,NULL);
 }
@@ -2313,6 +2451,11 @@ static void pomodoro_effect_event_cb(lv_event_t *e)
                    target == guider_ui.screen_pomodoro_btn_reset) {
             s_pomodoro_pending_effect = POMODORO_EFFECT_TIMER;
         } else if (target == guider_ui.screen_pomodoro_btn_start) {
+            /* 运行中马上进入黑屏，无需在背景再播放 Start 位移。 */
+            if (pomodoro_countdown && countdown_start_label &&
+                countdown_process_label) {
+                return;
+            }
             s_pomodoro_pending_effect = POMODORO_EFFECT_START;
         } else {
             return;
@@ -2421,6 +2564,52 @@ static void pomodoro_pause_icon_bind_hooks(void)
     }
 }
 
+static void pomodoro_black_start_click_cb(lv_event_t *e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+
+    /* generated 的 Start 回调先更新运行/暂停标志，这里只消费最终状态。 */
+    if (pomodoro_countdown && countdown_start_label &&
+        countdown_process_label) {
+        pomodoro_black_enter();
+    } else if (s_pomodoro_black_active) {
+        pomodoro_black_exit(true);
+    }
+}
+
+static void pomodoro_black_screen_unloaded_cb(lv_event_t *e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_SCREEN_UNLOADED) {
+        return;
+    }
+
+    pomodoro_black_exit(false);
+    s_pomodoro_black_total_seconds = 0;
+    s_pomodoro_black_hit = NULL;
+    s_pomodoro_black_bound_screen = NULL;
+}
+
+static void pomodoro_black_bind_hooks(void)
+{
+    lv_obj_t *screen = guider_ui.screen_pomodoro;
+    if (screen == NULL || !lv_obj_is_valid(screen) ||
+        s_pomodoro_black_bound_screen == screen) {
+        return;
+    }
+    s_pomodoro_black_bound_screen = screen;
+
+    lv_obj_add_event_cb(screen, pomodoro_black_screen_unloaded_cb,
+                        LV_EVENT_SCREEN_UNLOADED, NULL);
+    if (guider_ui.screen_pomodoro_btn_start != NULL &&
+        lv_obj_is_valid(guider_ui.screen_pomodoro_btn_start)) {
+        lv_obj_add_event_cb(guider_ui.screen_pomodoro_btn_start,
+                            pomodoro_black_start_click_cb,
+                            LV_EVENT_CLICKED, NULL);
+    }
+}
+
 //buttion add function screen_pomodoro
 void screen_pomodoro_buttion_add(){
     if(g == NULL) {
@@ -2460,6 +2649,7 @@ void screen_pomodoro_buttion_add(){
 
     pomodoro_pause_icon_bind_hooks();
     pomodoro_effect_bind_hooks();
+    pomodoro_black_bind_hooks();
 }
 static bool wordmenu_obj_ready(lv_obj_t *obj)
 {
