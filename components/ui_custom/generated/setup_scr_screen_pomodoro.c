@@ -541,6 +541,38 @@ void setup_scr_screen_pomodoro(lv_ui *ui)
     lv_obj_set_style_radius(ui->screen_pomodoro_img_pause, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_clip_corner(ui->screen_pomodoro_img_pause, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
+    //Write codes screen_pomodoro_img_focusbg
+    ui->screen_pomodoro_img_focusbg = lv_img_create(ui->screen_pomodoro);
+    lv_obj_add_flag(ui->screen_pomodoro_img_focusbg, LV_OBJ_FLAG_CLICKABLE);
+    lv_img_set_src(ui->screen_pomodoro_img_focusbg, &_AAA_timer_toumin_alpha_281x142);
+    lv_img_set_pivot(ui->screen_pomodoro_img_focusbg, 50,50);
+    lv_img_set_angle(ui->screen_pomodoro_img_focusbg, 0);
+    lv_obj_set_pos(ui->screen_pomodoro_img_focusbg, 23, 23);
+    lv_obj_set_size(ui->screen_pomodoro_img_focusbg, 281, 142);
+    lv_obj_add_flag(ui->screen_pomodoro_img_focusbg, LV_OBJ_FLAG_HIDDEN);
+
+    //Write style for screen_pomodoro_img_focusbg, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_img_recolor_opa(ui->screen_pomodoro_img_focusbg, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_img_opa(ui->screen_pomodoro_img_focusbg, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_pomodoro_img_focusbg, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(ui->screen_pomodoro_img_focusbg, true, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_pomodoro_img_lighticon
+    ui->screen_pomodoro_img_lighticon = lv_img_create(ui->screen_pomodoro);
+    lv_obj_add_flag(ui->screen_pomodoro_img_lighticon, LV_OBJ_FLAG_CLICKABLE);
+    lv_img_set_src(ui->screen_pomodoro_img_lighticon, &_AAA_timer_light_alpha_23x31);
+    lv_img_set_pivot(ui->screen_pomodoro_img_lighticon, 50,50);
+    lv_img_set_angle(ui->screen_pomodoro_img_lighticon, 0);
+    lv_obj_set_pos(ui->screen_pomodoro_img_lighticon, 50, 30);
+    lv_obj_set_size(ui->screen_pomodoro_img_lighticon, 23, 31);
+    lv_obj_add_flag(ui->screen_pomodoro_img_lighticon, LV_OBJ_FLAG_HIDDEN);
+
+    //Write style for screen_pomodoro_img_lighticon, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_img_recolor_opa(ui->screen_pomodoro_img_lighticon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_img_opa(ui->screen_pomodoro_img_lighticon, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_pomodoro_img_lighticon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(ui->screen_pomodoro_img_lighticon, true, LV_PART_MAIN|LV_STATE_DEFAULT);
+
     //The custom code of screen_pomodoro.
 
 
