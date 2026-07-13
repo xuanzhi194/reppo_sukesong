@@ -18,6 +18,9 @@
 #include "custom.h"
 #include "widgets_init.h"
 #include <stdlib.h>
+#ifdef ESP_PLATFORM
+#include "word_storage.h"
+#endif
 
 //lv group define
 lv_group_t *g = NULL;
@@ -56,6 +59,7 @@ volatile bool ble_disconnect_req = 0;
 bool ble_flow_led_en = 0;
 volatile bool ble_ui_refresh_req = 0;
 volatile bool todo_ble_ui_refresh_label = 0;
+volatile bool wordbook_ble_ui_refresh_label = 0;
 //timer variables
 int16_t timer_all_num = 25; //minutes
 uint32_t timer_all_seconds = 0;
@@ -566,10 +570,12 @@ void wificfg_show_connect_ui(lv_obj_t *list_btn, const char *password, bool focu
 /**
  * 默认实现：供 GUI Guider 模拟器链接；固件中由 main/wificfg_bridge.c 强符号覆盖（NVS 读密码）。
  */
-/* GUI Guider 模拟器用空实现；ESP32 固件由 main/wordcard_bridge.c 覆盖 */
+/* GUI Guider 模拟器用空实现；ESP32 固件必须链接到 main/wordcard_bridge.c 的真实实现。 */
+#ifndef ESP_PLATFORM
 __attribute__((weak)) void wordcard_on_menu_enter(void)
 {
 }
+#endif
 
 /* ESP32 固件由 main/volume_bridge.c 提供强符号实现 */
 __attribute__((weak)) void volume_enabled_impl(void)
@@ -2460,6 +2466,19 @@ static bool wordmenu_obj_ready(lv_obj_t *obj)
     return obj != NULL && lv_obj_is_valid(obj);
 }
 
+void wordmenu_stats_sync_values(void)
+{
+#ifdef ESP_PLATFORM
+    word_storage_reload_progress_snapshot();
+    int word_total = word_storage_get_total_count();
+    total_cards_num = (word_total > 0) ? word_total : 1;
+    learned_cards_num = word_storage_get_learned_count();
+    review_cards_num = word_storage_get_review_count();
+#else
+    wordcard_on_menu_enter();
+#endif
+}
+
 static void wordmenu_stats_refresh(void)
 {
     if (!wordmenu_obj_ready(guider_ui.screen_wordmeun)) {
@@ -2523,11 +2542,16 @@ static void wordmenu_stats_refresh(void)
     }
 }
 
+void screen_wordmenu_stats_refresh(void)
+{
+    wordmenu_stats_sync_values();
+    wordmenu_stats_refresh();
+}
+
 static void wordmenu_stats_refresh_async(void *unused)
 {
     LV_UNUSED(unused);
-    wordcard_on_menu_enter();
-    wordmenu_stats_refresh();
+    screen_wordmenu_stats_refresh();
 }
 
 static lv_obj_t *s_wordmenu_stats_bound_screen;
@@ -2558,9 +2582,9 @@ static void wordmenu_stats_bind_hook(void)
 
 //buttion add function screen_wordmeun
 void screen_wordmenu_buttion_add(){
-    wordcard_on_menu_enter();
+    wordmenu_stats_sync_values();
     wordmenu_stats_bind_hook();
-    wordmenu_stats_refresh();
+    screen_wordmenu_stats_refresh();
     if(g == NULL) {
         g = lv_group_create();
     } else {

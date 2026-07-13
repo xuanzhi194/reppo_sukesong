@@ -11,7 +11,7 @@ void wordcard_bridge_init(void)
 
 void wordcard_on_menu_enter(void)
 {
-    word_storage_ensure_review_saved();
+    word_storage_reload_progress_snapshot();
     int word_total = word_storage_get_total_count();
     total_cards_num = (word_total > 0) ? word_total : 1;
     learned_cards_num = word_storage_get_learned_count();

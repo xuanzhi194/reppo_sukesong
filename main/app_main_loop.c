@@ -180,6 +180,10 @@ static void main_loop_handle_ble_ui(void)
             }
         }
     }
+    if (wordbook_ble_ui_refresh_label) {
+        wordbook_ble_ui_refresh_label = 0;
+        wordmenu_stats_sync_values();
+    }
 }
 
 /** 归档后刷新 donelist 分页 */

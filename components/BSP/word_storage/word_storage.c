@@ -2,17 +2,29 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "esp_attr.h"
+#include "esp_crc.h"
 #include "esp_random.h"
 #include "esp_heap_caps.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <sys/stat.h>
+#include <unistd.h>
 
 static const char *TAG = "DICT_READER";
 static const char *REVIEW_INDEX_FILE = "/spiffs/word_review_index.csv";
 static const char *WORD_NVS_NAMESPACE = "WordData";
 static const char *WORD_NVS_KEY_LEARNED = "learned_cnt";
+static const char *WORD_NVS_KEY_BOOK_SIZE = "book_size";
+static const char *WORD_NVS_KEY_BOOK_CRC = "book_crc";
+
+#define WORD_CSV_PATH        "/spiffs/wordcards.csv"
+#define WORD_CSV_LEGACY_PATH "/spiffs/wordcard.csv"
+#define WORD_TMP_PATH        "/spiffs/wordcards.tmp"
+#define WORD_BAK_PATH        "/spiffs/wordcards.bak"
+
+#define WORD_STORAGE_MAX_LINE_BYTES 255
 
 word_item_t current_word = {
     .definition = "",
@@ -41,6 +53,15 @@ static int   s_line_offset_count = 0;
 
 static TaskHandle_t s_review_save_task = NULL;
 static int s_learned_count = 0;
+static bool s_word_rx_active = false;
+static uint32_t s_word_rx_total = 0;
+static uint32_t s_word_rx_crc_expected = 0;
+static uint32_t s_word_rx_expected_words = 0;
+static uint32_t s_word_rx_received_max = 0;
+static FILE *s_word_rx_fp = NULL;
+
+static const char *resolve_csv_path(void);
+static uint32_t word_storage_file_crc32(const char *path);
 
 /* ===== learned-count persistence (NVS) ===== */
 static int word_storage_dict_total(void)
@@ -48,15 +69,72 @@ static int word_storage_dict_total(void)
     return (s_total_count > 0) ? s_total_count : word_storage_get_total_count();
 }
 
-static void word_storage_save_learned_count(void)
+static bool word_storage_active_book_signature(uint32_t *out_size,
+                                               uint32_t *out_crc)
+{
+    const char *csv_path = resolve_csv_path();
+    if (csv_path == NULL || out_size == NULL || out_crc == NULL) {
+        return false;
+    }
+
+    struct stat st;
+    if (stat(csv_path, &st) != 0 || st.st_size < 0) {
+        return false;
+    }
+
+    *out_size = (uint32_t)st.st_size;
+    *out_crc = word_storage_file_crc32(csv_path);
+    return true;
+}
+
+static bool word_storage_save_book_signature(void)
+{
+    uint32_t size = 0;
+    uint32_t crc = 0;
+    if (!word_storage_active_book_signature(&size, &crc)) {
+        return false;
+    }
+
+    nvs_handle_t h;
+    esp_err_t err = nvs_open(WORD_NVS_NAMESPACE, NVS_READWRITE, &h);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "open NVS failed when saving book signature");
+        return false;
+    }
+
+    err = nvs_set_u32(h, WORD_NVS_KEY_BOOK_SIZE, size);
+    if (err == ESP_OK) {
+        err = nvs_set_u32(h, WORD_NVS_KEY_BOOK_CRC, crc);
+    }
+    if (err == ESP_OK) {
+        err = nvs_commit(h);
+    }
+    nvs_close(h);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "save book signature failed: %s", esp_err_to_name(err));
+        return false;
+    }
+    return true;
+}
+
+static bool word_storage_save_learned_count(void)
 {
     nvs_handle_t h;
     if (nvs_open(WORD_NVS_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) {
-        return;
+        ESP_LOGW(TAG, "open NVS failed when saving learned count");
+        return false;
     }
-    nvs_set_i32(h, WORD_NVS_KEY_LEARNED, (int32_t)s_learned_count);
-    nvs_commit(h);
+    esp_err_t err = nvs_set_i32(h, WORD_NVS_KEY_LEARNED,
+                                (int32_t)s_learned_count);
+    if (err == ESP_OK) {
+        err = nvs_commit(h);
+    }
     nvs_close(h);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "save learned count failed: %s", esp_err_to_name(err));
+        return false;
+    }
+    return true;
 }
 
 static void word_storage_normalize_learned_count(void)
@@ -73,13 +151,36 @@ static void word_storage_load_learned_count(void)
     nvs_handle_t h;
     s_learned_count = 0;
     if (nvs_open(WORD_NVS_NAMESPACE, NVS_READONLY, &h) != ESP_OK) {
+        word_storage_save_book_signature();
         return;
     }
+
+    uint32_t current_size = 0;
+    uint32_t current_crc = 0;
+    uint32_t stored_size = 0;
+    uint32_t stored_crc = 0;
+    bool has_current_sig = word_storage_active_book_signature(&current_size,
+                                                              &current_crc);
+    bool has_stored_sig =
+        nvs_get_u32(h, WORD_NVS_KEY_BOOK_SIZE, &stored_size) == ESP_OK &&
+        nvs_get_u32(h, WORD_NVS_KEY_BOOK_CRC, &stored_crc) == ESP_OK;
+
     int32_t val = 0;
     if (nvs_get_i32(h, WORD_NVS_KEY_LEARNED, &val) == ESP_OK && val >= 0) {
         s_learned_count = (int)val;
     }
     nvs_close(h);
+
+    if (has_current_sig && has_stored_sig &&
+        (stored_size != current_size || stored_crc != current_crc)) {
+        ESP_LOGI(TAG, "wordbook changed, reset progress");
+        word_storage_reset_all_progress();
+        return;
+    }
+    if (has_current_sig && !has_stored_sig) {
+        word_storage_save_book_signature();
+    }
+
     word_storage_normalize_learned_count();
 }
 
@@ -101,12 +202,45 @@ int word_storage_get_learned_count(void)
     return s_learned_count;
 }
 
+void word_storage_reload_progress_snapshot(void)
+{
+    word_storage_ensure_review_saved();
+    word_storage_load_learned_count();
+    memset(s_review_indices, 0, sizeof(s_review_indices));
+    s_review_count = word_storage_load_review_indices(s_review_indices,
+                                                      WORDCARD_MAX_REVIEW_ITEMS);
+}
+
+void word_storage_reset_all_progress(void)
+{
+    word_storage_ensure_review_saved();
+
+    s_learned_count = 0;
+    word_storage_save_learned_count();
+    word_storage_save_book_signature();
+
+    memset(s_review_indices, 0, sizeof(s_review_indices));
+    s_review_count = 0;
+    if (!word_storage_save_review_indices(s_review_indices, 0)) {
+        ESP_LOGW(TAG, "clear review index file failed");
+    }
+
+    memset(s_round_indices, 0, sizeof(s_round_indices));
+    memset(s_round_words, 0, sizeof(s_round_words));
+    s_round_size = 0;
+    s_learn_cursor = 0;
+    s_learn_initial_pending = false;
+    s_review_session_total = 0;
+    s_review_session_processed = 0;
+    s_review_initial_pending = false;
+}
+
 /* ===== filesystem helpers ===== */
 static const char *resolve_csv_path(void)
 {
     static const char *candidates[] = {
-        "/spiffs/wordcards.csv",
-        "/spiffs/wordcard.csv",
+        WORD_CSV_PATH,
+        WORD_CSV_LEGACY_PATH,
     };
     for (int i = 0; i < (int)(sizeof(candidates) / sizeof(candidates[0])); i++) {
         FILE *f = fopen(candidates[i], "r");
@@ -203,6 +337,10 @@ static bool word_storage_parse_line(const char *line_buffer, word_item_t *out_it
 
     char *token = strtok(local, ",");
     if (token) {
+        uint8_t *bytes = (uint8_t *)token;
+        if (bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf) {
+            token += 3;
+        }
         strncpy(out_item->word, token, sizeof(out_item->word) - 1);
     }
 
@@ -213,6 +351,10 @@ static bool word_storage_parse_line(const char *line_buffer, word_item_t *out_it
 
     token = strtok(NULL, "\n");
     if (token) {
+        size_t len = strlen(token);
+        while (len > 0 && token[len - 1] == '\r') {
+            token[--len] = '\0';
+        }
         strncpy(out_item->definition, token, sizeof(out_item->definition) - 1);
     }
 
@@ -525,6 +667,305 @@ bool word_storage_review_finished(void)
     return (s_review_session_total <= 0)
         || (s_review_session_processed >= s_review_session_total)
         || (s_review_count <= 0);
+}
+
+/* ===== BLE wordbook upload: tmp write + validated replace ===== */
+static void word_storage_rx_close_file(void)
+{
+    if (s_word_rx_fp != NULL) {
+        fclose(s_word_rx_fp);
+        s_word_rx_fp = NULL;
+    }
+}
+
+static uint32_t word_storage_file_crc32(const char *path)
+{
+    FILE *f = fopen(path, "rb");
+    if (f == NULL) {
+        return 0;
+    }
+
+    uint32_t crc = 0;
+    uint8_t buf[1024];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
+        crc = esp_crc32_le(crc, buf, n);
+    }
+    fclose(f);
+    return crc;
+}
+
+static void word_storage_trim_line_end(char *line)
+{
+    size_t len = strlen(line);
+    while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
+        line[--len] = '\0';
+    }
+}
+
+static bool word_storage_csv_line_valid(char *line)
+{
+    uint8_t *bytes = (uint8_t *)line;
+    char *p = line;
+    if (bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf) {
+        p += 3;
+    }
+
+    char *comma1 = strchr(p, ',');
+    if (comma1 == NULL || comma1 == p) {
+        return false;
+    }
+    char *comma2 = strchr(comma1 + 1, ',');
+    if (comma2 == NULL || comma2[1] == '\0') {
+        return false;
+    }
+    return true;
+}
+
+static esp_err_t word_storage_validate_csv_file(const char *path,
+                                                uint32_t expected_words,
+                                                uint32_t *actual_words)
+{
+    FILE *f = fopen(path, "rb");
+    if (f == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    uint32_t count = 0;
+    char line[WORD_STORAGE_MAX_LINE_BYTES + 2];
+    while (fgets(line, sizeof(line), f) != NULL) {
+        size_t len = strlen(line);
+        bool has_eol = len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r');
+        if (!has_eol && !feof(f)) {
+            fclose(f);
+            ESP_LOGW(TAG, "wordbook line too long");
+            return ESP_ERR_INVALID_SIZE;
+        }
+
+        word_storage_trim_line_end(line);
+        if (line[0] == '\0') {
+            continue;
+        }
+        if (!word_storage_csv_line_valid(line)) {
+            fclose(f);
+            ESP_LOGW(TAG, "wordbook invalid csv line near %lu", (unsigned long)count + 1);
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        count++;
+        if (count > WORD_STORAGE_MAX_UPLOAD_WORDS) {
+            fclose(f);
+            ESP_LOGW(TAG, "wordbook too many words: %lu", (unsigned long)count);
+            return ESP_ERR_INVALID_SIZE;
+        }
+    }
+
+    fclose(f);
+    if (count == 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if (expected_words > 0 && count != expected_words) {
+        ESP_LOGW(TAG, "wordbook word count mismatch got=%lu expect=%lu",
+                 (unsigned long)count, (unsigned long)expected_words);
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if (actual_words != NULL) {
+        *actual_words = count;
+    }
+    return ESP_OK;
+}
+
+static bool word_storage_reload_current_csv(void)
+{
+    const char *csv_path = resolve_csv_path();
+    if (csv_path == NULL) {
+        word_storage_free_line_index();
+        s_total_count = 0;
+        return false;
+    }
+
+    if (!word_storage_build_line_index(csv_path)) {
+        s_total_count = 0;
+        return false;
+    }
+    s_total_count = s_line_offset_count;
+    return s_total_count > 0;
+}
+
+static void word_storage_reset_progress_after_replace(void)
+{
+    word_storage_reset_all_progress();
+    word_storage_reload_progress_snapshot();
+}
+
+bool word_storage_rx_in_progress(void)
+{
+    return s_word_rx_active;
+}
+
+void word_storage_rx_abort(void)
+{
+    word_storage_rx_close_file();
+    if (s_word_rx_active) {
+        unlink(WORD_TMP_PATH);
+    }
+    s_word_rx_active = false;
+    s_word_rx_total = 0;
+    s_word_rx_crc_expected = 0;
+    s_word_rx_expected_words = 0;
+    s_word_rx_received_max = 0;
+    ESP_LOGW(TAG, "wordbook RX aborted");
+}
+
+esp_err_t word_storage_rx_begin(uint32_t total_size, uint32_t crc32,
+                                uint32_t expected_words, uint8_t format)
+{
+    if (format != WORD_FMT_CSV) {
+        ESP_LOGW(TAG, "unsupported wordbook format %u", (unsigned)format);
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (total_size == 0 || total_size > WORD_STORAGE_MAX_UPLOAD_BYTES) {
+        ESP_LOGW(TAG, "invalid wordbook size %lu", (unsigned long)total_size);
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if (expected_words == 0 || expected_words > WORD_STORAGE_MAX_UPLOAD_WORDS) {
+        ESP_LOGW(TAG, "invalid wordbook count %lu", (unsigned long)expected_words);
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    word_storage_rx_abort();
+    unlink(WORD_TMP_PATH);
+
+    s_word_rx_fp = fopen(WORD_TMP_PATH, "wb");
+    if (s_word_rx_fp == NULL) {
+        ESP_LOGE(TAG, "open wordbook tmp failed");
+        return ESP_FAIL;
+    }
+
+    s_word_rx_active = true;
+    s_word_rx_total = total_size;
+    s_word_rx_crc_expected = crc32;
+    s_word_rx_expected_words = expected_words;
+    s_word_rx_received_max = 0;
+    ESP_LOGI(TAG, "wordbook RX begin size=%lu words=%lu crc=0x%08lX",
+             (unsigned long)total_size, (unsigned long)expected_words,
+             (unsigned long)crc32);
+    return ESP_OK;
+}
+
+esp_err_t word_storage_rx_write(uint32_t offset, const uint8_t *data, size_t len)
+{
+    if (!s_word_rx_active || s_word_rx_fp == NULL || data == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (len == 0) {
+        return ESP_OK;
+    }
+    if (offset + len > s_word_rx_total) {
+        ESP_LOGW(TAG, "wordbook write overflow off=%lu len=%u total=%lu",
+                 (unsigned long)offset, (unsigned)len, (unsigned long)s_word_rx_total);
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    if (fseek(s_word_rx_fp, (long)offset, SEEK_SET) != 0) {
+        ESP_LOGE(TAG, "wordbook fseek failed off=%lu", (unsigned long)offset);
+        return ESP_FAIL;
+    }
+    if (fwrite(data, 1, len, s_word_rx_fp) != len) {
+        ESP_LOGE(TAG, "wordbook fwrite failed off=%lu len=%u",
+                 (unsigned long)offset, (unsigned)len);
+        return ESP_FAIL;
+    }
+
+    uint32_t end = offset + (uint32_t)len;
+    if (end > s_word_rx_received_max) {
+        s_word_rx_received_max = end;
+    }
+    return ESP_OK;
+}
+
+esp_err_t word_storage_rx_commit(void)
+{
+    if (!s_word_rx_active || s_word_rx_fp == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    fflush(s_word_rx_fp);
+    word_storage_rx_close_file();
+
+    struct stat st;
+    if (stat(WORD_TMP_PATH, &st) != 0 || (uint32_t)st.st_size != s_word_rx_total) {
+        long got_size = (stat(WORD_TMP_PATH, &st) == 0) ? (long)st.st_size : -1L;
+        ESP_LOGE(TAG, "wordbook size mismatch got=%ld expect=%lu",
+                 got_size, (unsigned long)s_word_rx_total);
+        word_storage_rx_abort();
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if (s_word_rx_received_max < s_word_rx_total) {
+        ESP_LOGE(TAG, "wordbook incomplete received=%lu total=%lu",
+                 (unsigned long)s_word_rx_received_max,
+                 (unsigned long)s_word_rx_total);
+        word_storage_rx_abort();
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    uint32_t crc = word_storage_file_crc32(WORD_TMP_PATH);
+    if (crc != s_word_rx_crc_expected) {
+        ESP_LOGE(TAG, "wordbook CRC mismatch got=0x%08lX expect=0x%08lX",
+                 (unsigned long)crc, (unsigned long)s_word_rx_crc_expected);
+        word_storage_rx_abort();
+        return ESP_ERR_INVALID_CRC;
+    }
+
+    uint32_t actual_words = 0;
+    esp_err_t err = word_storage_validate_csv_file(WORD_TMP_PATH,
+                                                   s_word_rx_expected_words,
+                                                   &actual_words);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "wordbook validation failed: %s", esp_err_to_name(err));
+        word_storage_rx_abort();
+        return err;
+    }
+
+    unlink(WORD_BAK_PATH);
+    struct stat current_st;
+    bool had_current = stat(WORD_CSV_PATH, &current_st) == 0;
+    if (had_current && rename(WORD_CSV_PATH, WORD_BAK_PATH) != 0) {
+        ESP_LOGE(TAG, "wordbook backup rename failed");
+        word_storage_rx_abort();
+        return ESP_FAIL;
+    }
+    if (rename(WORD_TMP_PATH, WORD_CSV_PATH) != 0) {
+        ESP_LOGE(TAG, "wordbook tmp rename failed");
+        if (had_current) {
+            rename(WORD_BAK_PATH, WORD_CSV_PATH);
+        }
+        word_storage_rx_abort();
+        return ESP_FAIL;
+    }
+
+    if (!word_storage_reload_current_csv()) {
+        ESP_LOGE(TAG, "wordbook reload failed, restoring previous csv");
+        unlink(WORD_CSV_PATH);
+        if (had_current) {
+            rename(WORD_BAK_PATH, WORD_CSV_PATH);
+            word_storage_reload_current_csv();
+        }
+        word_storage_rx_abort();
+        return ESP_FAIL;
+    }
+
+    unlink(WORD_BAK_PATH);
+    word_storage_reset_progress_after_replace();
+
+    s_word_rx_active = false;
+    s_word_rx_total = 0;
+    s_word_rx_crc_expected = 0;
+    s_word_rx_expected_words = 0;
+    s_word_rx_received_max = 0;
+    ESP_LOGI(TAG, "wordbook RX commit OK (%lu bytes, %lu words)",
+             (unsigned long)st.st_size, (unsigned long)actual_words);
+    return ESP_OK;
 }
 
 /* ===== legacy wrappers ===== */

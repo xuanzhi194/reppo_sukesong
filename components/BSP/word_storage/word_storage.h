@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "esp_spiffs.h"
 #include "esp_log.h"
 
@@ -21,6 +22,30 @@ extern "C" {
  * Override at compile time if you really need more. */
 #define WORDCARD_MAX_REVIEW_ITEMS 500
 #endif
+
+#ifndef WORD_STORAGE_MAX_UPLOAD_WORDS
+#define WORD_STORAGE_MAX_UPLOAD_WORDS 10000
+#endif
+
+#ifndef WORD_STORAGE_MAX_UPLOAD_BYTES
+#define WORD_STORAGE_MAX_UPLOAD_BYTES (768 * 1024)
+#endif
+
+/** BLE command bytes (WeChat mini program -> device) for wordbook upload. */
+#define BLE_CMD_WORD_INFO       0x40
+#define BLE_CMD_WORD_DATA       0x41
+#define BLE_CMD_WORD_COMMIT     0x42
+/** Device -> mini program status notify. */
+#define BLE_CMD_WORD_STATUS     0x43
+
+/** BLE_CMD_WORD_STATUS payload[0] values. */
+#define WORD_STATUS_OK          0
+#define WORD_STATUS_ERR         1
+#define WORD_STATUS_BUSY        2
+#define WORD_STATUS_PROGRESS    3
+
+/** Wordbook format byte in BLE_CMD_WORD_INFO. */
+#define WORD_FMT_CSV            1
 
 typedef struct {
     char word[32];
@@ -59,6 +84,8 @@ int  word_storage_get_review_count(void);
 
 /* ----- learned progress (wordmenu, persisted in NVS) ----- */
 int  word_storage_get_learned_count(void);
+void word_storage_reload_progress_snapshot(void);
+void word_storage_reset_all_progress(void);
 
 /* ----- learn session (wordcard) ----- */
 int  word_storage_learn_start(int round_size);
@@ -75,6 +102,14 @@ void word_storage_review_mark_known(void);
 bool word_storage_review_signal(word_session_state_t *out);
 bool word_storage_review_finished(void);
 void word_storage_ensure_review_saved(void);
+
+/* ----- BLE wordbook upload: tmp write + validated replace ----- */
+bool word_storage_rx_in_progress(void);
+esp_err_t word_storage_rx_begin(uint32_t total_size, uint32_t crc32,
+                                uint32_t expected_words, uint8_t format);
+esp_err_t word_storage_rx_write(uint32_t offset, const uint8_t *data, size_t len);
+esp_err_t word_storage_rx_commit(void);
+void word_storage_rx_abort(void);
 
 /* ----- legacy wrappers ----- */
 bool get_word_from_csv(int line_num, word_item_t *out_item);

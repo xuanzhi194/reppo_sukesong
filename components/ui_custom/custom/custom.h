@@ -119,6 +119,7 @@ extern volatile bool ble_disconnect_req;
 extern bool ble_flow_led_en;
 extern volatile bool ble_ui_refresh_req;
 extern volatile bool todo_ble_ui_refresh_label;
+extern volatile bool wordbook_ble_ui_refresh_label;
 void screen_setting_ble_refresh_icons(void);
 void todo_ble_sync_ui_refresh(void);
 /* 答案之书：custom 置位请求，main 写入 answer_book_rand */
@@ -182,6 +183,8 @@ void wordcard_hide_dog_anims(void);
 void reviewcard_show_dog_dui(void);
 void wordcard_content_change_effect(bool review_mode);
 void screen_wordmenu_buttion_add();
+void wordmenu_stats_sync_values(void);
+void screen_wordmenu_stats_refresh(void);
 void screen_reviewcard_buttion_add();
 void screen_setting_buttion_add();
 void screen_wificfg_buttion_add();

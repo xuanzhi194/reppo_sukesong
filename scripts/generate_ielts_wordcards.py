@@ -25,6 +25,8 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "wordcards.csv"
+LEGACY_SUPPLEMENT = Path(__file__).resolve().parent / "legacy_wordcards_supplement.csv"
+TARGET_COUNT = 5000
 
 # fmt: off
 # (lemma, part-of-speech hint, original Chinese gloss)
@@ -1108,9 +1110,32 @@ def clamp_field(text: str, limit: int) -> str:
     return text[: limit - 3] + "..."
 
 
+def load_legacy_supplement() -> list[tuple[str, str]]:
+    """Load prior in-project word list as fill vocabulary (Word, definition)."""
+    if not LEGACY_SUPPLEMENT.is_file():
+        return []
+
+    rows: list[tuple[str, str]] = []
+    with LEGACY_SUPPLEMENT.open(encoding="utf-8-sig") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split(",", 2)
+            if len(parts) != 3:
+                continue
+            word, _phonetic, definition = parts
+            word = word.strip()
+            definition = definition.strip()
+            if word and definition:
+                rows.append((word, definition))
+    return rows
+
+
 def merge_entries() -> list[tuple[str, str, str]]:
     seen: set[str] = set()
     merged: list[tuple[str, str, str]] = []
+
     for word, pos, zh in ENTRIES + TOPIC_SUPPLEMENTS:
         key = word.lower()
         if key in seen:
@@ -1118,8 +1143,18 @@ def merge_entries() -> list[tuple[str, str, str]]:
         seen.add(key)
         definition = f"{pos} {zh}" if pos else zh
         merged.append((word, pos, definition))
+
+    for word, definition in load_legacy_supplement():
+        if len(merged) >= TARGET_COUNT:
+            break
+        key = word.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append((word, "", definition))
+
     merged.sort(key=lambda item: item[0].lower())
-    return merged
+    return merged[:TARGET_COUNT]
 
 
 def validate(entries: list[tuple[str, str, str]]) -> None:
@@ -1149,7 +1184,7 @@ def main() -> None:
     entries = merge_entries()
     validate(entries)
     write_csv(entries)
-    print(f"Wrote {len(entries)} entries to {OUT}")
+    print(f"Wrote {len(entries)} entries to {OUT} (target {TARGET_COUNT})")
 
 
 if __name__ == "__main__":
