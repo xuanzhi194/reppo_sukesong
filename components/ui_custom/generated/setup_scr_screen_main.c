@@ -84,11 +84,9 @@ void setup_scr_screen_main(lv_ui *ui)
     lv_obj_set_style_text_opa(ui->screen_main_btn_todolist, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
 
     //Write style for screen_main_btn_todolist, Part: LV_PART_MAIN, State: LV_STATE_PRESSED.
-    lv_obj_set_style_bg_opa(ui->screen_main_btn_todolist, 255, LV_PART_MAIN|LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(ui->screen_main_btn_todolist, lv_color_hex(0x2195f6), LV_PART_MAIN|LV_STATE_PRESSED);
-    lv_obj_set_style_bg_grad_dir(ui->screen_main_btn_todolist, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(ui->screen_main_btn_todolist, 0, LV_PART_MAIN|LV_STATE_PRESSED);
     lv_obj_set_style_border_width(ui->screen_main_btn_todolist, 0, LV_PART_MAIN|LV_STATE_PRESSED);
-    lv_obj_set_style_radius(ui->screen_main_btn_todolist, 5, LV_PART_MAIN|LV_STATE_PRESSED);
+    lv_obj_set_style_radius(ui->screen_main_btn_todolist, 0, LV_PART_MAIN|LV_STATE_PRESSED);
     lv_obj_set_style_shadow_width(ui->screen_main_btn_todolist, 0, LV_PART_MAIN|LV_STATE_PRESSED);
     lv_obj_set_style_text_color(ui->screen_main_btn_todolist, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_PRESSED);
     lv_obj_set_style_text_font(ui->screen_main_btn_todolist, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_PRESSED);
@@ -685,6 +683,26 @@ void setup_scr_screen_main(lv_ui *ui)
     lv_obj_set_style_img_opa(ui->screen_main_img_photo_icon, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_main_img_photo_icon, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_clip_corner(ui->screen_main_img_photo_icon, true, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_main_cat_left
+    ui->screen_main_cat_left = lv_animimg_create(ui->screen_main);
+    lv_animimg_set_src(ui->screen_main_cat_left, (const void **) screen_main_cat_left_imgs, 30);
+    lv_animimg_set_duration(ui->screen_main_cat_left, 70*30);
+    lv_animimg_set_repeat_count(ui->screen_main_cat_left, LV_ANIM_REPEAT_INFINITE);
+    lv_animimg_start(ui->screen_main_cat_left);
+    lv_obj_set_pos(ui->screen_main_cat_left, 0, 60);
+    lv_obj_set_size(ui->screen_main_cat_left, 55, 55);
+    lv_obj_add_flag(ui->screen_main_cat_left, LV_OBJ_FLAG_HIDDEN);
+
+    //Write codes screen_main_cat_right
+    ui->screen_main_cat_right = lv_animimg_create(ui->screen_main);
+    lv_animimg_set_src(ui->screen_main_cat_right, (const void **) screen_main_cat_right_imgs, 30);
+    lv_animimg_set_duration(ui->screen_main_cat_right, 70*30);
+    lv_animimg_set_repeat_count(ui->screen_main_cat_right, LV_ANIM_REPEAT_INFINITE);
+    lv_animimg_start(ui->screen_main_cat_right);
+    lv_obj_set_pos(ui->screen_main_cat_right, 265, 60);
+    lv_obj_set_size(ui->screen_main_cat_right, 55, 55);
+    lv_obj_add_flag(ui->screen_main_cat_right, LV_OBJ_FLAG_HIDDEN);
 
     //The custom code of screen_main.
 

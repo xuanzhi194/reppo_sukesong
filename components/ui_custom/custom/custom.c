@@ -1736,6 +1736,209 @@ static void screen_main_realtime_card_bind_hook(void)
                         LV_EVENT_DEFOCUSED, NULL);
 }
 
+typedef enum {
+    SCREEN_MAIN_CAT_NONE = 0,
+    SCREEN_MAIN_CAT_LEFT,
+    SCREEN_MAIN_CAT_RIGHT,
+} screen_main_cat_side_t;
+
+static screen_main_cat_side_t s_screen_main_cat_visible = SCREEN_MAIN_CAT_NONE;
+
+static bool screen_main_cat_is_ready(lv_obj_t *cat)
+{
+    return cat != NULL && lv_obj_is_valid(cat);
+}
+
+static void screen_main_cat_hide_ready(lv_anim_t *anim)
+{
+    lv_obj_t *cat = (lv_obj_t *)anim->var;
+    if (screen_main_cat_is_ready(cat)) {
+        lv_obj_add_flag(cat, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
+static void screen_main_cat_prepare(lv_obj_t *cat, lv_coord_t x, lv_coord_t y)
+{
+    if (!screen_main_cat_is_ready(cat)) {
+        return;
+    }
+
+    lv_anim_del(cat, screen_main_nav_x_exec);
+    lv_anim_del(cat, screen_main_realtime_opa_exec);
+    lv_obj_clear_flag(cat, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_pos(cat, x, y);
+    lv_obj_set_style_opa(cat, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_move_foreground(cat);
+    lv_animimg_start(cat);
+}
+
+static void screen_main_cat_show(lv_obj_t *cat, lv_coord_t from_x, lv_coord_t to_x)
+{
+    if (!screen_main_cat_is_ready(cat)) {
+        return;
+    }
+
+    screen_main_cat_prepare(cat, from_x, 60);
+
+    lv_anim_t x_anim;
+    lv_anim_init(&x_anim);
+    lv_anim_set_var(&x_anim, cat);
+    lv_anim_set_exec_cb(&x_anim, screen_main_nav_x_exec);
+    lv_anim_set_values(&x_anim, from_x, to_x);
+    lv_anim_set_time(&x_anim, 300);
+    lv_anim_set_path_cb(&x_anim, lv_anim_path_overshoot);
+    lv_anim_start(&x_anim);
+
+    lv_anim_t fade_anim;
+    lv_anim_init(&fade_anim);
+    lv_anim_set_var(&fade_anim, cat);
+    lv_anim_set_exec_cb(&fade_anim, screen_main_realtime_opa_exec);
+    lv_anim_set_values(&fade_anim, LV_OPA_TRANSP, LV_OPA_COVER);
+    lv_anim_set_time(&fade_anim, 180);
+    lv_anim_set_path_cb(&fade_anim, lv_anim_path_ease_out);
+    lv_anim_start(&fade_anim);
+}
+
+static void screen_main_cat_hide(lv_obj_t *cat, lv_coord_t to_x)
+{
+    if (!screen_main_cat_is_ready(cat) ||
+        lv_obj_has_flag(cat, LV_OBJ_FLAG_HIDDEN)) {
+        return;
+    }
+
+    lv_anim_del(cat, screen_main_nav_x_exec);
+    lv_anim_del(cat, screen_main_realtime_opa_exec);
+
+    lv_anim_t x_anim;
+    lv_anim_init(&x_anim);
+    lv_anim_set_var(&x_anim, cat);
+    lv_anim_set_exec_cb(&x_anim, screen_main_nav_x_exec);
+    lv_anim_set_values(&x_anim, lv_obj_get_x(cat), to_x);
+    lv_anim_set_time(&x_anim, 220);
+    lv_anim_set_path_cb(&x_anim, lv_anim_path_ease_in);
+    lv_anim_start(&x_anim);
+
+    lv_anim_t fade_anim;
+    lv_anim_init(&fade_anim);
+    lv_anim_set_var(&fade_anim, cat);
+    lv_anim_set_exec_cb(&fade_anim, screen_main_realtime_opa_exec);
+    lv_anim_set_values(&fade_anim,
+                       lv_obj_get_style_opa(cat, LV_PART_MAIN),
+                       LV_OPA_TRANSP);
+    lv_anim_set_time(&fade_anim, 160);
+    lv_anim_set_ready_cb(&fade_anim, screen_main_cat_hide_ready);
+    lv_anim_set_path_cb(&fade_anim, lv_anim_path_ease_in);
+    lv_anim_start(&fade_anim);
+}
+
+static void screen_main_cat_focus_set(screen_main_cat_side_t side)
+{
+    if (side != SCREEN_MAIN_CAT_LEFT) {
+        screen_main_cat_hide(guider_ui.screen_main_cat_left, -55);
+    }
+    if (side != SCREEN_MAIN_CAT_RIGHT) {
+        screen_main_cat_hide(guider_ui.screen_main_cat_right, 320);
+    }
+
+    if (side == SCREEN_MAIN_CAT_LEFT) {
+        screen_main_cat_show(guider_ui.screen_main_cat_left, -55, 0);
+    } else if (side == SCREEN_MAIN_CAT_RIGHT) {
+        screen_main_cat_show(guider_ui.screen_main_cat_right, 320, 265);
+    }
+
+    s_screen_main_cat_visible = side;
+}
+
+static void screen_main_cat_focus_event_cb(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t *target = lv_event_get_target(e);
+
+    if (code == LV_EVENT_FOCUSED) {
+        if (target == guider_ui.screen_main_btn_todolist) {
+            screen_main_cat_focus_set(SCREEN_MAIN_CAT_LEFT);
+        } else if (target == guider_ui.screen_main_btn_setting) {
+            screen_main_cat_focus_set(SCREEN_MAIN_CAT_RIGHT);
+        } else {
+            screen_main_cat_focus_set(SCREEN_MAIN_CAT_NONE);
+        }
+    } else if (code == LV_EVENT_DEFOCUSED &&
+               (target == guider_ui.screen_main_btn_todolist ||
+                target == guider_ui.screen_main_btn_setting)) {
+        screen_main_cat_focus_set(SCREEN_MAIN_CAT_NONE);
+    }
+}
+
+static void screen_main_cat_focus_init_async(void *unused)
+{
+    LV_UNUSED(unused);
+    if (guider_ui.screen_main == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_main) ||
+        g == NULL) {
+        return;
+    }
+
+    lv_obj_t *focused = lv_group_get_focused(g);
+    if (focused == guider_ui.screen_main_btn_todolist) {
+        screen_main_cat_focus_set(SCREEN_MAIN_CAT_LEFT);
+    } else if (focused == guider_ui.screen_main_btn_setting) {
+        screen_main_cat_focus_set(SCREEN_MAIN_CAT_RIGHT);
+    } else {
+        screen_main_cat_focus_set(SCREEN_MAIN_CAT_NONE);
+    }
+}
+
+static void screen_main_cat_focus_bind_hook(void)
+{
+    if (guider_ui.screen_main == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_main)) {
+        return;
+    }
+
+    lv_obj_t *buttons[] = {
+        guider_ui.screen_main_btn_todolist,
+        guider_ui.screen_main_btn_done,
+        guider_ui.screen_main_btn_word,
+        guider_ui.screen_main_btn_timer,
+        guider_ui.screen_main_btn_ai,
+        guider_ui.screen_main_btn_fun,
+        guider_ui.screen_main_btn_photo,
+        guider_ui.screen_main_btn_setting,
+        guider_ui.screen_main_btn_realtime,
+    };
+
+    s_screen_main_cat_visible = SCREEN_MAIN_CAT_NONE;
+
+    if (screen_main_cat_is_ready(guider_ui.screen_main_cat_left)) {
+        lv_anim_del(guider_ui.screen_main_cat_left, NULL);
+        lv_obj_set_pos(guider_ui.screen_main_cat_left, -55, 60);
+        lv_obj_set_style_opa(guider_ui.screen_main_cat_left, LV_OPA_TRANSP,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_add_flag(guider_ui.screen_main_cat_left, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (screen_main_cat_is_ready(guider_ui.screen_main_cat_right)) {
+        lv_anim_del(guider_ui.screen_main_cat_right, NULL);
+        lv_obj_set_pos(guider_ui.screen_main_cat_right, 320, 60);
+        lv_obj_set_style_opa(guider_ui.screen_main_cat_right, LV_OPA_TRANSP,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_add_flag(guider_ui.screen_main_cat_right, LV_OBJ_FLAG_HIDDEN);
+    }
+
+    for (size_t i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
+        if (buttons[i] != NULL && lv_obj_is_valid(buttons[i])) {
+            while (lv_obj_remove_event_cb(buttons[i],
+                                          screen_main_cat_focus_event_cb)) {
+            }
+            lv_obj_add_event_cb(buttons[i], screen_main_cat_focus_event_cb,
+                                LV_EVENT_FOCUSED, NULL);
+            lv_obj_add_event_cb(buttons[i], screen_main_cat_focus_event_cb,
+                                LV_EVENT_DEFOCUSED, NULL);
+        }
+    }
+
+    lv_async_call(screen_main_cat_focus_init_async, NULL);
+}
+
 void screen_main_buttion_add(){
     if(g == NULL) {
         g = lv_group_create();
@@ -1772,6 +1975,7 @@ void screen_main_buttion_add(){
     clear_focus_box(guider_ui.screen_main_btn_realtime);
     screen_main_nav_effect_bind_hooks();
     screen_main_realtime_card_bind_hook();
+    screen_main_cat_focus_bind_hook();
     lv_async_call(screen_main_status_refresh_async, NULL);
 }
 
@@ -2251,9 +2455,112 @@ void screen_pomodoro_buttion_add(){
     pomodoro_pause_icon_bind_hooks();
     pomodoro_effect_bind_hooks();
 }
+static bool wordmenu_obj_ready(lv_obj_t *obj)
+{
+    return obj != NULL && lv_obj_is_valid(obj);
+}
+
+static void wordmenu_stats_refresh(void)
+{
+    if (!wordmenu_obj_ready(guider_ui.screen_wordmeun)) {
+        return;
+    }
+
+    if (total_cards_num <= 0) {
+        total_cards_num = 1;
+    }
+    if (learned_cards_num < 0) {
+        learned_cards_num = 0;
+    } else if (learned_cards_num > total_cards_num) {
+        learned_cards_num = total_cards_num;
+    }
+    if (review_cards_num < 0) {
+        review_cards_num = 0;
+    }
+
+    int process_percent = (learned_cards_num * 100) / total_cards_num;
+    if (process_percent < 0) {
+        process_percent = 0;
+    } else if (process_percent > 100) {
+        process_percent = 100;
+    }
+
+    if (wordmenu_obj_ready(guider_ui.screen_wordmeun_label_wordpercent)) {
+        lv_obj_clear_flag(guider_ui.screen_wordmeun_label_wordpercent,
+                          LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_style_opa(guider_ui.screen_wordmeun_label_wordpercent,
+                             LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_opa(guider_ui.screen_wordmeun_label_wordpercent,
+                                  220, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_pos(guider_ui.screen_wordmeun_label_wordpercent, 246, 104);
+        lv_obj_set_size(guider_ui.screen_wordmeun_label_wordpercent, 42, 16);
+        lv_label_set_long_mode(guider_ui.screen_wordmeun_label_wordpercent,
+                               LV_LABEL_LONG_CLIP);
+        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_wordpercent,
+                              "%d%%", process_percent);
+        lv_obj_move_foreground(guider_ui.screen_wordmeun_label_wordpercent);
+    }
+
+    if (wordmenu_obj_ready(guider_ui.screen_wordmeun_label_reviewnum)) {
+        lv_obj_clear_flag(guider_ui.screen_wordmeun_label_reviewnum,
+                          LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_style_opa(guider_ui.screen_wordmeun_label_reviewnum,
+                             LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_opa(guider_ui.screen_wordmeun_label_reviewnum,
+                                  220, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_pos(guider_ui.screen_wordmeun_label_reviewnum, 84, 104);
+        lv_obj_set_size(guider_ui.screen_wordmeun_label_reviewnum, 116, 16);
+        lv_label_set_long_mode(guider_ui.screen_wordmeun_label_reviewnum,
+                               LV_LABEL_LONG_CLIP);
+        lv_label_set_text_fmt(guider_ui.screen_wordmeun_label_reviewnum,
+                              "Review: %d", review_cards_num);
+        lv_obj_move_foreground(guider_ui.screen_wordmeun_label_reviewnum);
+    }
+
+    if (wordmenu_obj_ready(guider_ui.screen_wordmeun_bar_process)) {
+        lv_bar_set_value(guider_ui.screen_wordmeun_bar_process,
+                         process_percent, LV_ANIM_ON);
+    }
+}
+
+static void wordmenu_stats_refresh_async(void *unused)
+{
+    LV_UNUSED(unused);
+    wordcard_on_menu_enter();
+    wordmenu_stats_refresh();
+}
+
+static lv_obj_t *s_wordmenu_stats_bound_screen;
+
+static void wordmenu_stats_screen_event_cb(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_SCREEN_LOADED) {
+        lv_async_call(wordmenu_stats_refresh_async, NULL);
+    } else if (code == LV_EVENT_SCREEN_UNLOADED) {
+        s_wordmenu_stats_bound_screen = NULL;
+    }
+}
+
+static void wordmenu_stats_bind_hook(void)
+{
+    lv_obj_t *screen = guider_ui.screen_wordmeun;
+    if (!wordmenu_obj_ready(screen) || s_wordmenu_stats_bound_screen == screen) {
+        return;
+    }
+
+    s_wordmenu_stats_bound_screen = screen;
+    lv_obj_add_event_cb(screen, wordmenu_stats_screen_event_cb,
+                        LV_EVENT_SCREEN_LOADED, NULL);
+    lv_obj_add_event_cb(screen, wordmenu_stats_screen_event_cb,
+                        LV_EVENT_SCREEN_UNLOADED, NULL);
+}
+
 //buttion add function screen_wordmeun
 void screen_wordmenu_buttion_add(){
     wordcard_on_menu_enter();
+    wordmenu_stats_bind_hook();
+    wordmenu_stats_refresh();
     if(g == NULL) {
         g = lv_group_create();
     } else {
@@ -2275,6 +2582,7 @@ void screen_wordmenu_buttion_add(){
     clear_edge_box(guider_ui.screen_wordmeun_btn_learn);
     clear_edge_box(guider_ui.screen_wordmeun_btn_review);
     clear_edge_box(guider_ui.screen_wordmeun_btn_back);
+    lv_async_call(wordmenu_stats_refresh_async, NULL);
     
 }
 
