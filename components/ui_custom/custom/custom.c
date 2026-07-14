@@ -395,6 +395,9 @@ static bool pomodoro_screen_is_alive(void)
 }
 
 #define POMODORO_BLACK_LED_COUNT 10U
+#define POMODORO_BLACK_LED_R     3U
+#define POMODORO_BLACK_LED_G     8U
+#define POMODORO_BLACK_LED_B     12U
 
 static bool s_pomodoro_black_active;
 static uint32_t s_pomodoro_black_total_seconds;
@@ -419,7 +422,10 @@ static void pomodoro_black_update_leds(void)
             lit_count = POMODORO_BLACK_LED_COUNT;
         }
     }
-    set_led_bar_level(lit_count, 34, 80, 120);
+    set_led_bar_level(lit_count,
+                      POMODORO_BLACK_LED_R,
+                      POMODORO_BLACK_LED_G,
+                      POMODORO_BLACK_LED_B);
 #endif
 }
 

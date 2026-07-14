@@ -54,7 +54,7 @@ void setup_scr_screen_wordcard(lv_ui *ui)
 
     //Write codes screen_wordcard_label_phonetic
     ui->screen_wordcard_label_phonetic = lv_label_create(ui->screen_wordcard);
-    lv_label_set_text(ui->screen_wordcard_label_phonetic, "ɑ ɒ ɔ ə ɛ ɜ ɪ ʊ ʌ æ e ɪ a ɪ ɔ ɪ a ʊ ə ʊ ɪ ə e ə ʊ ə p t k f θ s ʃ h tʃ tr ts b d v ð z ʒ r dʒ dr dz m n ŋ l j w ˈ ˌ ː . [ ] / ( ) ɡ ，。");
+    lv_label_set_text(ui->screen_wordcard_label_phonetic, "ɑ ɒ ɔ ə ɛ ɜ ɪ ʊ ʌ æ e ɪ a ɪ ɔ ɪ a ʊ ə ʊ ɪ ə e ə ʊ ə p t k f θ s ʃ h tʃ ʧ tr ts b d v ð z ʒ r dʒ ʤ dr dz m n ŋ l j w ˈ ˌ ː . [ ] / ( ) ɡ ，。ɚ ɝ̃ “”” ” -");
     lv_label_set_long_mode(ui->screen_wordcard_label_phonetic, LV_LABEL_LONG_CLIP);
     lv_obj_set_pos(ui->screen_wordcard_label_phonetic, 32, 69);
     lv_obj_set_size(ui->screen_wordcard_label_phonetic, 255, 16);
