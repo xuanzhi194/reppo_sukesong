@@ -395,9 +395,6 @@ static bool pomodoro_screen_is_alive(void)
 }
 
 #define POMODORO_BLACK_LED_COUNT 10U
-#define POMODORO_BLACK_LED_R     3U
-#define POMODORO_BLACK_LED_G     8U
-#define POMODORO_BLACK_LED_B     12U
 
 static bool s_pomodoro_black_active;
 static uint32_t s_pomodoro_black_total_seconds;
@@ -422,10 +419,24 @@ static void pomodoro_black_update_leds(void)
             lit_count = POMODORO_BLACK_LED_COUNT;
         }
     }
-    set_led_bar_level(lit_count,
-                      POMODORO_BLACK_LED_R,
-                      POMODORO_BLACK_LED_G,
-                      POMODORO_BLACK_LED_B);
+
+    pomodoro_black_flow_set_lit_count(lit_count);
+#endif
+}
+
+static void pomodoro_black_start_leds(void)
+{
+#ifdef ESP_PLATFORM
+    start_pomodoro_black_flow_light();
+    pomodoro_black_update_leds();
+#endif
+}
+
+static void pomodoro_black_stop_leds(void)
+{
+#ifdef ESP_PLATFORM
+    stop_pomodoro_black_flow_light();
+    clear_led_bar();
 #endif
 }
 
@@ -447,7 +458,7 @@ static void pomodoro_black_exit(bool focus_start)
 
 #ifdef ESP_PLATFORM
     if (was_active) {
-        clear_led_bar();
+        pomodoro_black_stop_leds();
         /* 直接恢复用户保存的亮度，避免先闪到 100% 再回落。 */
         lcd_backlight_set_level(brightness_level);
     }
@@ -527,7 +538,7 @@ static void pomodoro_black_enter(void)
 #ifdef ESP_PLATFORM
     lcd_off();
 #endif
-    pomodoro_black_update_leds();
+    pomodoro_black_start_leds();
 }
 
 static void pomodoro_timer_delete_only(void)

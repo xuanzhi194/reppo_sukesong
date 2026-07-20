@@ -14,12 +14,12 @@ static const char *TAG = "ENCODER";
 #define ENCODER_B_GPIO 2
 
 /* 每触发一次 NEXT/PREV 需要的硬件计数（越小越灵） */
-/* EC06 4X 解码：4 counts ≈ 1 物理档；外圈半径变大后会更敏感，这里略增步进阈值 */
-#define EC_STEP_CW   8
-#define EC_STEP_CCW  8
+/* EC06 4X 解码：4 counts ≈ 1 物理档；略降低步进阈值以提高 UI 响应灵敏度 */
+#define EC_STEP_CW   6
+#define EC_STEP_CCW  6
 
 /* 连续两次 UI 步进间隔；过大会转很久才动，过小易连跳 */
-#define EC_EVENT_GAP_US    50000
+#define EC_EVENT_GAP_US    40000
 
 #define EC_IDLE_RESET_US   150000
 
@@ -35,7 +35,7 @@ static const char *TAG = "ENCODER";
 #define EC_DIR_LOCK_US        350000
 
 /* 触发前要求主方向“净优势”至少达到该计数，抑制慢速时偶发反向毛刺 */
-#define EC_DOMINANCE_MARGIN   2
+#define EC_DOMINANCE_MARGIN   1
 
 #define EC_GLITCH_FILTER_NS  12000
 

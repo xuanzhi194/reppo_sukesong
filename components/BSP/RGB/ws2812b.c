@@ -258,6 +258,125 @@ void stop_ble_flow_light(void)
     ble_flow_led_en = false;
 }
 
+#define POMODORO_BLACK_FLOW_STEP_MS     60
+#define POMODORO_BLACK_FLOW_TRAIL_LEN   2
+#define POMODORO_BLACK_FLOW_BASE_R      8
+#define POMODORO_BLACK_FLOW_BASE_G      8
+#define POMODORO_BLACK_FLOW_BASE_B      8
+#define POMODORO_BLACK_FLOW_PEAK_R      36
+#define POMODORO_BLACK_FLOW_PEAK_G      36
+#define POMODORO_BLACK_FLOW_PEAK_B      36
+
+static TaskHandle_t s_pomodoro_black_flow_task = NULL;
+static volatile bool s_pomodoro_black_flow_en;
+static volatile uint8_t s_pomodoro_black_lit_count = LED_STRIP_NUM_LEDS;
+
+static uint32_t pomodoro_black_flow_clamp_channel(uint32_t value)
+{
+    return value > 255U ? 255U : value;
+}
+
+void pomodoro_black_flow_set_lit_count(uint8_t lit_count)
+{
+    if (lit_count > LED_STRIP_NUM_LEDS) {
+        lit_count = LED_STRIP_NUM_LEDS;
+    }
+    s_pomodoro_black_lit_count = lit_count;
+}
+
+static void pomodoro_black_flow_once(void)
+{
+    const int trail = POMODORO_BLACK_FLOW_TRAIL_LEN;
+    uint8_t lit_count = s_pomodoro_black_lit_count;
+
+    if (lit_count == 0) {
+        if (led_strip_lock()) {
+            led_strip_clear(led_strip);
+            led_strip_refresh(led_strip);
+            led_strip_unlock();
+        }
+        vTaskDelay(pdMS_TO_TICKS(POMODORO_BLACK_FLOW_STEP_MS));
+        return;
+    }
+
+    /* 与进度条一致：从条带末端向前缩短，剩余时间减少时先熄低索引端。 */
+    uint8_t first_on = LED_STRIP_NUM_LEDS - lit_count;
+
+    for (int head = first_on; head < LED_STRIP_NUM_LEDS + trail - 1; head++) {
+        if (!s_pomodoro_black_flow_en) {
+            return;
+        }
+        if (!led_strip_lock()) {
+            vTaskDelay(pdMS_TO_TICKS(POMODORO_BLACK_FLOW_STEP_MS));
+            continue;
+        }
+        for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
+            if (i < first_on) {
+                led_strip_set_pixel(led_strip, i, 0, 0, 0);
+                continue;
+            }
+
+            uint32_t r = POMODORO_BLACK_FLOW_BASE_R;
+            uint32_t g = POMODORO_BLACK_FLOW_BASE_G;
+            uint32_t b = POMODORO_BLACK_FLOW_BASE_B;
+            int age = head - i;
+
+            if (age >= 0 && age < trail) {
+                uint32_t scale = 255U - (uint32_t)age * 255U / (uint32_t)trail;
+                r += (POMODORO_BLACK_FLOW_PEAK_R * scale) / 255U;
+                g += (POMODORO_BLACK_FLOW_PEAK_G * scale) / 255U;
+                b += (POMODORO_BLACK_FLOW_PEAK_B * scale) / 255U;
+            }
+
+            led_strip_set_pixel(led_strip, i,
+                                pomodoro_black_flow_clamp_channel(r),
+                                pomodoro_black_flow_clamp_channel(g),
+                                pomodoro_black_flow_clamp_channel(b));
+        }
+        led_strip_refresh(led_strip);
+        led_strip_unlock();
+        vTaskDelay(pdMS_TO_TICKS(POMODORO_BLACK_FLOW_STEP_MS));
+    }
+}
+
+static void pomodoro_black_flow_task(void *param)
+{
+    (void)param;
+    while (s_pomodoro_black_flow_en) {
+        pomodoro_black_flow_once();
+    }
+    if (led_strip_lock()) {
+        led_strip_clear(led_strip);
+        led_strip_refresh(led_strip);
+        led_strip_unlock();
+    }
+    s_pomodoro_black_flow_task = NULL;
+    vTaskDelete(NULL);
+}
+
+void start_pomodoro_black_flow_light(void)
+{
+    if (!s_led_strip_ready) {
+        init_led_strip();
+    }
+    if (s_pomodoro_black_flow_task != NULL) {
+        return;
+    }
+    s_pomodoro_black_flow_en = true;
+    s_pomodoro_black_lit_count = LED_STRIP_NUM_LEDS;
+    if (xTaskCreatePinnedToCore(pomodoro_black_flow_task, "pom_black_flow",
+                                LED_EFFECT_TASK_STACK, NULL, 5,
+                                &s_pomodoro_black_flow_task, 0) != pdPASS) {
+        s_pomodoro_black_flow_task = NULL;
+        s_pomodoro_black_flow_en = false;
+    }
+}
+
+void stop_pomodoro_black_flow_light(void)
+{
+    s_pomodoro_black_flow_en = false;
+}
+
 void set_led_bar_level(uint8_t lit_count, uint32_t r, uint32_t g, uint32_t b)
 {
     if (!s_led_strip_ready) {
