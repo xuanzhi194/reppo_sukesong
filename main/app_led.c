@@ -78,7 +78,7 @@ static void answer_loading_light_task(void *param)
 {
     (void)param;
     while (s_answer_loading_light_running) {
-        set_flow_light_fast(30, 52, 83);
+        set_flow_light_fast(40, 40, 40);
     }
     s_answer_loading_light_task_handle = NULL;
     vTaskDelete(NULL);
