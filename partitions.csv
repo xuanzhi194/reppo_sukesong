@@ -1,11 +1,11 @@
 # Name,   Type, SubType,  Offset,   Size,  Flags
 # 16MB Flash — 无 OTA 单应用布局
-#   factory  12 MB  主固件 (原 10 MB，当前 app ~9.7 MB)
+#   factory  ~12.94 MB (0xCF0000)  主固件；当前 bin ~10.5 MB，留 ~2.5 MB 余量
 #   storage   2 MB  SPIFFS — todo / 单词 CSV 等
 #   badge     1 MB  FAT    — 小程序蓝牙下发的单张吧唧图
-#   保留    ~960 KB  0xF10000 ~ 0xFFFFFF
+#   （原 0xF10000~0xFFFFFF 保留区已划入 factory，storage/badge 顺延）
 nvs,      data, nvs,      0x9000,   0x6000
 phy_init, data, phy,      0xf000,   0x1000
-factory,  app,  factory,  0x10000,  0xC00000
-storage,  data, spiffs,   0xC10000, 0x200000
-badge,    data, fat,      0xE10000, 0x100000
+factory,  app,  factory,  0x10000,  0xCF0000
+storage,  data, spiffs,   0xD00000, 0x200000
+badge,    data, fat,      0xF00000, 0x100000

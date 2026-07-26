@@ -16,7 +16,7 @@
    idf.py build
    ```
 
-2. 复制 bin 到网页目录：
+2. 复制 **app 固件**到网页目录（仅 `project-name.bin`，烧录偏移 `0x10000`）：
 
    **Windows**
 
@@ -62,16 +62,13 @@
 
 ## 烧录分区说明
 
+网页烧录 **只写入 app 分区**，保留 NVS / SPIFFS / badge 等用户数据（`manifest.json` 中 `new_install_prompt_erase: false`）。
+
 | 文件 | 偏移 |
 |------|------|
-| bootloader.bin | 0x0 |
-| partition-table.bin | 0x8000 |
 | project-name.bin | 0x10000 |
-| storage.bin | 0xc10000 |
 
-`badge` 分区（0xe10000，1MB FAT）由固件首次使用时格式化，无需预烧 bin。
-
-与 `partitions.csv` 及 `idf.py build` 输出一致。
+出厂整片烧录（bootloader、分区表、storage 等）请使用 `idf.py merge-bin` 或产线工具，不走本页。
 
 ## 用户操作
 

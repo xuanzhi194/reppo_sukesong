@@ -53,7 +53,7 @@ void setup_scr_screen_wordmeun(lv_ui *ui)
     lv_obj_set_style_bg_grad_dir(ui->screen_wordmeun_bar_process, LV_GRAD_DIR_HOR, LV_PART_INDICATOR|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_color(ui->screen_wordmeun_bar_process, lv_color_hex(0x0a3763), LV_PART_INDICATOR|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_main_stop(ui->screen_wordmeun_bar_process, 0, LV_PART_INDICATOR|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_grad_stop(ui->screen_wordmeun_bar_process, 255, LV_PART_INDICATOR|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_stop(ui->screen_wordmeun_bar_process, 0, LV_PART_INDICATOR|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_wordmeun_bar_process, 10, LV_PART_INDICATOR|LV_STATE_DEFAULT);
 
     //Write codes screen_wordmeun_label_wordpercent

@@ -690,7 +690,7 @@ void setup_scr_screen_main(lv_ui *ui)
     lv_animimg_set_duration(ui->screen_main_cat_left, 70*30);
     lv_animimg_set_repeat_count(ui->screen_main_cat_left, LV_ANIM_REPEAT_INFINITE);
     lv_animimg_start(ui->screen_main_cat_left);
-    lv_obj_set_pos(ui->screen_main_cat_left, 0, 60);
+    lv_obj_set_pos(ui->screen_main_cat_left, 0, 50);
     lv_obj_set_size(ui->screen_main_cat_left, 55, 55);
     lv_obj_add_flag(ui->screen_main_cat_left, LV_OBJ_FLAG_HIDDEN);
 
@@ -700,7 +700,7 @@ void setup_scr_screen_main(lv_ui *ui)
     lv_animimg_set_duration(ui->screen_main_cat_right, 70*30);
     lv_animimg_set_repeat_count(ui->screen_main_cat_right, LV_ANIM_REPEAT_INFINITE);
     lv_animimg_start(ui->screen_main_cat_right);
-    lv_obj_set_pos(ui->screen_main_cat_right, 265, 60);
+    lv_obj_set_pos(ui->screen_main_cat_right, 265, 50);
     lv_obj_set_size(ui->screen_main_cat_right, 55, 55);
     lv_obj_add_flag(ui->screen_main_cat_right, LV_OBJ_FLAG_HIDDEN);
 
