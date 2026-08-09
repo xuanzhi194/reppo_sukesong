@@ -201,6 +201,49 @@ esp_err_t _nvs_save_done(void)
     return err;
 }
 
+esp_err_t todo_storage_apply_ui_done_flags(const todo_list_t *ui)
+{
+    if (ui == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!todo_storage_lock(pdMS_TO_TICKS(200))) {
+        ESP_LOGW(TAG, "apply UI done flags: lock timeout");
+        return ESP_ERR_TIMEOUT;
+    }
+
+    bool dirty = false;
+    if (ui->count == g_todo_list.count) {
+        bool names_match = true;
+        for (uint8_t i = 0; i < ui->count; i++) {
+            if (strncmp(ui->items[i].name, g_todo_list.items[i].name,
+                        TODO_NAME_LEN) != 0) {
+                names_match = false;
+                break;
+            }
+        }
+        if (names_match) {
+            for (uint8_t i = 0; i < ui->count; i++) {
+                if (g_todo_list.items[i].done != ui->items[i].done) {
+                    g_todo_list.items[i].done = ui->items[i].done;
+                    dirty = true;
+                }
+            }
+        }
+    }
+
+    esp_err_t err = ESP_OK;
+    if (dirty) {
+        err = _nvs_save_done();
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Synced UI done flags to NVS (%u tasks)",
+                     (unsigned)g_todo_list.count);
+        }
+    }
+
+    todo_storage_unlock();
+    return err;
+}
+
 esp_err_t todo_storage_init(void)
 {
     if (s_todo_mutex == NULL) {

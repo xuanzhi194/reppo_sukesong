@@ -14,22 +14,33 @@
 #include "esp_log.h"
 #include <stdio.h>
 
-/** Todo 完成标记写回 NVS */
+/** Todo 完成标记写回 NVS（离开 todolist，或页内完成/恢复后的增量同步） */
 static void nvs_worker_handle_todo_save(void)
 {
-    if (!todo_back_label) {
+    if (todo_back_label) {
+        printf("Saving done flags to NVS...\n");
+        if (todo_storage_lock(pdMS_TO_TICKS(200))) {
+            g_todo_list = ui_todo_list;
+            _nvs_save_done();
+            todo_storage_unlock();
+            todo_back_label = 0;
+        } else {
+            ESP_LOGW("NVS_WORKER", "todo save skipped: lock timeout");
+        }
         return;
     }
-    printf("Saving done flags to NVS...\n");
-    if (todo_storage_lock(pdMS_TO_TICKS(200))) {
-        g_todo_list = ui_todo_list;
-        _nvs_save_done();
-        todo_storage_unlock();
-    } else {
-        ESP_LOGW("NVS_WORKER", "todo save skipped: lock timeout");
-        return;
+
+    /* Complete/recover while still on todolist only flips ui_todo_list.done.
+     * Persist those flags promptly so BLE READ can see 暂存状态 without
+     * requiring a trip back to the main screen. */
+    if (ui_todo_list.count == g_todo_list.count) {
+        for (uint8_t i = 0; i < ui_todo_list.count; i++) {
+            if (ui_todo_list.items[i].done != g_todo_list.items[i].done) {
+                (void)todo_storage_apply_ui_done_flags(&ui_todo_list);
+                break;
+            }
+        }
     }
-    todo_back_label = 0;
 }
 
 /** 主界面重新加载任务列表标志（当前仅占位清零） */

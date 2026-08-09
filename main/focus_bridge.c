@@ -3,6 +3,7 @@
  */
 #include "focus_bridge.h"
 #include "custom.h"
+#include "todo_storage.h"
 #include "nvs.h"
 
 #define FOCUS_NVS_NS   "Timing"
@@ -39,7 +40,7 @@ void focus_bridge_on_countdown_complete(void)
     }
     focus_complete_pending = 0;
 
-    /* 任务专注会话：标记 todo 为完成 */
+    /* 任务专注会话：标记 todo 为完成，并立刻写 NVS 供 BLE 同步 */
     if (focus_session_active) {
         focus_session_active = 0;
         if (current_task_index < (int)ui_todo_list.count &&
@@ -47,6 +48,7 @@ void focus_bridge_on_countdown_complete(void)
             ui_todo_list.items[current_task_index].done = 1;
             done_sum += 1;
             todo_sum -= 1;
+            (void)todo_storage_apply_ui_done_flags(&ui_todo_list);
         }
     }
 

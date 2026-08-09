@@ -68,6 +68,13 @@ esp_err_t todo_storage_archive_done_tasks(void);
 //** @brief 设置任务完成状态，并保存到 NVS（不修改 CSV） */
 esp_err_t _nvs_save_done(void);
 
+/**
+ * @brief 将 UI 侧 done 标记合并进 g_todo_list 并写 NVS（不改 CSV）。
+ *        仅在 count/name 一致时合并，避免覆盖进行中的 BLE 列表替换。
+ *        用于 todolist 内完成任务后、离开页面前也能被小程序 READ 到。
+ */
+esp_err_t todo_storage_apply_ui_done_flags(const todo_list_t *ui);
+
 /** @brief 清洗任务名：去掉控制字符，并将 ,| 换行等替换为空格，降低 CSV/AI Prompt 注入风险 */
 void todo_storage_sanitize_task_name(char *name, size_t cap);
 

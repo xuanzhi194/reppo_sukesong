@@ -15,6 +15,7 @@ extern bool ble_success;
 extern bool ble_enabled;
 extern volatile bool ble_ui_refresh_req;
 extern volatile bool wordbook_ble_ui_refresh_label;
+extern todo_list_t ui_todo_list;
 
 /* NimBLE */
 #include "nimble/nimble_port.h"
@@ -96,6 +97,9 @@ static uint8_t wordbook_error_detail(esp_err_t err)
 
 static bool ble_refresh_stored_read_bundle(void)
 {
+    /* Flush in-page complete/recover done flags before READ reloads from flash. */
+    (void)todo_storage_apply_ui_done_flags(&ui_todo_list);
+
     esp_err_t err = todo_storage_export_ble_read_bundle(stored_read_json,
                                                         sizeof(stored_read_json));
     if (err == ESP_ERR_INVALID_SIZE) {
