@@ -504,6 +504,10 @@ static void screen_todolist_event_handler (lv_event_t *e)
             } else if(todo_index == 3) {
                 lv_group_focus_obj(guider_ui.screen_todolist_btn_todo4);
             }
+        } else {
+            /* In-place reload (e.g. BLE 0→N) may leave keypad focus NULL after
+             * group rebuild + disable pass; restore a focusable control. */
+            screen_todolist_ensure_group_focus();
         }
         //show for the first time when loading todolist ui
         lv_label_set_text_fmt(guider_ui.screen_todolist_label_donenum, "%d", done_sum);

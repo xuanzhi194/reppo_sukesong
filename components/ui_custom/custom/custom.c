@@ -1085,6 +1085,12 @@
  
  static lv_obj_t *s_todolist_effect_screen = NULL;
  static int8_t s_todolist_effect_page = -1;
+ static bool s_todolist_effect_active = false;
+ static uint8_t s_todolist_effect_pending = 0;
+ static const lv_coord_t s_todolist_final_x[] = {19, 177, 19, 177};
+ /* Rest / focus-peak Y for Guider todo buttons (row0/1 vs row2/3). */
+ static const lv_coord_t s_todolist_rest_y[] = {51, 51, 104, 104};
+ static const lv_coord_t s_todolist_focus_y[] = {40, 40, 93, 93};
  
  static lv_obj_t *todolist_todo_btn(uint8_t index)
  {
@@ -1108,6 +1114,19 @@
      return index < 4 ? labels[index] : NULL;
  }
  
+ static bool todolist_todo_should_show(uint8_t index)
+ {
+     lv_obj_t *btn = todolist_todo_btn(index);
+     lv_obj_t *label = todolist_todo_label(index);
+     if (btn == NULL || label == NULL ||
+         !lv_obj_is_valid(btn) || !lv_obj_is_valid(label)) {
+         return false;
+     }
+     const char *text = lv_label_get_text(label);
+     bool has_content = text != NULL && text[0] != '\0';
+     return has_content && !lv_obj_has_state(btn, LV_STATE_DISABLED);
+ }
+ 
  static void todolist_effect_x_exec(void *obj, int32_t value)
  {
      if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
@@ -1123,6 +1142,127 @@
      }
  }
  
+ static void todolist_focus_y_stop(lv_obj_t *btn, lv_coord_t rest_y);
+ 
+ /* Snap every todo row to its resting X/opacity. Used when encoder focus
+  * interrupts the enter/page transition so items cannot freeze mid-slide. */
+ static void todolist_effect_finish(void)
+ {
+     if (!s_todolist_effect_active) {
+         return;
+     }
+ 
+     s_todolist_effect_active = false;
+     s_todolist_effect_pending = 0;
+ 
+     for (uint8_t i = 0; i < 4; i++) {
+         lv_obj_t *btn = todolist_todo_btn(i);
+         if (btn == NULL || !lv_obj_is_valid(btn)) {
+             continue;
+         }
+ 
+         lv_anim_del(btn, todolist_effect_x_exec);
+         lv_anim_del(btn, todolist_effect_opa_exec);
+         lv_obj_set_x(btn, s_todolist_final_x[i]);
+         lv_obj_set_style_opa(btn,
+                              todolist_todo_should_show(i) ? LV_OPA_COVER
+                                                          : LV_OPA_TRANSP,
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+         /* Drop any in-flight Guider Y bounce left by focus changes mid-enter. */
+         if (!lv_obj_has_state(btn, LV_STATE_FOCUSED)) {
+             todolist_focus_y_stop(btn, s_todolist_rest_y[i]);
+         }
+     }
+ }
+ 
+ static void todolist_effect_ready(lv_anim_t *anim)
+ {
+     LV_UNUSED(anim);
+     if (s_todolist_effect_pending > 0) {
+         s_todolist_effect_pending--;
+     }
+     if (s_todolist_effect_pending == 0) {
+         s_todolist_effect_active = false;
+     }
+ }
+ 
+ static int8_t todolist_todo_btn_index(lv_obj_t *obj)
+ {
+     for (uint8_t i = 0; i < 4; i++) {
+         if (todolist_todo_btn(i) == obj) {
+             return (int8_t)i;
+         }
+     }
+     return -1;
+ }
+ 
+ static void todolist_focus_y_exec(void *obj, int32_t value)
+ {
+     if (obj != NULL && lv_obj_is_valid((lv_obj_t *)obj)) {
+         lv_obj_set_y((lv_obj_t *)obj, (lv_coord_t)value);
+     }
+ }
+ 
+ static void todolist_focus_y_stop(lv_obj_t *btn, lv_coord_t rest_y)
+ {
+     if (btn == NULL || !lv_obj_is_valid(btn)) {
+         return;
+     }
+     /* Guider handlers use lv_obj_set_y as exec_cb; clear both. */
+     lv_anim_del(btn, (lv_anim_exec_xcb_t)lv_obj_set_y);
+     lv_anim_del(btn, todolist_focus_y_exec);
+     lv_obj_set_y(btn, rest_y);
+ }
+ 
+ static void todolist_focus_y_play(lv_obj_t *btn, lv_coord_t rest_y,
+                                  lv_coord_t focus_y)
+ {
+     if (btn == NULL || !lv_obj_is_valid(btn)) {
+         return;
+     }
+ 
+     todolist_focus_y_stop(btn, rest_y);
+ 
+     lv_anim_t bounce;
+     lv_anim_init(&bounce);
+     lv_anim_set_var(&bounce, btn);
+     lv_anim_set_exec_cb(&bounce, todolist_focus_y_exec);
+     lv_anim_set_values(&bounce, rest_y, focus_y);
+     lv_anim_set_time(&bounce, 0);
+     lv_anim_set_playback_time(&bounce, 200);
+     lv_anim_set_repeat_count(&bounce, 1);
+     lv_anim_set_path_cb(&bounce, lv_anim_path_linear);
+     lv_anim_start(&bounce);
+ }
+ 
+ /*
+  * Runs after Guider's generated focus handlers. Snaps enter/page motion if
+  * still in progress, then corrects Y bounce so interrupted focus cannot leave
+  * rows parked at a mid-animation offset.
+  */
+ static void todolist_effect_focus_interrupt_cb(lv_event_t *e)
+ {
+     lv_event_code_t code = lv_event_get_code(e);
+     if (code != LV_EVENT_FOCUSED && code != LV_EVENT_DEFOCUSED) {
+         return;
+     }
+ 
+     todolist_effect_finish();
+ 
+     lv_obj_t *target = lv_event_get_target(e);
+     int8_t index = todolist_todo_btn_index(target);
+     if (index < 0) {
+         return;
+     }
+ 
+     if (code == LV_EVENT_FOCUSED) {
+         todolist_focus_y_play(target, s_todolist_rest_y[index],
+                               s_todolist_focus_y[index]);
+     } else {
+         todolist_focus_y_stop(target, s_todolist_rest_y[index]);
+     }
+ }
+ 
  /*
   * direction: 0 = 页面进入（两侧汇入），1 = 下一页（右侧进入），
   *           -1 = 上一页（左侧进入）。
@@ -1131,24 +1271,20 @@
   */
  static void todolist_effect_play(int8_t direction)
  {
-     static const lv_coord_t final_x[] = {19, 177, 19, 177};
+     todolist_effect_finish();
+     s_todolist_effect_pending = 0;
  
      for (uint8_t i = 0; i < 4; i++) {
          lv_obj_t *btn = todolist_todo_btn(i);
-         lv_obj_t *label = todolist_todo_label(i);
-         if (btn == NULL || label == NULL ||
-             !lv_obj_is_valid(btn) || !lv_obj_is_valid(label)) {
+         if (btn == NULL || !lv_obj_is_valid(btn)) {
              continue;
          }
  
          lv_anim_del(btn, todolist_effect_x_exec);
          lv_anim_del(btn, todolist_effect_opa_exec);
-         lv_obj_set_x(btn, final_x[i]);
+         lv_obj_set_x(btn, s_todolist_final_x[i]);
  
-         const char *text = lv_label_get_text(label);
-         bool has_content = text != NULL && text[0] != '\0';
-         bool enabled = !lv_obj_has_state(btn, LV_STATE_DISABLED);
-         if (!enabled || !has_content) {
+         if (!todolist_todo_should_show(i)) {
              lv_obj_set_style_opa(btn, LV_OPA_TRANSP,
                                   LV_PART_MAIN | LV_STATE_DEFAULT);
              continue;
@@ -1156,11 +1292,11 @@
  
          lv_coord_t start_x;
          if (direction > 0) {
-             start_x = final_x[i] + 34;
+             start_x = s_todolist_final_x[i] + 34;
          } else if (direction < 0) {
-             start_x = final_x[i] - 34;
+             start_x = s_todolist_final_x[i] - 34;
          } else {
-             start_x = final_x[i] + ((i & 1U) ? 30 : -30);
+             start_x = s_todolist_final_x[i] + ((i & 1U) ? 30 : -30);
          }
  
          lv_obj_set_x(btn, start_x);
@@ -1171,11 +1307,13 @@
          lv_anim_init(&move);
          lv_anim_set_var(&move, btn);
          lv_anim_set_exec_cb(&move, todolist_effect_x_exec);
-         lv_anim_set_values(&move, start_x, final_x[i]);
+         lv_anim_set_values(&move, start_x, s_todolist_final_x[i]);
          lv_anim_set_time(&move, 240);
          lv_anim_set_delay(&move, i * 55);
          lv_anim_set_path_cb(&move, lv_anim_path_ease_out);
+         lv_anim_set_ready_cb(&move, todolist_effect_ready);
          lv_anim_start(&move);
+         s_todolist_effect_pending++;
  
          lv_anim_t fade;
          lv_anim_init(&fade);
@@ -1185,8 +1323,12 @@
          lv_anim_set_time(&fade, 150);
          lv_anim_set_delay(&fade, i * 55);
          lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+         lv_anim_set_ready_cb(&fade, todolist_effect_ready);
          lv_anim_start(&fade);
+         s_todolist_effect_pending++;
      }
+ 
+     s_todolist_effect_active = (s_todolist_effect_pending > 0);
  }
  
  static void todolist_effect_play_async(void *direction_ptr)
@@ -1206,6 +1348,7 @@
      if (code == LV_EVENT_SCREEN_LOADED) {
          lv_async_call(todolist_effect_play_async, NULL);
      } else if (code == LV_EVENT_SCREEN_UNLOADED) {
+         todolist_effect_finish();
          s_todolist_effect_screen = NULL;
          s_todolist_effect_page = -1;
      }
@@ -1235,6 +1378,38 @@
      }
  }
  
+ void screen_todolist_ensure_group_focus(void)
+ {
+     if (g == NULL) {
+         return;
+     }
+
+     lv_obj_t *foc = lv_group_get_focused(g);
+     if (foc != NULL && lv_obj_is_valid(foc) &&
+         !lv_obj_has_state(foc, LV_STATE_DISABLED)) {
+         return;
+     }
+
+     lv_obj_t *candidates[] = {
+         guider_ui.screen_todolist_btn_todo1,
+         guider_ui.screen_todolist_btn_todo2,
+         guider_ui.screen_todolist_btn_todo3,
+         guider_ui.screen_todolist_btn_todo4,
+         guider_ui.screen_todolist_btn_lastpage,
+         guider_ui.screen_todolist_btn_nxtpage,
+         guider_ui.screen_todolist_btn_back,
+     };
+
+     for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
+         lv_obj_t *obj = candidates[i];
+         if (obj != NULL && lv_obj_is_valid(obj) &&
+             !lv_obj_has_state(obj, LV_STATE_DISABLED)) {
+             lv_group_focus_obj(obj);
+             return;
+         }
+     }
+ }
+
  void screen_todolist_buttion_add(){
      if(g == NULL) {
          g = lv_group_create();
@@ -1250,6 +1425,14 @@
              lv_indev_set_group(indev, g);
          }
      }
+
+     /* Empty todolist leaves todo buttons DISABLED. Rebuilding the group while
+      * they stay disabled makes lv_group_refocus() skip every candidate and
+      * leave obj_focus=NULL, freezing keypad/encoder input after BLE 0→N sync. */
+     lv_obj_clear_state(guider_ui.screen_todolist_btn_todo1, LV_STATE_DISABLED);
+     lv_obj_clear_state(guider_ui.screen_todolist_btn_todo2, LV_STATE_DISABLED);
+     lv_obj_clear_state(guider_ui.screen_todolist_btn_todo3, LV_STATE_DISABLED);
+     lv_obj_clear_state(guider_ui.screen_todolist_btn_todo4, LV_STATE_DISABLED);
      
      lv_group_add_obj(g, guider_ui.screen_todolist_btn_todo1);
      lv_group_add_obj(g, guider_ui.screen_todolist_btn_todo2);
@@ -1277,6 +1460,27 @@
                              todolist_effect_page_cb, LV_EVENT_CLICKED, NULL);
          lv_obj_add_event_cb(guider_ui.screen_todolist_btn_nxtpage,
                              todolist_effect_page_cb, LV_EVENT_CLICKED, NULL);
+ 
+         /* Encoder focus during enter/page motion must snap layout first. */
+         lv_obj_t *focus_targets[] = {
+             guider_ui.screen_todolist_btn_todo1,
+             guider_ui.screen_todolist_btn_todo2,
+             guider_ui.screen_todolist_btn_todo3,
+             guider_ui.screen_todolist_btn_todo4,
+             guider_ui.screen_todolist_btn_lastpage,
+             guider_ui.screen_todolist_btn_nxtpage,
+             guider_ui.screen_todolist_btn_back,
+         };
+         for (size_t i = 0; i < sizeof(focus_targets) / sizeof(focus_targets[0]); i++) {
+             if (focus_targets[i] != NULL) {
+                 lv_obj_add_event_cb(focus_targets[i],
+                                     todolist_effect_focus_interrupt_cb,
+                                     LV_EVENT_FOCUSED, NULL);
+                 lv_obj_add_event_cb(focus_targets[i],
+                                     todolist_effect_focus_interrupt_cb,
+                                     LV_EVENT_DEFOCUSED, NULL);
+             }
+         }
      }
  
  }
@@ -3103,6 +3307,7 @@
          lv_obj_is_valid(guider_ui.screen_todolist_btn_todo1_label)) {
          page_cur = 1;
          lv_event_send(guider_ui.screen_todolist, LV_EVENT_SCREEN_LOAD_START, NULL);
+         screen_todolist_ensure_group_focus();
          lv_async_call(todolist_effect_play_async, NULL);
      }
  }

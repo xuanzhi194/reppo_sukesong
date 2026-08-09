@@ -171,6 +171,8 @@ void screen_ai_update_focus_level(void);
 extern lv_group_t *g;
 void group_focus_obj(lv_obj_t *obj);
 void screen_todolist_buttion_add();
+/** Ensure keypad/encoder group has a non-disabled focused object on todolist. */
+void screen_todolist_ensure_group_focus(void);
 void screen_main_buttion_add();
 void screen_log_buttion_add();
 void screen_timing_buttion_add();
