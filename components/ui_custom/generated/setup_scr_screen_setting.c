@@ -509,7 +509,7 @@ void setup_scr_screen_setting(lv_ui *ui)
 
     //Write codes screen_setting_label_info3
     ui->screen_setting_label_info3 = lv_label_create(ui->screen_setting);
-    lv_label_set_text(ui->screen_setting_label_info3, "1.3");
+    lv_label_set_text(ui->screen_setting_label_info3, "1.4");
     lv_label_set_long_mode(ui->screen_setting_label_info3, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_setting_label_info3, 232, 110);
     lv_obj_set_size(ui->screen_setting_label_info3, 70, 16);

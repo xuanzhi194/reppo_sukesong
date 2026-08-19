@@ -36,5 +36,5 @@
   },
   "idf.espIdfPath": "/Users/sean/.espressif/v5.3.5/esp-idf",
   "idf.currentSetup": "/Users/sean/.espressif/v5.3.5/esp-idf",
-  "idf.port": "/dev/tty.usbserial-120"
+  "idf.port": "/dev/tty.usbserial-1130"
 }
