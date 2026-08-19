@@ -69,9 +69,9 @@ esp_err_t todo_storage_archive_done_tasks(void);
 esp_err_t _nvs_save_done(void);
 
 /**
- * @brief 将 UI 侧 done 标记合并进 g_todo_list 并写 NVS（不改 CSV）。
+ * @brief 将 UI 侧 done / duration 合并进 g_todo_list。
  *        仅在 count/name 一致时合并，避免覆盖进行中的 BLE 列表替换。
- *        用于 todolist 内完成任务后、离开页面前也能被小程序 READ 到。
+ *        done 写入 NVS；duration 有变化时写回 todo.csv，供 donelist 归档使用。
  */
 esp_err_t todo_storage_apply_ui_done_flags(const todo_list_t *ui);
 

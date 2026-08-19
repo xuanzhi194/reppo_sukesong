@@ -211,7 +211,8 @@ esp_err_t todo_storage_apply_ui_done_flags(const todo_list_t *ui)
         return ESP_ERR_TIMEOUT;
     }
 
-    bool dirty = false;
+    bool dirty_done = false;
+    bool dirty_duration = false;
     if (ui->count == g_todo_list.count) {
         bool names_match = true;
         for (uint8_t i = 0; i < ui->count; i++) {
@@ -225,18 +226,32 @@ esp_err_t todo_storage_apply_ui_done_flags(const todo_list_t *ui)
             for (uint8_t i = 0; i < ui->count; i++) {
                 if (g_todo_list.items[i].done != ui->items[i].done) {
                     g_todo_list.items[i].done = ui->items[i].done;
-                    dirty = true;
+                    dirty_done = true;
+                }
+                if (g_todo_list.items[i].duration_min != ui->items[i].duration_min) {
+                    g_todo_list.items[i].duration_min = ui->items[i].duration_min;
+                    dirty_duration = true;
                 }
             }
         }
     }
 
     esp_err_t err = ESP_OK;
-    if (dirty) {
-        err = _nvs_save_done();
+    if (dirty_duration) {
+        err = _write_csv();
         if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Synced UI duration to CSV (%u tasks)",
+                     (unsigned)g_todo_list.count);
+        }
+    }
+    if (dirty_done) {
+        esp_err_t done_err = _nvs_save_done();
+        if (done_err == ESP_OK) {
             ESP_LOGI(TAG, "Synced UI done flags to NVS (%u tasks)",
                      (unsigned)g_todo_list.count);
+        }
+        if (err == ESP_OK) {
+            err = done_err;
         }
     }
 

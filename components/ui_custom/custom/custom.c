@@ -756,6 +756,11 @@
      (void)level;
  }
  
+ __attribute__((weak)) void brightness_persist_impl(uint8_t level)
+ {
+     (void)level;
+ }
+ 
  void brightness_apply(void)
  {
      brightness_apply_impl(brightness_level);
@@ -779,6 +784,7 @@
      brightness_level = (brightness_level + 1U) % 3U;
      brightness_apply();
      brightness_update_icon();
+     brightness_persist_impl(brightness_level);
  }
  
  /* ESP32 固件由 main/focus_bridge.c 提供强符号实现 */
@@ -2831,8 +2837,132 @@
      }
  }
  
- //buttion add function screen_pomodoro
- void screen_pomodoro_buttion_add(){
+//--------------- 任务秒表暂停结算（stopwatch + 待办任务） ----------------//
+/* 从待办任务进入番茄钟并选择秒表模式时，按暂停后弹出与倒计时超时一致的
+ * Complete/Continue 结算层：Complete 以秒表实际用时完成任务并归档，
+ * Continue 从暂停处继续走秒。全部通过 post-Guider 钩子实现，不改 generated。 */
+static bool s_stopwatch_settle_active = false;
+static uint32_t s_stopwatch_settle_seconds = 0;
+static lv_obj_t *s_stopwatch_settle_screen = NULL;
+
+static void stopwatch_settle_show(void)
+{
+    lv_obj_clear_state(guider_ui.screen_pomodoro_btn_complete, LV_STATE_DISABLED);
+    lv_obj_clear_state(guider_ui.screen_pomodoro_btn_continue, LV_STATE_DISABLED);
+    lv_obj_clear_flag(guider_ui.screen_pomodoro_img_timeout, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_state(guider_ui.screen_pomodoro_btn_minus, LV_STATE_DISABLED);
+    lv_obj_add_state(guider_ui.screen_pomodoro_btn_plus, LV_STATE_DISABLED);
+    lv_obj_add_state(guider_ui.screen_pomodoro_btn_addnum, LV_STATE_DISABLED);
+    lv_obj_add_state(guider_ui.screen_pomodoro_btn_reset, LV_STATE_DISABLED);
+    lv_obj_add_state(guider_ui.screen_pomodoro_btn_start, LV_STATE_DISABLED);
+    lv_obj_add_state(guider_ui.screen_pomodoro_btn_back, LV_STATE_DISABLED);
+    lv_obj_add_state(guider_ui.screen_pomodoro_btn_countdown, LV_STATE_DISABLED);
+    lv_obj_add_state(guider_ui.screen_pomodoro_btn_stopwatch, LV_STATE_DISABLED);
+    lv_obj_add_flag(guider_ui.screen_pomodoro_btn_start, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(guider_ui.screen_pomodoro_btn_reset, LV_OBJ_FLAG_HIDDEN);
+    pomodoro_timeout_effect_play();
+}
+
+static void stopwatch_settle_resume(void)
+{
+    /* generated 的 Continue 回调已把界面重置回倒计时默认态，这里恢复秒表续走 */
+    pomodoro_countdown = 0;
+    pomodoro_stopwatch = 1;
+    stopwatch_start_label = 1;
+    stopwatch_process_label = 1;
+    timer_all_num = 0;
+    stopwatch_start();
+    timer_all_seconds = s_stopwatch_settle_seconds;
+    lv_obj_clear_flag(guider_ui.screen_pomodoro_img_stopwatch, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(guider_ui.screen_pomodoro_img_countdown, LV_OBJ_FLAG_HIDDEN);
+    lv_label_set_text_fmt(guider_ui.screen_pomodoro_label_timer,
+                          "%02d:%02d:%02d",
+                          (int)(timer_all_seconds / 3600),
+                          (int)((timer_all_seconds % 3600) / 60),
+                          (int)(timer_all_seconds % 60));
+}
+
+static void stopwatch_settle_event_cb(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t *target = lv_event_get_target(e);
+
+    if (code == LV_EVENT_SCREEN_UNLOADED) {
+        s_stopwatch_settle_active = false;
+        s_stopwatch_settle_screen = NULL;
+        return;
+    }
+    if (code != LV_EVENT_CLICKED) {
+        return;
+    }
+
+    if (target == guider_ui.screen_pomodoro_btn_start) {
+        /* generated 回调刚把秒表切到暂停态：任务会话下弹出结算层 */
+        if (focus_session_active && pomodoro_stopwatch &&
+            stopwatch_start_label && !stopwatch_process_label &&
+            !s_stopwatch_settle_active) {
+            s_stopwatch_settle_active = true;
+            s_stopwatch_settle_seconds = timer_all_seconds;
+            stopwatch_settle_show();
+        }
+    } else if (target == guider_ui.screen_pomodoro_btn_complete) {
+        if (s_stopwatch_settle_active) {
+            s_stopwatch_settle_active = false;
+            /* 以秒表实际用时（四舍五入，至少 1 分钟）作为任务时长，
+             * 置 pending 交由主循环 focus_bridge_on_countdown_complete()
+             * 统一完成任务标记、归档与专注时长累计。 */
+            int minutes = (int)((s_stopwatch_settle_seconds + 30U) / 60U);
+            if (minutes < 1) {
+                minutes = 1;
+            }
+            focus_session_minutes = minutes;
+            focus_complete_pending = 1;
+            /* generated 的 Complete 回调把内部状态重置成了倒计时并把
+             * label_timer 写成预设时长，但界面模式图标仍是秒表，
+             * 这里恢复为秒表空闲态并把计时归零，保持显示一致。 */
+            pomodoro_countdown = 0;
+            pomodoro_stopwatch = 1;
+            timer_all_num = 0;
+            timer_all_seconds = 0;
+            lv_label_set_text(guider_ui.screen_pomodoro_label_timer,
+                              "00:00:00");
+            /* generated 回调只给 btn_start 加了 FOCUSED 视觉态，
+             * group 实际焦点仍在已禁用的 Complete 上，需真正移过去。 */
+            group_focus_obj(guider_ui.screen_pomodoro_btn_start);
+        }
+    } else if (target == guider_ui.screen_pomodoro_btn_continue) {
+        if (s_stopwatch_settle_active) {
+            s_stopwatch_settle_active = false;
+            stopwatch_settle_resume();
+            /* 同上：把 group 焦点从已禁用的 Continue 真正切回 btn_start，
+             * 否则按下确认键仍打在 Continue 上，Start 点不动。 */
+            group_focus_obj(guider_ui.screen_pomodoro_btn_start);
+        }
+    }
+}
+
+static void stopwatch_settle_bind_hooks(void)
+{
+    lv_obj_t *scr = guider_ui.screen_pomodoro;
+    if (scr == NULL || !lv_obj_is_valid(scr) ||
+        s_stopwatch_settle_screen == scr) {
+        return;
+    }
+    s_stopwatch_settle_screen = scr;
+    s_stopwatch_settle_active = false;
+
+    lv_obj_add_event_cb(scr, stopwatch_settle_event_cb,
+                        LV_EVENT_SCREEN_UNLOADED, NULL);
+    lv_obj_add_event_cb(guider_ui.screen_pomodoro_btn_start,
+                        stopwatch_settle_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(guider_ui.screen_pomodoro_btn_complete,
+                        stopwatch_settle_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(guider_ui.screen_pomodoro_btn_continue,
+                        stopwatch_settle_event_cb, LV_EVENT_CLICKED, NULL);
+}
+
+//buttion add function screen_pomodoro
+void screen_pomodoro_buttion_add(){
      if(g == NULL) {
          g = lv_group_create();
      } else {
@@ -2868,10 +2998,11 @@
      clear_edge_box(guider_ui.screen_pomodoro_btn_complete);
      clear_edge_box(guider_ui.screen_pomodoro_btn_continue);
  
-     pomodoro_pause_icon_bind_hooks();
-     pomodoro_effect_bind_hooks();
-     pomodoro_black_bind_hooks();
- }
+    pomodoro_pause_icon_bind_hooks();
+    pomodoro_effect_bind_hooks();
+    pomodoro_black_bind_hooks();
+    stopwatch_settle_bind_hooks();
+}
  static bool wordmenu_obj_ready(lv_obj_t *obj)
  {
      return obj != NULL && lv_obj_is_valid(obj);

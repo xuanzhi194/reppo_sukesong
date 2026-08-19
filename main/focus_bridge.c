@@ -40,12 +40,19 @@ void focus_bridge_on_countdown_complete(void)
     }
     focus_complete_pending = 0;
 
-    /* 任务专注会话：标记 todo 为完成，并立刻写 NVS 供 BLE 同步 */
+    /* 任务专注会话：标记 todo 为完成，并用番茄钟实际时长覆盖预设时长 */
     if (focus_session_active) {
         focus_session_active = 0;
-        if (current_task_index < (int)ui_todo_list.count &&
+        if (current_task_index >= 0 &&
+            current_task_index < (int)ui_todo_list.count &&
             ui_todo_list.items[current_task_index].done == 0) {
             ui_todo_list.items[current_task_index].done = 1;
+            if (focus_session_minutes > 0) {
+                uint16_t actual_min = (focus_session_minutes > 65535)
+                                          ? 65535
+                                          : (uint16_t)focus_session_minutes;
+                ui_todo_list.items[current_task_index].duration_min = actual_min;
+            }
             done_sum += 1;
             todo_sum -= 1;
             (void)todo_storage_apply_ui_done_flags(&ui_todo_list);
