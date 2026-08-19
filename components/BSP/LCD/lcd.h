@@ -135,6 +135,8 @@ void lcd_init_full(bool swap_color_bytes, bool dc_inverted, bool bgr_order);
 
 void lcd_backlight_init(void);
 void lcd_backlight_set_level(uint8_t level);
+/** 仅缓存亮度百分比，供 lcd_backlight_init 启动时使用（不操作 GPIO）。 */
+void lcd_backlight_prefetch_level(uint8_t level);
 uint8_t lcd_backlight_level_to_percent(uint8_t level);
 void lcd_on(void);
 void lcd_off(void);

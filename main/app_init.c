@@ -58,6 +58,9 @@ void app_init_storage_and_data(void)
     /* 链入 wificfg 强符号桥接，使列表点击可从 NVS 回填密码 */
     wificfg_bridge_init();
     volume_bridge_init();
+    /* Restore backlight level from NVS before LCD PWM starts, so boot
+     * does not flash 100% then drop to the saved setting. */
+    brightness_bridge_init();
     focus_time_init();
 
     ai_daily_result_load();
@@ -89,7 +92,7 @@ void app_init_lvgl_ui(void)
     lvgl_tick_timer_init();
     lv_init();
     lv_port_disp_init();
-    brightness_bridge_init();
+    brightness_apply();
     lv_port_indev_init();
     setup_ui(&guider_ui);
     lv_refr_now(NULL);

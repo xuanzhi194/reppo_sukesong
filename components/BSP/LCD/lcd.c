@@ -133,6 +133,14 @@ void lcd_backlight_set_level(uint8_t level)
     lcd_backlight_apply_percent(s_backlight_level_percent[level]);
 }
 
+void lcd_backlight_prefetch_level(uint8_t level)
+{
+    if (level >= LCD_BACKLIGHT_LEVEL_COUNT) {
+        level = LCD_BACKLIGHT_LEVEL_COUNT - 1;
+    }
+    s_backlight_percent = s_backlight_level_percent[level];
+}
+
 uint8_t lcd_backlight_level_to_percent(uint8_t level)
 {
     if (level >= LCD_BACKLIGHT_LEVEL_COUNT) {
