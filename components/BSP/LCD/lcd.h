@@ -120,17 +120,25 @@ void lcd_set_madctl(uint8_t madctl);
 void lcd_init_with_options(bool swap_color_bytes);
 void lcd_init_full(bool swap_color_bytes, bool dc_inverted, bool bgr_order);
 #ifndef LCD_BACKLIGHT_LEVEL_COUNT
-#define LCD_BACKLIGHT_LEVEL_COUNT  3
+#define LCD_BACKLIGHT_LEVEL_COUNT  5
 #endif
 
+/* 观感大致按 sqrt(duty) 拉开，低端更密：夜灯 / 暗室 / 室内 / 明亮 / 最大。
+ * 旧三档 30/65/100 对应新档 2/3/4。 */
 #ifndef LCD_BACKLIGHT_LEVEL0_PERCENT
-#define LCD_BACKLIGHT_LEVEL0_PERCENT  30
+#define LCD_BACKLIGHT_LEVEL0_PERCENT  5
 #endif
 #ifndef LCD_BACKLIGHT_LEVEL1_PERCENT
-#define LCD_BACKLIGHT_LEVEL1_PERCENT  65
+#define LCD_BACKLIGHT_LEVEL1_PERCENT  15
 #endif
 #ifndef LCD_BACKLIGHT_LEVEL2_PERCENT
-#define LCD_BACKLIGHT_LEVEL2_PERCENT  100
+#define LCD_BACKLIGHT_LEVEL2_PERCENT  35
+#endif
+#ifndef LCD_BACKLIGHT_LEVEL3_PERCENT
+#define LCD_BACKLIGHT_LEVEL3_PERCENT  65
+#endif
+#ifndef LCD_BACKLIGHT_LEVEL4_PERCENT
+#define LCD_BACKLIGHT_LEVEL4_PERCENT  100
 #endif
 
 void lcd_backlight_init(void);

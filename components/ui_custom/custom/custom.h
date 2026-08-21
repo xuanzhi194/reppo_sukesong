@@ -110,6 +110,9 @@ extern int  all_focus_time;
 extern int  max_focus_time;
 extern int  focus_level_hour[10];
 extern bool volume_en;
+#ifndef BRIGHTNESS_LEVEL_COUNT
+#define BRIGHTNESS_LEVEL_COUNT  5U
+#endif
 extern uint8_t brightness_level;
 extern bool ble_success;
 extern bool ble_enabled;

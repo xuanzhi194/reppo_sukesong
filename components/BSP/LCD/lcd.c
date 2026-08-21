@@ -77,6 +77,8 @@ static const uint8_t s_backlight_level_percent[LCD_BACKLIGHT_LEVEL_COUNT] = {
     LCD_BACKLIGHT_LEVEL0_PERCENT,
     LCD_BACKLIGHT_LEVEL1_PERCENT,
     LCD_BACKLIGHT_LEVEL2_PERCENT,
+    LCD_BACKLIGHT_LEVEL3_PERCENT,
+    LCD_BACKLIGHT_LEVEL4_PERCENT,
 };
 
 static void lcd_backlight_apply_percent(uint8_t percent)

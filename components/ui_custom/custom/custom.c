@@ -52,7 +52,7 @@
  bool main_load_label = 0;
  char current_task_name[128] = {0};
  bool volume_en = 0;
- uint8_t brightness_level = 1;
+ uint8_t brightness_level = 2;
  bool ble_success = 0;
  bool ble_enabled = 0;
  volatile bool ble_toggle_on_req = 0;
@@ -768,20 +768,26 @@
  
  void brightness_update_icon(void)
  {
-     static const lv_opa_t icon_opa[3] = { 90, 170, 255 };
+     static const lv_opa_t icon_opa[BRIGHTNESS_LEVEL_COUNT] = {
+         70, 115, 160, 210, 255
+     };
+     uint8_t level = brightness_level;
  
+     if (level >= BRIGHTNESS_LEVEL_COUNT) {
+         level = BRIGHTNESS_LEVEL_COUNT - 1U;
+     }
      if (guider_ui.screen_setting_img_brightness == NULL ||
          !lv_obj_is_valid(guider_ui.screen_setting_img_brightness)) {
          return;
      }
      lv_obj_set_style_img_opa(guider_ui.screen_setting_img_brightness,
-                              icon_opa[brightness_level % 3],
+                              icon_opa[level],
                               LV_PART_MAIN | LV_STATE_DEFAULT);
  }
  
  void brightness_cycle(void)
  {
-     brightness_level = (brightness_level + 1U) % 3U;
+     brightness_level = (uint8_t)((brightness_level + 1U) % BRIGHTNESS_LEVEL_COUNT);
      brightness_apply();
      brightness_update_icon();
      brightness_persist_impl(brightness_level);
@@ -3517,6 +3523,21 @@ void screen_pomodoro_buttion_add(){
      }
  }
  
+ static lv_opa_t screen_setting_icon_target_opa(lv_obj_t *icon)
+ {
+     if (icon == guider_ui.screen_setting_img_brightness) {
+         static const lv_opa_t icon_opa[BRIGHTNESS_LEVEL_COUNT] = {
+             70, 115, 160, 210, 255
+         };
+         uint8_t level = brightness_level;
+         if (level >= BRIGHTNESS_LEVEL_COUNT) {
+             level = BRIGHTNESS_LEVEL_COUNT - 1U;
+         }
+         return icon_opa[level];
+     }
+     return LV_OPA_COVER;
+ }
+ 
  static void screen_setting_icon_pop(lv_obj_t *icon)
  {
      if (icon == NULL || !lv_obj_is_valid(icon) ||
@@ -3524,6 +3545,7 @@ void screen_pomodoro_buttion_add(){
          return;
      }
  
+     lv_opa_t target_opa = screen_setting_icon_target_opa(icon);
      lv_anim_del(icon, screen_setting_icon_zoom_exec);
      lv_anim_del(icon, screen_setting_icon_opa_exec);
      lv_img_set_zoom(icon, 214);
@@ -3543,7 +3565,7 @@ void screen_pomodoro_buttion_add(){
      lv_anim_init(&fade);
      lv_anim_set_var(&fade, icon);
      lv_anim_set_exec_cb(&fade, screen_setting_icon_opa_exec);
-     lv_anim_set_values(&fade, LV_OPA_TRANSP, LV_OPA_COVER);
+     lv_anim_set_values(&fade, LV_OPA_TRANSP, target_opa);
      lv_anim_set_time(&fade, 150);
      lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
      lv_anim_start(&fade);
@@ -3557,7 +3579,7 @@ void screen_pomodoro_buttion_add(){
      }
  
      lv_anim_del(icon, screen_setting_icon_zoom_exec);
-     lv_obj_set_style_img_opa(icon, LV_OPA_COVER,
+     lv_obj_set_style_img_opa(icon, screen_setting_icon_target_opa(icon),
                               LV_PART_MAIN | LV_STATE_DEFAULT);
  
      lv_anim_t pulse;
