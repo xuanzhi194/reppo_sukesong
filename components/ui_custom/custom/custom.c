@@ -1021,6 +1021,12 @@
          ui_done_list.count++;
      }
      fclose(f);
+     /* CSV 按归档时间追加（旧→新），展示时倒序：首页第一条为最新完成。 */
+     for (int i = 0, j = ui_done_list.count - 1; i < j; i++, j--) {
+         done_item_t tmp = ui_done_list.items[i];
+         ui_done_list.items[i] = ui_done_list.items[j];
+         ui_done_list.items[j] = tmp;
+     }
      return ui_done_list.count;
  }
  
@@ -2888,6 +2894,23 @@ static void stopwatch_settle_resume(void)
                           (int)(timer_all_seconds % 60));
 }
 
+static void stopwatch_settle_after_start_async(void *unused)
+{
+    LV_UNUSED(unused);
+    if (s_stopwatch_settle_active) {
+        return;
+    }
+    /* 秒表已启动再暂停：弹出 Complete/Continue。
+     * 不要求 focus_session_active，主页进入的秒表同样可用；
+     * 真正标记待办完成仍只在 Complete 且有任务会话时发生。 */
+    if (pomodoro_stopwatch && stopwatch_start_label &&
+        !stopwatch_process_label) {
+        s_stopwatch_settle_active = true;
+        s_stopwatch_settle_seconds = timer_all_seconds;
+        stopwatch_settle_show();
+    }
+}
+
 static void stopwatch_settle_event_cb(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -2898,20 +2921,20 @@ static void stopwatch_settle_event_cb(lv_event_t *e)
         s_stopwatch_settle_screen = NULL;
         return;
     }
-    if (code != LV_EVENT_CLICKED) {
+    if (code != LV_EVENT_CLICKED && code != LV_EVENT_SHORT_CLICKED) {
         return;
     }
 
     if (target == guider_ui.screen_pomodoro_btn_start) {
-        /* generated 回调刚把秒表切到暂停态：任务会话下弹出结算层 */
-        if (focus_session_active && pomodoro_stopwatch &&
-            stopwatch_start_label && !stopwatch_process_label &&
-            !s_stopwatch_settle_active) {
-            s_stopwatch_settle_active = true;
-            s_stopwatch_settle_seconds = timer_all_seconds;
-            stopwatch_settle_show();
-        }
-    } else if (target == guider_ui.screen_pomodoro_btn_complete) {
+        /* 等 generated 把 pause 标志写完再判断，避免和 SHORT_CLICKED 时序打架。 */
+        lv_async_call(stopwatch_settle_after_start_async, NULL);
+        return;
+    }
+    if (code != LV_EVENT_CLICKED) {
+        return;
+    }
+
+    if (target == guider_ui.screen_pomodoro_btn_complete) {
         if (s_stopwatch_settle_active) {
             s_stopwatch_settle_active = false;
             /* 以秒表实际用时（四舍五入，至少 1 分钟）作为任务时长，
@@ -2961,6 +2984,8 @@ static void stopwatch_settle_bind_hooks(void)
                         LV_EVENT_SCREEN_UNLOADED, NULL);
     lv_obj_add_event_cb(guider_ui.screen_pomodoro_btn_start,
                         stopwatch_settle_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(guider_ui.screen_pomodoro_btn_start,
+                        stopwatch_settle_event_cb, LV_EVENT_SHORT_CLICKED, NULL);
     lv_obj_add_event_cb(guider_ui.screen_pomodoro_btn_complete,
                         stopwatch_settle_event_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_add_event_cb(guider_ui.screen_pomodoro_btn_continue,
