@@ -199,6 +199,7 @@ static void keypad_read(lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
     /*Get whether the a key is pressed and save the pressed key*/
     uint32_t act_key = keypad_get_encoder();
     // uint32_t act_key = keypad_get_key();
+    idle_sleep_poll();
     if(act_key != 0) {
         data->state = LV_INDEV_STATE_PR;
 
@@ -222,6 +223,12 @@ static void keypad_read(lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
         }
 
         last_key = act_key;
+        if (idle_sleep_consume_key(last_key)) {
+            data->state = LV_INDEV_STATE_REL;
+            data->key = 0;
+            last_key = 0;
+            return;
+        }
     }
     else {
         data->state = LV_INDEV_STATE_REL;

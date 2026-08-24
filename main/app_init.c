@@ -24,6 +24,7 @@
 #include "wificfg_bridge.h"
 #include "volume_bridge.h"
 #include "brightness_bridge.h"
+#include "sleep_bridge.h"
 #include "focus_bridge.h"
 #include "word_storage.h"
 #include "badge_storage.h"
@@ -61,6 +62,7 @@ void app_init_storage_and_data(void)
     /* Restore backlight level from NVS before LCD PWM starts, so boot
      * does not flash 100% then drop to the saved setting. */
     brightness_bridge_init();
+    sleep_bridge_init();
     focus_time_init();
 
     ai_daily_result_load();

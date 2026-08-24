@@ -29,6 +29,7 @@ idf_component_register(
                                "wordcard_bridge.c"
                                "volume_bridge.c"
                                "brightness_bridge.c"
+                               "sleep_bridge.c"
                                "focus_bridge.c"
                                "picture_bridge.c"
                         INCLUDE_DIRS ${include_dirs} 

@@ -377,6 +377,129 @@ void stop_pomodoro_black_flow_light(void)
     s_pomodoro_black_flow_en = false;
 }
 
+#define IDLE_CHARGE_FLOW_STEP_MS    60
+#define IDLE_CHARGE_FLOW_TRAIL_LEN  2
+#define IDLE_CHARGE_WHITE_BASE      8
+#define IDLE_CHARGE_WHITE_PEAK      36
+#define IDLE_CHARGE_GREEN_BASE_R    4
+#define IDLE_CHARGE_GREEN_BASE_G    10
+#define IDLE_CHARGE_GREEN_BASE_B    4
+#define IDLE_CHARGE_GREEN_PEAK_R    16
+#define IDLE_CHARGE_GREEN_PEAK_G    40
+#define IDLE_CHARGE_GREEN_PEAK_B    16
+
+static TaskHandle_t s_idle_charge_flow_task = NULL;
+static volatile bool s_idle_charge_flow_en;
+static volatile uint8_t s_idle_charge_lit_count = LED_STRIP_NUM_LEDS;
+static volatile bool s_idle_charge_pale_green;
+
+void idle_charge_flow_update(uint8_t lit_count, bool pale_green)
+{
+    if (lit_count > LED_STRIP_NUM_LEDS) {
+        lit_count = LED_STRIP_NUM_LEDS;
+    }
+    s_idle_charge_lit_count = lit_count;
+    s_idle_charge_pale_green = pale_green;
+}
+
+static void idle_charge_flow_once(void)
+{
+    const int trail = IDLE_CHARGE_FLOW_TRAIL_LEN;
+    uint8_t lit_count = s_idle_charge_lit_count;
+    bool pale_green = s_idle_charge_pale_green;
+    uint32_t base_r = pale_green ? IDLE_CHARGE_GREEN_BASE_R : IDLE_CHARGE_WHITE_BASE;
+    uint32_t base_g = pale_green ? IDLE_CHARGE_GREEN_BASE_G : IDLE_CHARGE_WHITE_BASE;
+    uint32_t base_b = pale_green ? IDLE_CHARGE_GREEN_BASE_B : IDLE_CHARGE_WHITE_BASE;
+    uint32_t peak_r = pale_green ? IDLE_CHARGE_GREEN_PEAK_R : IDLE_CHARGE_WHITE_PEAK;
+    uint32_t peak_g = pale_green ? IDLE_CHARGE_GREEN_PEAK_G : IDLE_CHARGE_WHITE_PEAK;
+    uint32_t peak_b = pale_green ? IDLE_CHARGE_GREEN_PEAK_B : IDLE_CHARGE_WHITE_PEAK;
+
+    if (lit_count == 0) {
+        if (led_strip_lock()) {
+            led_strip_clear(led_strip);
+            led_strip_refresh(led_strip);
+            led_strip_unlock();
+        }
+        vTaskDelay(pdMS_TO_TICKS(IDLE_CHARGE_FLOW_STEP_MS));
+        return;
+    }
+
+    uint8_t first_on = LED_STRIP_NUM_LEDS - lit_count;
+
+    for (int head = first_on; head < LED_STRIP_NUM_LEDS + trail - 1; head++) {
+        if (!s_idle_charge_flow_en) {
+            return;
+        }
+        if (!led_strip_lock()) {
+            vTaskDelay(pdMS_TO_TICKS(IDLE_CHARGE_FLOW_STEP_MS));
+            continue;
+        }
+        for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
+            if (i < first_on) {
+                led_strip_set_pixel(led_strip, i, 0, 0, 0);
+                continue;
+            }
+
+            uint32_t r = base_r;
+            uint32_t g = base_g;
+            uint32_t b = base_b;
+            int age = head - i;
+
+            if (age >= 0 && age < trail) {
+                uint32_t scale = 255U - (uint32_t)age * 255U / (uint32_t)trail;
+                r += (peak_r * scale) / 255U;
+                g += (peak_g * scale) / 255U;
+                b += (peak_b * scale) / 255U;
+            }
+
+            led_strip_set_pixel(led_strip, i,
+                                pomodoro_black_flow_clamp_channel(r),
+                                pomodoro_black_flow_clamp_channel(g),
+                                pomodoro_black_flow_clamp_channel(b));
+        }
+        led_strip_refresh(led_strip);
+        led_strip_unlock();
+        vTaskDelay(pdMS_TO_TICKS(IDLE_CHARGE_FLOW_STEP_MS));
+    }
+}
+
+static void idle_charge_flow_task(void *param)
+{
+    (void)param;
+    while (s_idle_charge_flow_en) {
+        idle_charge_flow_once();
+    }
+    if (led_strip_lock()) {
+        led_strip_clear(led_strip);
+        led_strip_refresh(led_strip);
+        led_strip_unlock();
+    }
+    s_idle_charge_flow_task = NULL;
+    vTaskDelete(NULL);
+}
+
+void start_idle_charge_flow_light(void)
+{
+    if (!s_led_strip_ready) {
+        init_led_strip();
+    }
+    if (s_idle_charge_flow_task != NULL) {
+        return;
+    }
+    s_idle_charge_flow_en = true;
+    if (xTaskCreatePinnedToCore(idle_charge_flow_task, "idle_chg_flow",
+                                LED_EFFECT_TASK_STACK, NULL, 5,
+                                &s_idle_charge_flow_task, 0) != pdPASS) {
+        s_idle_charge_flow_task = NULL;
+        s_idle_charge_flow_en = false;
+    }
+}
+
+void stop_idle_charge_flow_light(void)
+{
+    s_idle_charge_flow_en = false;
+}
+
 void set_led_bar_level(uint8_t lit_count, uint32_t r, uint32_t g, uint32_t b)
 {
     if (!s_led_strip_ready) {

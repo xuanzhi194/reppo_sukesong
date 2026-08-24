@@ -114,6 +114,16 @@ extern bool volume_en;
 #define BRIGHTNESS_LEVEL_COUNT  5U
 #endif
 extern uint8_t brightness_level;
+#ifndef SLEEP_LEVEL_COUNT
+#define SLEEP_LEVEL_COUNT  4U
+#endif
+extern uint8_t sleep_timeout_level;
+void sleep_timeout_update_ui(void);
+void sleep_timeout_cycle(void);
+uint16_t sleep_timeout_get_minutes(void);
+void idle_sleep_poll(void);
+bool idle_sleep_consume_key(uint32_t lv_key);
+void idle_sleep_note_activity(void);
 extern bool ble_success;
 extern bool ble_enabled;
 extern volatile bool ble_toggle_on_req;
@@ -192,6 +202,8 @@ void wordmenu_stats_sync_values(void);
 void screen_wordmenu_stats_refresh(void);
 void screen_reviewcard_buttion_add();
 void screen_setting_buttion_add();
+/** 按 WIFI/BLE 同规格追加设置按钮，纳入左侧滚动列表与旋钮焦点。 */
+lv_obj_t *screen_setting_list_add_btn(const char *text);
 void screen_wificfg_buttion_add();
 void screen_todosel_buttion_add();
 void screen_ai_buttion_add();

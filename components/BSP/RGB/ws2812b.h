@@ -20,4 +20,9 @@ void start_pomodoro_black_flow_light(void);
 void stop_pomodoro_black_flow_light(void);
 void pomodoro_black_flow_set_lit_count(uint8_t lit_count);
 
+/** 息屏充电：微亮底光 + 流水高亮；lit_count 与电量成比例，pale_green 为 >90%。 */
+void start_idle_charge_flow_light(void);
+void stop_idle_charge_flow_light(void);
+void idle_charge_flow_update(uint8_t lit_count, bool pale_green);
+
 #endif

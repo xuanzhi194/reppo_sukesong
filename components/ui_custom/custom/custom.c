@@ -22,6 +22,7 @@
  #include "word_storage.h"
  #include "ws2812b.h"
  #include "lcd.h"
+ #include "bat_percent.h"
  #endif
  
  //lv group define
@@ -53,6 +54,7 @@
  char current_task_name[128] = {0};
  bool volume_en = 0;
  uint8_t brightness_level = 2;
+ uint8_t sleep_timeout_level = 0;
  bool ble_success = 0;
  bool ble_enabled = 0;
  volatile bool ble_toggle_on_req = 0;
@@ -555,6 +557,129 @@
      s_pomodoro_black_total_seconds = 0;
      pomodoro_timer_delete_only();
      pomodoro_pause_icon_refresh();
+     idle_sleep_note_activity();
+ }
+
+ static bool s_idle_sleep_asleep;
+ static bool s_idle_sleep_inited;
+ static uint32_t s_idle_sleep_last_ms;
+
+ static bool idle_sleep_timer_running(void)
+ {
+     if (pomodoro_countdown && countdown_start_label && countdown_process_label) {
+         return true;
+     }
+     if (pomodoro_stopwatch && stopwatch_start_label && stopwatch_process_label) {
+         return true;
+     }
+     return false;
+ }
+
+ static bool idle_sleep_blocked(void)
+ {
+     return s_pomodoro_black_active || idle_sleep_timer_running();
+ }
+
+ void idle_sleep_note_activity(void)
+ {
+     s_idle_sleep_last_ms = lv_tick_get();
+     s_idle_sleep_inited = true;
+ }
+
+#ifdef ESP_PLATFORM
+ static void idle_sleep_charge_led_refresh(void)
+ {
+     battery_info_t info;
+     int percent;
+     uint8_t lit_count;
+
+     battery_monitor_get(&info);
+     if (!info.plugged_ui) {
+         stop_idle_charge_flow_light();
+         clear_led_bar();
+         return;
+     }
+
+     percent = info.display_percent;
+     if (percent < 0) {
+         percent = 0;
+     } else if (percent > 100) {
+         percent = 100;
+     }
+     lit_count = (uint8_t)((percent * 10 + 99) / 100);
+     if (lit_count == 0U) {
+         lit_count = 1U;
+     }
+     idle_charge_flow_update(lit_count, percent > 90);
+     start_idle_charge_flow_light();
+ }
+#endif
+
+ static void idle_sleep_enter(void)
+ {
+     if (s_idle_sleep_asleep || idle_sleep_blocked()) {
+         return;
+     }
+     s_idle_sleep_asleep = true;
+#ifdef ESP_PLATFORM
+     lcd_off();
+     idle_sleep_charge_led_refresh();
+#endif
+ }
+
+ static void idle_sleep_exit(void)
+ {
+     if (!s_idle_sleep_asleep) {
+         return;
+     }
+     s_idle_sleep_asleep = false;
+     idle_sleep_note_activity();
+#ifdef ESP_PLATFORM
+     stop_idle_charge_flow_light();
+     lcd_backlight_set_level(brightness_level);
+#endif
+ }
+
+ bool idle_sleep_consume_key(uint32_t lv_key)
+ {
+     if (s_idle_sleep_asleep) {
+         if (lv_key == LV_KEY_ENTER) {
+             idle_sleep_exit();
+         }
+         /* 息屏时旋转不唤醒，点按唤醒并吞掉，避免误点当前按钮。 */
+         return true;
+     }
+     idle_sleep_note_activity();
+     return false;
+ }
+
+ void idle_sleep_poll(void)
+ {
+     uint32_t now = lv_tick_get();
+     uint16_t minutes;
+     uint32_t timeout_ms;
+
+     if (!s_idle_sleep_inited) {
+         idle_sleep_note_activity();
+         return;
+     }
+     minutes = sleep_timeout_get_minutes();
+     if (minutes == 0 || s_idle_sleep_asleep) {
+#ifdef ESP_PLATFORM
+         if (s_idle_sleep_asleep) {
+             idle_sleep_charge_led_refresh();
+         }
+#endif
+         return;
+     }
+     if (idle_sleep_blocked()) {
+         s_idle_sleep_last_ms = now;
+         return;
+     }
+     timeout_ms = (uint32_t)minutes * 60000U;
+     if ((uint32_t)(now - s_idle_sleep_last_ms) >= timeout_ms) {
+         idle_sleep_enter();
+     }
  }
  
  void pomodoro_pause_icon_refresh(void)
@@ -791,6 +916,24 @@
      brightness_apply();
      brightness_update_icon();
      brightness_persist_impl(brightness_level);
+ }
+
+ static const uint16_t s_sleep_level_minutes[SLEEP_LEVEL_COUNT] = {
+     0, 1, 5, 10
+ };
+
+ __attribute__((weak)) void sleep_persist_impl(uint8_t level)
+ {
+     (void)level;
+ }
+
+ uint16_t sleep_timeout_get_minutes(void)
+ {
+     uint8_t level = sleep_timeout_level;
+     if (level >= SLEEP_LEVEL_COUNT) {
+         level = 0;
+     }
+     return s_sleep_level_minutes[level];
  }
  
  /* ESP32 固件由 main/focus_bridge.c 提供强符号实现 */
@@ -3743,8 +3886,472 @@ void screen_pomodoro_buttion_add(){
      lv_async_call(screen_setting_initial_effect_async, NULL);
  }
  
+ /* 左侧设置按钮滚动区：对齐原 WIFI(y=35) 到 General(y=135+16) 的上下边界。 */
+ #define SETTING_LIST_X           19
+ #define SETTING_LIST_Y           35
+ #define SETTING_LIST_W           95
+ #define SETTING_LIST_H           116
+ #define SETTING_BTN_W            95
+ #define SETTING_BTN_H            16
+ #define SETTING_BTN_STEP         25
+ #define SETTING_BTN_FOCUS_LIFT   5
+ #define SETTING_LIST_CORE_COUNT  5
+ #define SETTING_LIST_EXTRA_MAX   8
+ 
+ typedef struct {
+     const char *text;
+ } setting_extra_desc_t;
+ 
+ /* 在此追加新设置项即可，尺寸/字体/焦点样式与 WIFI 五键一致。 */
+ static const setting_extra_desc_t s_setting_extra_descs[] = {
+     { "Sleep" },
+ };
+ 
+ static lv_obj_t *s_setting_list;
+ static lv_obj_t *s_setting_extra_btns[SETTING_LIST_EXTRA_MAX];
+ static uint8_t s_setting_extra_count;
+ static lv_obj_t *s_setting_btn_sleep;
+ static lv_obj_t *s_sleep_value_label;
+
+ static const char *const s_sleep_level_text[SLEEP_LEVEL_COUNT] = {
+     "Off",
+     "1min",
+     "5min",
+     "10min",
+ };
+ 
+ static lv_obj_t *screen_setting_list_core_btn(uint8_t index)
+ {
+     switch (index) {
+     case 0: return guider_ui.screen_setting_btn_wifi;
+     case 1: return guider_ui.screen_setting_btn_ble;
+     case 2: return guider_ui.screen_setting_btn_volume;
+     case 3: return guider_ui.screen_setting_btn_brightness;
+     case 4: return guider_ui.screen_setting_btn_general;
+     default: return NULL;
+     }
+ }
+ 
+ static bool screen_setting_list_ready(void)
+ {
+     return s_setting_list != NULL &&
+            lv_obj_is_valid(s_setting_list) &&
+            guider_ui.screen_setting != NULL &&
+            lv_obj_is_valid(guider_ui.screen_setting) &&
+            lv_obj_get_parent(s_setting_list) == guider_ui.screen_setting;
+ }
+ 
+ static int screen_setting_list_btn_index(const lv_obj_t *btn)
+ {
+     uint8_t i;
+ 
+     for (i = 0; i < SETTING_LIST_CORE_COUNT; i++) {
+         if (btn == screen_setting_list_core_btn(i)) {
+             return (int)i;
+         }
+     }
+     for (i = 0; i < s_setting_extra_count; i++) {
+         if (btn == s_setting_extra_btns[i]) {
+             return (int)SETTING_LIST_CORE_COUNT + (int)i;
+         }
+     }
+     return -1;
+ }
+ 
+ static lv_coord_t screen_setting_list_rest_y(int index)
+ {
+     return (lv_coord_t)(index * SETTING_BTN_STEP);
+ }
+ 
+ static bool screen_setting_sleep_ui_ready(void)
+ {
+     return s_sleep_value_label != NULL &&
+            lv_obj_is_valid(s_sleep_value_label) &&
+            guider_ui.screen_setting != NULL &&
+            lv_obj_get_parent(s_sleep_value_label) == guider_ui.screen_setting;
+ }
+
+ static void screen_setting_sleep_hide(void)
+ {
+     if (s_sleep_value_label != NULL && lv_obj_is_valid(s_sleep_value_label)) {
+         lv_obj_add_flag(s_sleep_value_label, LV_OBJ_FLAG_HIDDEN);
+     }
+ }
+
+ static void screen_setting_sleep_place_label(void)
+ {
+     lv_obj_set_pos(s_sleep_value_label, 135, 31);
+     lv_obj_set_size(s_sleep_value_label, 170, 126);
+     lv_obj_set_style_pad_top(s_sleep_value_label, 47,
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+ }
+
+ static void screen_setting_sleep_create_ui(void)
+ {
+     if (guider_ui.screen_setting == NULL ||
+         !lv_obj_is_valid(guider_ui.screen_setting) ||
+         screen_setting_sleep_ui_ready()) {
+         return;
+     }
+
+     s_sleep_value_label = lv_label_create(guider_ui.screen_setting);
+     lv_label_set_text(s_sleep_value_label, s_sleep_level_text[0]);
+     lv_label_set_long_mode(s_sleep_value_label, LV_LABEL_LONG_CLIP);
+     screen_setting_sleep_place_label();
+     lv_obj_set_style_text_font(s_sleep_value_label,
+                                &lv_font_SourceHanSansSC_Medium_28,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_color(s_sleep_value_label, lv_color_hex(0x274a6e),
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(s_sleep_value_label, LV_OPA_COVER,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_align(s_sleep_value_label, LV_TEXT_ALIGN_CENTER,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_opa(s_sleep_value_label, LV_OPA_TRANSP,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_add_flag(s_sleep_value_label, LV_OBJ_FLAG_HIDDEN);
+     lv_obj_clear_flag(s_sleep_value_label, LV_OBJ_FLAG_CLICKABLE);
+ }
+
+ void sleep_timeout_update_ui(void)
+ {
+     uint8_t level = sleep_timeout_level;
+
+     if (level >= SLEEP_LEVEL_COUNT) {
+         level = 0;
+     }
+     if (!screen_setting_sleep_ui_ready()) {
+         return;
+     }
+
+     lv_label_set_text(s_sleep_value_label, s_sleep_level_text[level]);
+     screen_setting_sleep_place_label();
+     lv_anim_del(s_sleep_value_label, screen_setting_label_opa_exec);
+     lv_obj_set_style_text_opa(s_sleep_value_label, LV_OPA_TRANSP,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_anim_t fade;
+     lv_anim_init(&fade);
+     lv_anim_set_var(&fade, s_sleep_value_label);
+     lv_anim_set_exec_cb(&fade, screen_setting_label_opa_exec);
+     lv_anim_set_values(&fade, LV_OPA_TRANSP, LV_OPA_COVER);
+     lv_anim_set_time(&fade, 160);
+     lv_anim_set_path_cb(&fade, lv_anim_path_ease_out);
+     lv_anim_start(&fade);
+ }
+
+ static void screen_setting_sleep_show(void)
+ {
+     screen_setting_sleep_create_ui();
+     if (!screen_setting_sleep_ui_ready()) {
+         return;
+     }
+     sleep_timeout_update_ui();
+     lv_obj_clear_flag(s_sleep_value_label, LV_OBJ_FLAG_HIDDEN);
+ }
+
+ void sleep_timeout_cycle(void)
+ {
+     sleep_timeout_level = (uint8_t)((sleep_timeout_level + 1U) % SLEEP_LEVEL_COUNT);
+     sleep_timeout_update_ui();
+     sleep_persist_impl(sleep_timeout_level);
+     idle_sleep_note_activity();
+ }
+
+ static void screen_setting_sleep_event_cb(lv_event_t *e)
+ {
+     if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
+         sleep_timeout_cycle();
+     }
+ }
+
+ static void screen_setting_sleep_bind_btn(lv_obj_t *btn)
+ {
+     if (btn == NULL || !lv_obj_is_valid(btn)) {
+         return;
+     }
+     s_setting_btn_sleep = btn;
+     lv_obj_add_event_cb(btn, screen_setting_sleep_event_cb, LV_EVENT_CLICKED, NULL);
+ }
+
+ static void screen_setting_hide_detail_widgets(void)
+ {
+     lv_obj_t *widgets[] = {
+         guider_ui.screen_setting_img_wifi_open,
+         guider_ui.screen_setting_img_wifi_close,
+         guider_ui.screen_setting_img_volume_close,
+         guider_ui.screen_setting_img_volume_open,
+         guider_ui.screen_setting_img_ble,
+         guider_ui.screen_setting_img_ble_dis,
+         guider_ui.screen_setting_img_brightness,
+         guider_ui.screen_setting_label_txt1,
+         guider_ui.screen_setting_label_txt2,
+         guider_ui.screen_setting_label_txt3,
+         guider_ui.screen_setting_label_txt4,
+         guider_ui.screen_setting_label_info1,
+         guider_ui.screen_setting_label_info2,
+         guider_ui.screen_setting_label_info3,
+         guider_ui.screen_setting_label_info4,
+         guider_ui.screen_setting_label_about,
+     };
+     size_t i;
+ 
+     for (i = 0; i < sizeof(widgets) / sizeof(widgets[0]); i++) {
+         if (widgets[i] != NULL && lv_obj_is_valid(widgets[i])) {
+             lv_obj_add_flag(widgets[i], LV_OBJ_FLAG_HIDDEN);
+         }
+     }
+     screen_setting_sleep_hide();
+ }
+ 
+ static void screen_setting_list_ensure_visible(lv_obj_t *btn)
+ {
+     lv_coord_t y;
+     lv_coord_t h;
+     lv_coord_t scroll;
+     lv_coord_t view_h;
+ 
+     if (!screen_setting_list_ready() || btn == NULL || !lv_obj_is_valid(btn)) {
+         return;
+     }
+ 
+     y = lv_obj_get_y(btn);
+     h = lv_obj_get_height(btn);
+     scroll = lv_obj_get_scroll_y(s_setting_list);
+     view_h = lv_obj_get_height(s_setting_list);
+ 
+     if (y < scroll) {
+         lv_obj_scroll_to_y(s_setting_list, y, LV_ANIM_ON);
+     } else if ((y + h) > (scroll + view_h)) {
+         lv_obj_scroll_to_y(s_setting_list, y + h - view_h, LV_ANIM_ON);
+     }
+ }
+ 
+ static void screen_setting_list_snap_y(lv_obj_t *btn, int index)
+ {
+     lv_coord_t rest = screen_setting_list_rest_y(index);
+ 
+     lv_anim_del(btn, (lv_anim_exec_xcb_t)lv_obj_set_y);
+     lv_obj_set_y(btn, rest);
+ }
+ 
+ static void screen_setting_list_focus_cb(lv_event_t *e)
+ {
+     lv_obj_t *btn = lv_event_get_target(e);
+     lv_event_code_t code = lv_event_get_code(e);
+     int index = screen_setting_list_btn_index(btn);
+     lv_coord_t rest;
+ 
+     if (index < 0 || btn == NULL || !lv_obj_is_valid(btn)) {
+         return;
+     }
+ 
+     rest = screen_setting_list_rest_y(index);
+     if (code == LV_EVENT_FOCUSED) {
+         /* Guider 仍按屏幕绝对 Y 做弹跳，这里改回列表内坐标。 */
+         screen_setting_list_snap_y(btn, index);
+         screen_setting_list_ensure_visible(btn);
+         if (btn == s_setting_btn_sleep) {
+             screen_setting_hide_detail_widgets();
+             screen_setting_sleep_show();
+         } else if (index >= SETTING_LIST_CORE_COUNT) {
+             screen_setting_hide_detail_widgets();
+         } else {
+             screen_setting_sleep_hide();
+         }
+         ui_animation(btn, 100, 0, rest, rest - SETTING_BTN_FOCUS_LIFT,
+                      &lv_anim_path_linear, 0, 0, 100, 0,
+                      (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+     } else if (code == LV_EVENT_DEFOCUSED) {
+         screen_setting_list_snap_y(btn, index);
+         if (btn == s_setting_btn_sleep) {
+             screen_setting_sleep_hide();
+         }
+     }
+ }
+ 
+ static void screen_setting_list_bind_btn(lv_obj_t *btn)
+ {
+     if (btn == NULL || !lv_obj_is_valid(btn)) {
+         return;
+     }
+     lv_obj_add_flag(btn, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+     lv_obj_add_event_cb(btn, screen_setting_list_focus_cb, LV_EVENT_FOCUSED, NULL);
+     lv_obj_add_event_cb(btn, screen_setting_list_focus_cb, LV_EVENT_DEFOCUSED, NULL);
+ }
+ 
+ static void screen_setting_list_apply_btn_style(lv_obj_t *btn)
+ {
+     lv_obj_set_size(btn, SETTING_BTN_W, SETTING_BTN_H);
+     lv_obj_set_style_pad_all(btn, 0, LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_opa(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_radius(btn, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_color(btn, lv_color_hex(0x274a6e),
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(btn, &lv_font_SourceHanSansSC_Medium_14,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(btn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_align(btn, LV_TEXT_ALIGN_LEFT,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+     lv_obj_set_style_bg_opa(btn, 255, LV_PART_MAIN | LV_STATE_FOCUSED);
+     lv_obj_set_style_bg_color(btn, lv_color_hex(0xffffff),
+                               LV_PART_MAIN | LV_STATE_FOCUSED);
+     lv_obj_set_style_bg_grad_dir(btn, LV_GRAD_DIR_NONE,
+                                  LV_PART_MAIN | LV_STATE_FOCUSED);
+     lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
+     lv_obj_set_style_radius(btn, 5, LV_PART_MAIN | LV_STATE_FOCUSED);
+     lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
+     lv_obj_set_style_text_color(btn, lv_color_hex(0x274a6e),
+                                 LV_PART_MAIN | LV_STATE_FOCUSED);
+     lv_obj_set_style_text_font(btn, &lv_font_SourceHanSansSC_Medium_14,
+                                LV_PART_MAIN | LV_STATE_FOCUSED);
+     lv_obj_set_style_text_opa(btn, 255, LV_PART_MAIN | LV_STATE_FOCUSED);
+ }
+ 
+ static void screen_setting_list_place_btn(lv_obj_t *btn, int index)
+ {
+     lv_obj_set_parent(btn, s_setting_list);
+     lv_obj_set_pos(btn, 0, screen_setting_list_rest_y(index));
+     lv_obj_set_size(btn, SETTING_BTN_W, SETTING_BTN_H);
+ }
+ 
+ static void screen_setting_list_reset_layout(void)
+ {
+     uint8_t i;
+     lv_obj_t *btn;
+ 
+     if (!screen_setting_list_ready()) {
+         return;
+     }
+ 
+     for (i = 0; i < SETTING_LIST_CORE_COUNT; i++) {
+         btn = screen_setting_list_core_btn(i);
+         if (btn != NULL && lv_obj_is_valid(btn)) {
+             screen_setting_list_snap_y(btn, (int)i);
+         }
+     }
+     for (i = 0; i < s_setting_extra_count; i++) {
+         btn = s_setting_extra_btns[i];
+         if (btn != NULL && lv_obj_is_valid(btn)) {
+             screen_setting_list_snap_y(btn, (int)SETTING_LIST_CORE_COUNT + (int)i);
+         }
+     }
+     lv_obj_scroll_to_y(s_setting_list, 0, LV_ANIM_OFF);
+     lv_obj_update_layout(s_setting_list);
+ }
+ 
+ lv_obj_t *screen_setting_list_add_btn(const char *text)
+ {
+     lv_obj_t *btn;
+     lv_obj_t *label;
+     int index;
+ 
+     if (text == NULL || !screen_setting_list_ready() ||
+         s_setting_extra_count >= SETTING_LIST_EXTRA_MAX) {
+         return NULL;
+     }
+ 
+     btn = lv_btn_create(s_setting_list);
+     if (btn == NULL) {
+         return NULL;
+     }
+ 
+     label = lv_label_create(btn);
+     lv_label_set_text(label, text);
+     lv_label_set_long_mode(label, LV_LABEL_LONG_WRAP);
+     lv_obj_align(label, LV_ALIGN_LEFT_MID, 0, 0);
+     lv_obj_set_style_pad_all(btn, 0, LV_STATE_DEFAULT);
+     lv_obj_set_width(label, LV_PCT(100));
+ 
+     screen_setting_list_apply_btn_style(btn);
+     index = (int)SETTING_LIST_CORE_COUNT + (int)s_setting_extra_count;
+     lv_obj_set_pos(btn, 0, screen_setting_list_rest_y(index));
+     screen_setting_list_bind_btn(btn);
+     clear_edge_box(btn);
+ 
+     s_setting_extra_btns[s_setting_extra_count] = btn;
+     s_setting_extra_count++;
+ 
+     if (g != NULL && guider_ui.screen_setting_btn_back != NULL &&
+         lv_obj_is_valid(guider_ui.screen_setting_btn_back) &&
+         lv_obj_get_group(guider_ui.screen_setting_btn_back) == g) {
+         lv_group_remove_obj(guider_ui.screen_setting_btn_back);
+         lv_group_add_obj(g, btn);
+         lv_group_add_obj(g, guider_ui.screen_setting_btn_back);
+     }
+ 
+     lv_obj_update_layout(s_setting_list);
+     return btn;
+ }
+ 
+ static void screen_setting_list_create(void)
+ {
+     uint8_t i;
+     lv_obj_t *btn;
+     size_t extra_n;
+ 
+     s_setting_list = lv_obj_create(guider_ui.screen_setting);
+     lv_obj_remove_style_all(s_setting_list);
+     lv_obj_set_pos(s_setting_list, SETTING_LIST_X, SETTING_LIST_Y);
+     lv_obj_set_size(s_setting_list, SETTING_LIST_W, SETTING_LIST_H);
+     lv_obj_set_style_bg_opa(s_setting_list, LV_OPA_TRANSP, LV_PART_MAIN);
+     lv_obj_set_style_border_width(s_setting_list, 0, LV_PART_MAIN);
+     lv_obj_set_style_outline_width(s_setting_list, 0, LV_PART_MAIN);
+     lv_obj_set_style_pad_all(s_setting_list, 0, LV_PART_MAIN);
+     lv_obj_set_style_radius(s_setting_list, 0, LV_PART_MAIN);
+     lv_obj_set_style_shadow_width(s_setting_list, 0, LV_PART_MAIN);
+     lv_obj_set_scrollbar_mode(s_setting_list, LV_SCROLLBAR_MODE_OFF);
+     lv_obj_set_scroll_dir(s_setting_list, LV_DIR_VER);
+     lv_obj_add_flag(s_setting_list, LV_OBJ_FLAG_SCROLLABLE);
+     lv_obj_clear_flag(s_setting_list, LV_OBJ_FLAG_CLICKABLE);
+     lv_obj_clear_flag(s_setting_list, LV_OBJ_FLAG_SCROLL_ELASTIC);
+     lv_obj_clear_flag(s_setting_list, LV_OBJ_FLAG_SCROLL_MOMENTUM);
+     lv_obj_clear_flag(s_setting_list, LV_OBJ_FLAG_SCROLL_CHAIN);
+     lv_obj_clear_flag(s_setting_list, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+ 
+     s_setting_extra_count = 0;
+     memset(s_setting_extra_btns, 0, sizeof(s_setting_extra_btns));
+     s_setting_btn_sleep = NULL;
+ 
+     for (i = 0; i < SETTING_LIST_CORE_COUNT; i++) {
+         btn = screen_setting_list_core_btn(i);
+         if (btn != NULL && lv_obj_is_valid(btn)) {
+             screen_setting_list_place_btn(btn, (int)i);
+             screen_setting_list_bind_btn(btn);
+         }
+     }
+ 
+     extra_n = sizeof(s_setting_extra_descs) / sizeof(s_setting_extra_descs[0]);
+     for (i = 0; i < extra_n && i < SETTING_LIST_EXTRA_MAX; i++) {
+         btn = screen_setting_list_add_btn(s_setting_extra_descs[i].text);
+         if (btn != NULL && s_setting_extra_descs[i].text != NULL &&
+             strcmp(s_setting_extra_descs[i].text, "Sleep") == 0) {
+             screen_setting_sleep_bind_btn(btn);
+         }
+     }
+     screen_setting_sleep_create_ui();
+ }
+ 
+ static void screen_setting_list_setup(void)
+ {
+     if (guider_ui.screen_setting == NULL ||
+         !lv_obj_is_valid(guider_ui.screen_setting)) {
+         return;
+     }
+ 
+     if (!screen_setting_list_ready()) {
+         screen_setting_list_create();
+     }
+     screen_setting_list_reset_layout();
+ }
+ 
  //buttion add function screen_setting
  void screen_setting_buttion_add(){
+     uint8_t i;
+     lv_obj_t *btn;
+ 
      if(g == NULL) {
          g = lv_group_create();
      } else {
@@ -3759,11 +4366,19 @@ void screen_pomodoro_buttion_add(){
              lv_indev_set_group(indev, g);
          }
      }
+     screen_setting_list_setup();
      lv_group_add_obj(g, guider_ui.screen_setting_btn_wifi);  
      lv_group_add_obj(g, guider_ui.screen_setting_btn_ble);
      lv_group_add_obj(g, guider_ui.screen_setting_btn_volume);
      lv_group_add_obj(g, guider_ui.screen_setting_btn_brightness);
      lv_group_add_obj(g, guider_ui.screen_setting_btn_general);
+     for (i = 0; i < s_setting_extra_count; i++) {
+         btn = s_setting_extra_btns[i];
+         if (btn != NULL && lv_obj_is_valid(btn)) {
+             lv_group_add_obj(g, btn);
+             clear_edge_box(btn);
+         }
+     }
      lv_group_add_obj(g, guider_ui.screen_setting_btn_back);  
      clear_edge_box(guider_ui.screen_setting_btn_wifi);
      clear_edge_box(guider_ui.screen_setting_btn_ble);
