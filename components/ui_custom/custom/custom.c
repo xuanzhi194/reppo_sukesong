@@ -31,14 +31,14 @@
  todo_list_t ui_todo_list = {
      .count = 8,
      .items = {
-         {.name = "Morning standup",   .duration_min = 15, .done = 1, .finish_date = "2026-05-09"},
-         {.name = "Review PR #128",    .duration_min = 25, .done = 1, .finish_date = "2026-05-09"},
-         {.name = "Fix WiFi reconnect",.duration_min = 45, .done = 0, .finish_date = ""},
-         {.name = "LVGL animation tune", .duration_min = 30, .done = 0, .finish_date = ""},
-         {.name = "Write test notes",  .duration_min = 20, .done = 0, .finish_date = ""},
-         {.name = "Refactor timer flow", .duration_min = 35, .done = 0, .finish_date = ""},
-         {.name = "Sync NVS defaults", .duration_min = 18, .done = 0, .finish_date = ""},
-         {.name = "Polish main screen",.duration_min = 40, .done = 0, .finish_date = ""},
+         {.name = "Morning standup",   .duration_min = 15, .done = 1, .planned_date = "2026-05-09"},
+         {.name = "Review PR #128",    .duration_min = 25, .done = 1, .planned_date = "2026-05-09"},
+         {.name = "Fix WiFi reconnect",.duration_min = 45, .done = 0, .planned_date = ""},
+         {.name = "LVGL animation tune", .duration_min = 30, .done = 0, .planned_date = ""},
+         {.name = "Write test notes",  .duration_min = 20, .done = 0, .planned_date = ""},
+         {.name = "Refactor timer flow", .duration_min = 35, .done = 0, .planned_date = ""},
+         {.name = "Sync NVS defaults", .duration_min = 18, .done = 0, .planned_date = ""},
+         {.name = "Polish main screen",.duration_min = 40, .done = 0, .planned_date = ""},
      }
  };
  bool   todosel_back = 0;
@@ -1151,16 +1151,22 @@
          size_t len = strlen(line);
          while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r')) line[--len] = '\0';
          if (len == 0) continue;
-         char *p_name = strtok(line, ",");
-         char *p_date = strtok(NULL, ",");
-         char *p_dur  = strtok(NULL, ",");
-         if (!p_name || !p_date) continue;
-         strncpy(ui_done_list.items[ui_done_list.count].name, p_name,
+         /* 日期列可能为空（小程序未下发），不能用 strtok：它会吞掉空字段导致列错位 */
+         char *fields[3] = {line, NULL, NULL};
+         int nf = 1;
+         for (char *p = line; *p != '\0' && nf < 3; p++) {
+             if (*p == ',') {
+                 *p = '\0';
+                 fields[nf++] = p + 1;
+             }
+         }
+         if (nf < 2 || fields[0][0] == '\0') continue;
+         strncpy(ui_done_list.items[ui_done_list.count].name, fields[0],
                  sizeof(ui_done_list.items[0].name) - 1);
-         strncpy(ui_done_list.items[ui_done_list.count].date, p_date,
+         strncpy(ui_done_list.items[ui_done_list.count].date, fields[1],
                  sizeof(ui_done_list.items[0].date) - 1);
          ui_done_list.items[ui_done_list.count].duration_min =
-                 (uint16_t)(p_dur ? atoi(p_dur) : 0);
+                 (uint16_t)(nf > 2 ? atoi(fields[2]) : 0);
          ui_done_list.count++;
      }
      fclose(f);
@@ -4384,9 +4390,12 @@ void screen_pomodoro_buttion_add(){
      clear_edge_box(guider_ui.screen_setting_btn_ble);
      clear_edge_box(guider_ui.screen_setting_btn_volume);
      clear_edge_box(guider_ui.screen_setting_btn_brightness);
-     clear_edge_box(guider_ui.screen_setting_btn_general);
-     clear_edge_box(guider_ui.screen_setting_btn_back);
-     screen_setting_ble_icon_bind_hooks();
+    clear_edge_box(guider_ui.screen_setting_btn_general);
+    clear_edge_box(guider_ui.screen_setting_btn_back);
+    /* 动态创建的 Sleep 按钮会被 LVGL 自动塞进 default group 并抢走焦点，
+     * 之后按 REFOCUS_POLICY_PREV 回卷到表尾的 General。进入本页必须停在 Wi-Fi。 */
+    group_focus_obj(guider_ui.screen_setting_btn_wifi);
+    screen_setting_ble_icon_bind_hooks();
      screen_setting_visual_effect_bind_hooks();
  }
  
@@ -4429,6 +4438,94 @@ void screen_pomodoro_buttion_add(){
      clear_edge_box(guider_ui.screen_wificfg_btn_back);
  } 
  
+ /* screen_todosel 底部 Cancel 那一行：左侧显示任务日期，右侧显示预设专注时长。
+  * 该 screen 每次进入都会重建，故用 parent 校验决定是否重新创建。 */
+ static lv_obj_t *s_todosel_label_date;
+ static lv_obj_t *s_todosel_label_focus;
+
+ /* 与背景图上的 "Cancel"（x 137~177, y 130~139）同行居中；
+  * 左右外沿对齐上方 Complete / Start focus 的文字列（x 30 ~ 281）。 */
+ #define TODOSEL_INFO_Y      127
+ #define TODOSEL_INFO_W      100
+ #define TODOSEL_INFO_H      14
+ #define TODOSEL_INFO_DATE_X 30
+ #define TODOSEL_INFO_MIN_X  181
+
+ static bool screen_todosel_info_ready(void)
+ {
+     return s_todosel_label_date != NULL && lv_obj_is_valid(s_todosel_label_date) &&
+            s_todosel_label_focus != NULL && lv_obj_is_valid(s_todosel_label_focus) &&
+            guider_ui.screen_todosel != NULL &&
+            lv_obj_get_parent(s_todosel_label_date) == guider_ui.screen_todosel;
+ }
+
+ static void screen_todosel_info_place(lv_obj_t *label, lv_coord_t x)
+ {
+     lv_obj_set_pos(label, x, TODOSEL_INFO_Y);
+     lv_obj_set_size(label, TODOSEL_INFO_W, TODOSEL_INFO_H);
+ }
+
+ static lv_obj_t *screen_todosel_info_label_create(lv_coord_t x, lv_text_align_t align)
+ {
+     lv_obj_t *label = lv_label_create(guider_ui.screen_todosel);
+
+     lv_label_set_text(label, "");
+     lv_label_set_long_mode(label, LV_LABEL_LONG_CLIP);
+     screen_todosel_info_place(label, x);
+     lv_obj_set_style_text_font(label, &lv_font_SourceHanSansSC_Medium_14,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_color(label, lv_color_hex(0x274a6e),
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(label, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_align(label, align, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_opa(label, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_pad_all(label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_border_width(label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_clear_flag(label, LV_OBJ_FLAG_CLICKABLE);
+     return label;
+ }
+
+ static void screen_todosel_info_create_ui(void)
+ {
+     if (guider_ui.screen_todosel == NULL ||
+         !lv_obj_is_valid(guider_ui.screen_todosel) ||
+         screen_todosel_info_ready()) {
+         return;
+     }
+     s_todosel_label_date =
+         screen_todosel_info_label_create(TODOSEL_INFO_DATE_X, LV_TEXT_ALIGN_LEFT);
+     s_todosel_label_focus =
+         screen_todosel_info_label_create(TODOSEL_INFO_MIN_X, LV_TEXT_ALIGN_RIGHT);
+ }
+
+ static void screen_todosel_info_update(void)
+ {
+     screen_todosel_info_create_ui();
+     if (!screen_todosel_info_ready()) {
+         return;
+     }
+
+     /* 每次进入都重新钉住位置，避免受任何布局副作用影响 */
+     screen_todosel_info_place(s_todosel_label_date, TODOSEL_INFO_DATE_X);
+     screen_todosel_info_place(s_todosel_label_focus, TODOSEL_INFO_MIN_X);
+
+     int idx = (page_cur - 1) * 4 + todo_index;
+     if (idx < 0 || idx >= (int)ui_todo_list.count) {
+         lv_label_set_text(s_todosel_label_date, "");
+         lv_label_set_text(s_todosel_label_focus, "");
+         return;
+     }
+
+     /* 日期仅来自微信小程序，未下发时留空 */
+     lv_label_set_text(s_todosel_label_date, ui_todo_list.items[idx].planned_date);
+     if (ui_todo_list.items[idx].duration_min > 0) {
+         lv_label_set_text_fmt(s_todosel_label_focus, "%uMIN",
+                               (unsigned)ui_todo_list.items[idx].duration_min);
+     } else {
+         lv_label_set_text(s_todosel_label_focus, "");
+     }
+ }
+
  //buttion add function screen_todosel
  void screen_todosel_buttion_add(){
      if(g == NULL) {
@@ -4451,6 +4548,7 @@ void screen_pomodoro_buttion_add(){
      clear_edge_box(guider_ui.screen_todosel_btn_complete);
      clear_edge_box(guider_ui.screen_todosel_btn_focus);
      clear_edge_box(guider_ui.screen_todosel_btn_cancel);
+     screen_todosel_info_update();
  }
  
  typedef enum {

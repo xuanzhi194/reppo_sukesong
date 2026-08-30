@@ -1,9 +1,13 @@
 ﻿/**
  * todo_storage.c
  *
- * 存储方案：CSV（只读任务名/时长） + NVS（存 done 标志）
- *   - CSV (/spiffs/todo.csv): 格式 name,duration_min，仅蓝牙同步时写一次
+ * 存储方案：CSV（只读任务名/时长/日期） + NVS（存 done 标志）
+ *   - CSV (/spiffs/todo.csv): 格式 name,duration_min,done,date，仅蓝牙同步时写一次
+ *   - CSV (/spiffs/task_done.csv): 格式 name,date,duration_min
  *   - NVS (namespace "TodoDone"): done 标志数组，标记完成时立即更新
+ *
+ * 日期完全来自微信小程序下发的 plannedDate，设备端不参与生成（不读 RTC）。
+ * 小程序未下发时该列为空。
  */
 
 #include "todo_storage.h"
@@ -16,7 +20,6 @@
 #include "nvs.h"
 #include <time.h>
 #include <ctype.h>
-#include "rx8130.h"
 #include "esp_heap_caps.h"
 #include "freertos/semphr.h"
 
@@ -54,6 +57,56 @@ void todo_storage_sanitize_task_name(char *name, size_t cap)
         write--;
     }
     name[write] = '\0';
+}
+
+/* 计划日期只接受 YYYY-MM-DD，避免脏数据串进 CSV 列 */
+static bool _is_date_key(const char *s)
+{
+    if (s == NULL) {
+        return false;
+    }
+    for (int i = 0; i < 10; i++) {
+        if (i == 4 || i == 7) {
+            if (s[i] != '-') return false;
+        } else if (!isdigit((unsigned char)s[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void _copy_date_key(char *dst, size_t cap, const char *src)
+{
+    if (dst == NULL || cap == 0) {
+        return;
+    }
+    dst[0] = '\0';
+    if (!_is_date_key(src)) {
+        return;
+    }
+    size_t n = cap - 1 < 10 ? cap - 1 : 10;
+    memcpy(dst, src, n);
+    dst[n] = '\0';
+}
+
+/* 原地按逗号切分。日期列可能为空，strtok 会吞掉连续分隔符导致列错位，故自行切分。 */
+static int _split_csv(char *line, char **fields, int max_fields)
+{
+    int n = 0;
+    char *p = line;
+
+    if (line == NULL || max_fields <= 0) {
+        return 0;
+    }
+    fields[n++] = p;
+    while (*p != '\0' && n < max_fields) {
+        if (*p == ',') {
+            *p = '\0';
+            fields[n++] = p + 1;
+        }
+        p++;
+    }
+    return n;
 }
 
 bool todo_storage_lock(TickType_t timeout_ticks)
@@ -95,7 +148,7 @@ static esp_err_t _read_csv(void)
         return ESP_ERR_NOT_FOUND;
     }
 
-    char line[128];
+    char line[192];
     uint8_t count = 0;
     memset(&g_todo_list, 0, sizeof(g_todo_list));
 
@@ -105,15 +158,18 @@ static esp_err_t _read_csv(void)
             line[--len] = '\0';
         if (len == 0) continue;
 
-        char *p_name = strtok(line, ",");
-        char *p_dur  = strtok(NULL, ",");
-        // 第三列 done 不读取，始终由 NVS 恢复
-        if (!p_name || !p_dur) continue;
+        /* 第三列 done 不读取，始终由 NVS 恢复；第四列日期旧格式没有，留空 */
+        char *fields[4];
+        int nf = _split_csv(line, fields, 4);
+        if (nf < 2) continue;
 
-        strncpy(g_todo_list.items[count].name, p_name, TODO_NAME_LEN - 1);
+        strncpy(g_todo_list.items[count].name, fields[0], TODO_NAME_LEN - 1);
         g_todo_list.items[count].name[TODO_NAME_LEN - 1] = '\0';
-        g_todo_list.items[count].duration_min = (uint16_t)atoi(p_dur);
+        g_todo_list.items[count].duration_min = (uint16_t)atoi(fields[1]);
         g_todo_list.items[count].done = 0;  // done 由 NVS 单独恢复
+        _copy_date_key(g_todo_list.items[count].planned_date,
+                       sizeof(g_todo_list.items[count].planned_date),
+                       nf > 3 ? fields[3] : NULL);
         count++;
     }
     fclose(f);
@@ -132,10 +188,11 @@ static esp_err_t _write_csv(void)
         return ESP_FAIL;
     }
     for (uint8_t i = 0; i < g_todo_list.count; i++) {
-        fprintf(f, "%s,%u,%u\n",
+        fprintf(f, "%s,%u,%u,%s\n",
                 g_todo_list.items[i].name,
                 (unsigned)g_todo_list.items[i].duration_min,
-                (unsigned)g_todo_list.items[i].done);
+                (unsigned)g_todo_list.items[i].done,
+                g_todo_list.items[i].planned_date);
     }
     fclose(f);
     ESP_LOGI(TAG, "Saved %d tasks to CSV.", g_todo_list.count);
@@ -289,6 +346,21 @@ esp_err_t todo_storage_save_list(void)
     return ret;
 }
 
+/* 与小程序 getTodoPlannedDate() 的取值顺序保持一致 */
+static cJSON *_json_pick_date(const cJSON *obj)
+{
+    static const char *const keys[] = {
+        "plannedDate", "planDate", "startDate", "dateKey", "date",
+    };
+    for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
+        cJSON *item = cJSON_GetObjectItem(obj, keys[i]);
+        if (cJSON_IsString(item) && _is_date_key(item->valuestring)) {
+            return item;
+        }
+    }
+    return NULL;
+}
+
 static uint16_t _parse_duration_min(const char *s)
 {
     unsigned v = 0;
@@ -335,6 +407,7 @@ esp_err_t todo_storage_apply_ble_json(const char *json)
         if (!cJSON_IsObject(obj) || !cJSON_IsString(content)) {
             continue;
         }
+        cJSON *planned = _json_pick_date(obj);
 
         todo_item_t *dst = &g_todo_list.items[g_todo_list.count];
         strncpy(dst->name, content->valuestring, TODO_NAME_LEN - 1);
@@ -347,7 +420,8 @@ esp_err_t todo_storage_apply_ble_json(const char *json)
                                  ? _parse_duration_min(duration_str->valuestring)
                                  : 0;
         dst->done = cJSON_IsBool(done_item) ? (cJSON_IsTrue(done_item) ? 1 : 0) : 0;
-        dst->finish_date[0] = '\0';
+        _copy_date_key(dst->planned_date, sizeof(dst->planned_date),
+                       planned ? planned->valuestring : NULL);
         g_todo_list.count++;
     }
 
@@ -389,6 +463,9 @@ static cJSON *todo_storage_build_todo_json_array(void)
         cJSON_AddStringToObject(obj, "content", g_todo_list.items[i].name);
         cJSON_AddStringToObject(obj, "durationStr", dur);
         cJSON_AddBoolToObject(obj, "done", g_todo_list.items[i].done != 0);
+        if (g_todo_list.items[i].planned_date[0] != '\0') {
+            cJSON_AddStringToObject(obj, "plannedDate", g_todo_list.items[i].planned_date);
+        }
         cJSON_AddItemToArray(arr, obj);
     }
     return arr;
@@ -419,10 +496,9 @@ static cJSON *todo_storage_build_task_done_json_array(void)
             continue;
         }
 
-        char *p_name = strtok(line, ",");
-        char *p_date = strtok(NULL, ",");
-        char *p_dur  = strtok(NULL, ",");
-        if (p_name == NULL || p_date == NULL) {
+        char *fields[3];
+        int nf = _split_csv(line, fields, 3);
+        if (nf < 2 || fields[0][0] == '\0') {
             continue;
         }
 
@@ -433,9 +509,9 @@ static cJSON *todo_storage_build_task_done_json_array(void)
             fclose(f);
             return NULL;
         }
-        snprintf(dur, sizeof(dur), "%uMIN", (unsigned)(p_dur ? atoi(p_dur) : 0));
-        cJSON_AddStringToObject(obj, "content", p_name);
-        cJSON_AddStringToObject(obj, "date", p_date);
+        snprintf(dur, sizeof(dur), "%uMIN", (unsigned)(nf > 2 ? atoi(fields[2]) : 0));
+        cJSON_AddStringToObject(obj, "content", fields[0]);
+        cJSON_AddStringToObject(obj, "date", fields[1]);
         cJSON_AddStringToObject(obj, "durationStr", dur);
         cJSON_AddItemToArray(arr, obj);
     }
@@ -526,22 +602,6 @@ uint8_t todo_storage_get_done_count(void)
 
 esp_err_t todo_storage_archive_done_tasks(void)
 {
-    // 1. 从 RX8130 芯片检查并获取当前绝对日期
-    rx8130_time_t ds_now;
-    if (rx8130_get_time(I2C_NUM_0, &ds_now) != ESP_OK) {
-        printf("[TODO Archive] Error reading from RX8130!\n");
-        return ESP_FAIL;
-    }
-    
-    if (ds_now.year < 2026) {
-        printf("[TODO Archive] Current clock year is %04d. Please synchronize time first! Archiving aborted.\n", ds_now.year);
-        return ESP_FAIL;
-    }
-
-    char current_date[32];
-    snprintf(current_date, sizeof(current_date), "%04d-%02d-%02d",
-             (int)ds_now.year, (int)ds_now.month, (int)ds_now.date);
-
     FILE *f_done = fopen(TASK_DONE_CSV_PATH, "a");
     if (!f_done) {
         ESP_LOGE(TAG, "Failed to open %s for appending", TASK_DONE_CSV_PATH);
@@ -558,15 +618,14 @@ esp_err_t todo_storage_archive_done_tasks(void)
     memset(new_list, 0, sizeof(todo_list_t));
     int archive_cnt = 0;
 
-    // 2. 遍历现有任务，分类处理
+    // 1. 遍历现有任务，分类处理
     for (uint8_t i = 0; i < g_todo_list.count; i++) {
         if (g_todo_list.items[i].done == 1) {
-            // 已完成任务：附加绝对日期+时长并存入 task_done.csv
-            strncpy(g_todo_list.items[i].finish_date, current_date, sizeof(g_todo_list.items[i].finish_date) - 1);
+            // 已完成任务：带上小程序下发的日期+时长存入 task_done.csv
             todo_storage_sanitize_task_name(g_todo_list.items[i].name, TODO_NAME_LEN);
             fprintf(f_done, "%s,%s,%u\n",
                     g_todo_list.items[i].name,
-                    g_todo_list.items[i].finish_date,
+                    g_todo_list.items[i].planned_date,
                     (unsigned)g_todo_list.items[i].duration_min);
             archive_cnt++;
         } else {
@@ -578,14 +637,14 @@ esp_err_t todo_storage_archive_done_tasks(void)
     fclose(f_done);
 
     if (archive_cnt > 0) {
-        // 3. 覆盖写入新的未完成任务列表 (更新 RAM + SPIFFS + NVS)
+        // 2. 覆盖写入新的未完成任务列表 (更新 RAM + SPIFFS + NVS)
         g_todo_list = *new_list;
         heap_caps_free(new_list);
         _write_csv();        // 更新 todo.csv（只剩下未完成的）
         _nvs_save_done();    // 更新 NVS，标记均为未完成(因为 done 全是 0 转移过来的)
         ESP_LOGI(TAG, "Archived %d done tasks. %d tasks remaining.", archive_cnt, g_todo_list.count);
         
-        // 4. 限制 task_done 文件中的任务数量，最多保留最新的 100 条
+        // 3. 限制 task_done 文件中的任务数量，最多保留最新的 100 条
         _trim_task_done_csv(100);
     } else {
         heap_caps_free(new_list);

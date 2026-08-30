@@ -22,7 +22,8 @@ typedef struct {
     char     name[TODO_NAME_LEN];
     uint16_t duration_min;
     uint8_t  done;
-    char     finish_date[16];
+    /* 日期 YYYY-MM-DD，仅由微信小程序下发；未下发时为空，设备端不自行生成 */
+    char     planned_date[16];
 } todo_item_t;
 typedef struct {
     uint8_t     count;

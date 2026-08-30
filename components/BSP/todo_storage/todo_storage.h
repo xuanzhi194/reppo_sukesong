@@ -15,7 +15,8 @@ typedef struct {
     char     name[TODO_NAME_LEN];
     uint16_t duration_min;
     uint8_t  done;
-    char     finish_date[16];
+    /* 日期 YYYY-MM-DD，仅由微信小程序下发；未下发时为空，设备端不自行生成 */
+    char     planned_date[16];
 } todo_item_t;
 typedef struct {
     uint8_t     count;
@@ -39,8 +40,10 @@ esp_err_t todo_storage_init(void);
 esp_err_t todo_storage_save_list(void);
 
 /**
- * @brief 解析蓝牙 JSON 任务数组，清空并覆盖 /spiffs/todo.csv（name,duration_min,done）。
- * @param json 形如 [{"content":"..","durationStr":"60MIN","done":false}, ...]
+ * @brief 解析蓝牙 JSON 任务数组，清空并覆盖 /spiffs/todo.csv
+ *        （name,duration_min,done,planned_date）。
+ * @param json 形如
+ *        [{"content":"..","durationStr":"60MIN","done":false,"plannedDate":"2026-08-28"}, ...]
  */
 esp_err_t todo_storage_apply_ble_json(const char *json);
 

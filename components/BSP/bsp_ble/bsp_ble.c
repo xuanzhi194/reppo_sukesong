@@ -33,7 +33,8 @@ static const char *TAG = "REPPO_BLE_Device";
 
 #define GATTS_SERVICE_UUID 0x00FF
 #define GATTS_CHAR_UUID    0xFF01
-#define JSON_BUFFER_SIZE   8192
+/* 每条待办新增 plannedDate 字段后单条记录变长，缓冲区同步放大（位于 PSRAM） */
+#define JSON_BUFFER_SIZE   16384
 #define BLE_PREFERRED_MTU  512
 #define BLE_SYNC_NOTIFY_DELAY_MS 150
 
