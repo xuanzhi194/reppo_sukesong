@@ -471,7 +471,6 @@ void setup_scr_screen_wificfg(lv_ui *ui)
     lv_textarea_set_one_line(ui->screen_wificfg_ta_password, true);
     lv_textarea_set_accepted_chars(ui->screen_wificfg_ta_password, "");
     lv_textarea_set_max_length(ui->screen_wificfg_ta_password, 32);
-
     lv_obj_set_pos(ui->screen_wificfg_ta_password, 15, 60);
     lv_obj_set_size(ui->screen_wificfg_ta_password, 135, 26);
     lv_obj_add_flag(ui->screen_wificfg_ta_password, LV_OBJ_FLAG_HIDDEN);

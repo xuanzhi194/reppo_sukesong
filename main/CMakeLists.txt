@@ -32,6 +32,7 @@ idf_component_register(
                                "sleep_bridge.c"
                                "focus_bridge.c"
                                "picture_bridge.c"
+                               "gash_machine.c"
                         INCLUDE_DIRS ${include_dirs} 
                         PRIV_REQUIRES ${priv_requires}
                         EMBED_FILES  ${embed_files}

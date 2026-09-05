@@ -10,6 +10,7 @@
 #include "ai_demo_task.h"
 #include "custom.h"
 #include "focus_bridge.h"
+#include "gash_machine.h"
 #include "esp_random.h"
 #include "todo_storage.h"
 #include "wifi.h"
@@ -268,6 +269,9 @@ void app_main_loop_lvgl_tick(void)
 {
     if (xSemaphoreTake(lvgl_mutex, portMAX_DELAY) == pdTRUE) {
         lv_task_handler();
+        /* Guider 切屏会先 clean 主页按钮，CLICKED 里的 custom_init 到不了。
+         * setup_scr 之后立刻在这里接上扭蛋机。 */
+        gash_machine_poll();
         xSemaphoreGive(lvgl_mutex);
     }
 }

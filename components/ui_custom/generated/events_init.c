@@ -109,7 +109,9 @@ static void screen_main_btn_todolist_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 83, 155);
+        lv_obj_add_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 79, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         lv_obj_set_style_translate_y(guider_ui.screen_main_btn_todolist, -8, LV_STATE_FOCUSED);
         ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
@@ -146,49 +148,12 @@ static void screen_main_btn_done_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 103, 155);
+        lv_obj_add_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 100, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         lv_obj_set_style_translate_y(guider_ui.screen_main_btn_done, -8, LV_STATE_FOCUSED);
         ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
-
-        break;
-    }
-    case LV_EVENT_DEFOCUSED:
-    {
-        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
-        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-static void screen_main_btn_word_event_handler (lv_event_t *e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    switch (code) {
-    case LV_EVENT_CLICKED:
-    {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_main_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
-        break;
-    }
-    case LV_EVENT_FOCUSED:
-    {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"Word");
-        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 125, 155);
-        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
-        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_word, -8, LV_STATE_FOCUSED);
-        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
-
 
         break;
     }
@@ -223,7 +188,9 @@ static void screen_main_btn_timer_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 147, 155);
+        lv_obj_add_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 120, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         lv_obj_set_style_translate_y(guider_ui.screen_main_btn_timer, -8, LV_STATE_FOCUSED);
         ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
@@ -251,7 +218,7 @@ static void screen_main_btn_ai_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"AI Summary");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Keep");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -260,10 +227,92 @@ static void screen_main_btn_ai_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 168, 155);
+        lv_obj_add_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 140, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         lv_obj_set_style_translate_y(guider_ui.screen_main_btn_ai, -8, LV_STATE_FOCUSED);
         ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_main_btn_gashapon_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Random Todo");
+        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 160, 155);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_gashapon, -8, LV_STATE_FOCUSED);
+        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
+        break;
+    }
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_gash, guider_ui.screen_gash_del, &guider_ui.screen_main_del, setup_scr_screen_gash, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_main_btn_word_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_wordmeun, guider_ui.screen_wordmeun_del, &guider_ui.screen_main_del, setup_scr_screen_wordmeun, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        break;
+    }
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Word");
+        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 174, 155);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_word, -8, LV_STATE_FOCUSED);
+        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
+
+
         break;
     }
     case LV_EVENT_DEFOCUSED:
@@ -297,6 +346,8 @@ static void screen_main_btn_fun_event_handler (lv_event_t *e)
         lv_obj_clear_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(guider_ui.screen_main_img_point_icon,193, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         lv_obj_set_style_translate_y(guider_ui.screen_main_btn_fun, -8, LV_STATE_FOCUSED);
@@ -334,7 +385,8 @@ static void screen_main_btn_photo_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
-
+        lv_obj_add_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(guider_ui.screen_main_img_point_icon,216, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         lv_obj_set_style_translate_y(guider_ui.screen_main_btn_photo, -8, LV_STATE_FOCUSED);
@@ -345,6 +397,45 @@ static void screen_main_btn_photo_event_handler (lv_event_t *e)
     {
         lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
         lv_obj_set_x(guider_ui.screen_main_img_select, 132);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void screen_main_btn_game_event_handler (lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code) {
+    case LV_EVENT_FOCUSED:
+    {
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Game");
+        lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 228, 155);
+        ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+        lv_obj_set_style_translate_y(guider_ui.screen_main_btn_game, -8, LV_STATE_FOCUSED);
+        ui_animation(guider_ui.screen_main_img_select, 100, 0, lv_obj_get_x(guider_ui.screen_main_img_select), 115, &lv_anim_path_linear, 0, 0, 100, 0, (lv_anim_exec_xcb_t)lv_obj_set_x, NULL, NULL, NULL);
+        break;
+    }
+    case LV_EVENT_DEFOCUSED:
+    {
+        lv_obj_set_y(guider_ui.screen_main_label_chosen, 10);
+        lv_obj_set_x(guider_ui.screen_main_img_select, 132);
+        break;
+    }
+    case LV_EVENT_CLICKED:
+    {
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_game, guider_ui.screen_game_del, &guider_ui.screen_main_del, setup_scr_screen_game, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     default:
@@ -372,6 +463,8 @@ static void screen_main_btn_setting_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(guider_ui.screen_main_img_point_icon, 236, 155);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
         lv_obj_set_style_translate_y(guider_ui.screen_main_btn_setting, -8, LV_STATE_FOCUSED);
@@ -407,7 +500,10 @@ static void screen_main_btn_realtime_event_handler (lv_event_t *e)
         lv_obj_add_flag(guider_ui.screen_main_img_timer_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_ai_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_fun_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_photo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_setting_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_gash_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(guider_ui.screen_main_img_game_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(guider_ui.screen_main_img_select_timing, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_select, LV_OBJ_FLAG_HIDDEN);
         ui_animation(guider_ui.screen_main_label_chosen, 0, 0, lv_obj_get_y(guider_ui.screen_main_label_chosen), -25, &lv_anim_path_linear, 1, 0, 200, 0, (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
@@ -432,11 +528,13 @@ void events_init_screen_main (lv_ui *ui)
     lv_obj_add_event_cb(ui->screen_main, screen_main_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_todolist, screen_main_btn_todolist_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_done, screen_main_btn_done_event_handler, LV_EVENT_ALL, ui);
-    lv_obj_add_event_cb(ui->screen_main_btn_word, screen_main_btn_word_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_timer, screen_main_btn_timer_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_ai, screen_main_btn_ai_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_main_btn_gashapon, screen_main_btn_gashapon_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_main_btn_word, screen_main_btn_word_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_fun, screen_main_btn_fun_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_photo, screen_main_btn_photo_event_handler, LV_EVENT_ALL, ui);
+    lv_obj_add_event_cb(ui->screen_main_btn_game, screen_main_btn_game_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_setting, screen_main_btn_setting_event_handler, LV_EVENT_ALL, ui);
     lv_obj_add_event_cb(ui->screen_main_btn_realtime, screen_main_btn_realtime_event_handler, LV_EVENT_ALL, ui);
 }

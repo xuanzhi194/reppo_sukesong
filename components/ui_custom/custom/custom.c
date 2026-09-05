@@ -131,209 +131,209 @@
  volatile bool answer_loading_led_stop_req = 0;
  
  static const char * const answer_book_answers[] = {
-     /* —— 肯定 —— */
-     "毫无疑问",
-     "是的",
-     "当然",
-     "放手去做",
-     "时机已到",
-     "值得尝试",
-     "勇敢迈出一步",
-     "命运说:行",
-     "星星眨眼表示同意",
-     "宇宙给你点了赞",
-     "签文:大吉",
-     "卦象:可行",
-     "前景看好",
-     "会得到支持",
-     "结果会比你想的好",
-     "相信直觉",
-     "现在正是时候",
-     "去做就对了",
-     "好运正在靠近",
-     "门已为你打开",
-     "顺水行舟",
-     "贵人会出现",
-     "坚持到底会看到光",
-     "你可以的",
-     "值得一搏",
-     "向前走吧",
-     "老天开了绿灯",
+     /* —— Yes —— */
+     "Without a doubt",
+     "Yes",
+     "Of course",
+     "Go for it",
+     "The time is now",
+     "Worth a try",
+     "Take the first step",
+     "Fate says: yes",
+     "The stars wink yes",
+     "The universe likes this",
+     "Oracle: great luck",
+     "The signs say go",
+     "Looks promising",
+     "You will have support",
+     "It will turn out better",
+     "Trust your gut",
+     "Now is the moment",
+     "Just do it",
+     "Luck is coming",
+     "The door is open",
+     "Go with the flow",
+     "Help will appear",
+     "Keep going; light ahead",
+     "You've got this",
+     "Worth the risk",
+     "Move forward",
+     "The lights are green",
      "YES",
-     "全票通过",
-     "马到成功",
-     "水到渠成",
-     "柳暗花明",
-     "福星高照",
-     "不必再问了",
-     "答案是肯定的",
-     "绝对可以",
-     "没问题",
-     "会有好结果",
-     "抓住这次机会",
-     "月亮说可以",
-     "诸事皆宜",
-     "大胆一点",
-     "心之所向,便是答案",
-     "旗开得胜",
-     "否极泰来",
-     "时来运转",
-     "鸿运当头",
-     "紫气东来",
-     "天佑善人",
-     "绝对没问题",
-     "前景一片光明",
-     "会得到意外之喜",
-     "放手一搏",
-     "宜动不宜静",
-     "吉星高照",
-     "守得云开见月明",
-     "车到山前必有路",
-     "船到桥头自然直",
-     "山重水复,后面你懂的",
-     "机会难得,抓住",
-     "运势正旺",
-     "东风正好",
-     "春暖花开",
-     "柳暗花明又一村",
-     "苦尽甘来",
-     "瑞气盈门",
-     /* —— 否定 —— */
-     "最好不要",
-     "现在还不是时候",
-     "重新考虑一下吧",
-     "别抱太大希望",
-     "答案是:不行",
-     "暂时不要",
-     "再等等",
-     "时机未到",
-     "星星摇头了",
-     "宇宙说:再想想",
-     "恐怕不行",
-     "别冲动",
-     "冷静,先别动",
-     "现在做会后悔",
-     "另寻他路吧",
-     "此路不通",
-     "卦象示凶,慎行",
-     "逆风,不宜",
-     "水逆,请回避",
-     "今日忌大事",
-     "签文:凶",
-     "老天今天没点头",
+     "Unanimous yes",
+     "Swift success",
+     "It will fall into place",
+     "A way will open",
+     "Lucky stars align",
+     "No need to ask again",
+     "The answer is yes",
+     "Absolutely",
+     "No problem",
+     "A good outcome awaits",
+     "Seize this chance",
+     "The moon says yes",
+     "All signs favor you",
+     "Be a little bolder",
+     "Follow what you want",
+     "A strong start",
+     "The worst is over",
+     "Your luck is turning",
+     "Fortune is on your side",
+     "Good things are coming",
+     "Kindness will be repaid",
+     "Absolutely fine",
+     "The outlook is bright",
+     "An unexpected gift",
+     "Take the leap",
+     "Act, don't wait",
+     "Lucky stars shine",
+     "Wait, then the sky clears",
+     "A path will appear",
+     "It will work itself out",
+     "You know what comes next",
+     "Rare chance. Take it",
+     "Your luck is strong",
+     "The wind is with you",
+     "Spring is coming",
+     "A new path after this",
+     "The hard part is ending",
+     "Good fortune at the door",
+     /* —— No —— */
+     "Better not",
+     "Not yet",
+     "Think it over again",
+     "Don't get your hopes up",
+     "The answer is: no",
+     "Not for now",
+     "Wait a bit longer",
+     "The timing is off",
+     "The stars shake their heads",
+     "The universe says: rethink",
+     "Probably not",
+     "Don't rush it",
+     "Stay still for now",
+     "You'll regret it now",
+     "Find another way",
+     "This path is closed",
+     "Bad omen. Be careful",
+     "Headwind. Don't go",
+     "Mercury retrograde. Pause",
+     "Avoid big moves today",
+     "Oracle: unlucky",
+     "Heaven did not nod today",
      "NO",
-     "全票否决",
-     "三思而后行",
-     "欲速则不达",
-     "过犹不及",
-     "塞翁失马,先别动",
-     "缘木求鱼",
-     "南辕北辙",
-     "镜花水月,别当真",
-     "不宜妄动",
-     "不宜强求",
-     "最好忘记",
-     "不会如你所愿",
-     "前景不明",
-     "别一意孤行",
-     "别因小失大",
-     "别飞蛾扑火",
-     "别守株待兔",
-     "不会如期发生",
-     "恐怕要失望",
-     "别指望太多",
-     "不是时候",
-     "缘分未到",
-     "胜算不大",
-     "阻力不小",
-     "风波四起",
-     "乌云未散",
-     "月缺不宜",
-     "门已紧闭",
-     "路已堵死",
-     "此计不通",
-     "此愿难成",
-     "此事作罢",
-     "今非良日",
-     "回头是岸",
-     "悬崖勒马",
-     "亡羊补牢,先停",
-     "前车之鉴,慎之",
-     "覆水难收,勿试",
-     "画地为牢,勿入",
-     "作茧自缚,勿为",
-     /* —— 中立 / 模糊 / 幽默 —— */
-     "顺其自然",
-     "再看看吧",
-     "也许,也许不",
-     "这需要时间",
-     "你其实已经知道了",
-     "命运今天休假",
-     "骰子投出了模棱两可",
-     "月老说再看看",
-     "风水师请假了",
-     "这题超纲了",
-     "答案之书也需要思考",
-     "别催,正在算",
-     "薛定谔的答案是",
-     "建议重摇一次",
-     "睡醒再来问",
-     "老天开了个玩笑",
-     "天机不可泄露太多",
-     "你问得太频繁了",
-     "答案在下一页",
-     "此书拒绝回答",
-     "命运正在输入中...",
-     "看心情",
-     "看缘分",
-     "看天意",
-     "看时机",
-     "看猫的脸色",
-     "抛硬币吧",
-     "宇宙正在加载,请稍候",
-     "猫说你得问问它",
-     "狗说:汪(翻译:随便)",
-     "星星说:你猜",
-     "风把答案吹跑了",
-     "签筒空了,改日",
-     "黄历:宜静不宜动",
-     "福星在路上堵车",
-     "答案之书摸了会儿鱼",
-     "命运键盘卡了",
-     "是又不是",
-     "对又不对",
-     "算了,随它",
-     "你定",
-     "听天由命",
-     "尽人事,听天命",
-     "不可说,不可说",
-     "天机只泄露一半",
-     "悟不到就再问",
-     "好了,翻页吧",
-     "问了也不一定答",
-     "答了也不一定信",
-     "或者:别问了,去生活",
-     "立起来就再问",
-     "今日额度已用完",
-     "凡人,请自重",
-     "你问得我心虚",
-     "门开了条缝,自己推",
-     "月亮还没圆,再等等",
-     "猫主子没睡醒",
-     "月老正在输入",
-     "信号不好,请重试",
-     "再问还是这句",
-     "树说:静一静",
-     "云说:飘哪算哪",
-     "三个直觉打平,重摇",
-     "另一半你自己悟",
-     "由心而定",
-     "问心无愧即可",
-     "宇宙略过此题",
-     "太阳打西边出来了?那再问",
-     "谋事在人,成事在天",
-     "天知地知,你知我知",
-     "所以:再问一次吧",
+     "Unanimous no",
+     "Think twice",
+     "Haste makes waste",
+     "Too much is as bad",
+     "Wait. It may flip later",
+     "You're climbing the wrong tree",
+     "Wrong direction",
+     "It's only a mirage",
+     "Don't act rashly",
+     "Don't force it",
+     "Better to forget",
+     "It won't go your way",
+     "The outlook is unclear",
+     "Don't go it alone",
+     "Don't lose the big picture",
+     "Don't fly into the flame",
+     "Don't just wait around",
+     "It won't happen on time",
+     "You may be disappointed",
+     "Don't expect too much",
+     "Not the right time",
+     "Not meant to be yet",
+     "The odds are low",
+     "Too much resistance",
+     "Trouble is brewing",
+     "The clouds haven't cleared",
+     "A waning moon. Wait",
+     "The door is shut",
+     "The road is blocked",
+     "This plan won't work",
+     "This wish won't come true",
+     "Let this one go",
+     "Today is not the day",
+     "Turn back while you can",
+     "Stop before the edge",
+     "Stop first. Then fix it",
+     "Learn from the last miss",
+     "Don't try; it can't be undone",
+     "Don't walk into a trap",
+     "Don't tie your own hands",
+     /* —— Maybe / vague / funny —— */
+     "Let it be",
+     "Wait and see",
+     "Maybe. Maybe not",
+     "This will take time",
+     "You already know",
+     "Fate is off today",
+     "The dice landed sideways",
+     "Cupid says check again",
+     "The mystic called in sick",
+     "This question is extra credit",
+     "The book needs to think",
+     "Don't rush. Still calculating",
+     "Schrodinger's answer is",
+     "Shake it again",
+     "Ask after you sleep",
+     "Fate is joking",
+     "Too much has been revealed",
+     "You asked too many times",
+     "The answer is on the next page",
+     "This book refuses to answer",
+     "Fate is still typing...",
+     "Depends on the mood",
+     "Depends on fate",
+     "Depends on the heavens",
+     "Depends on the timing",
+     "Depends on the cat",
+     "Flip a coin",
+     "Universe loading. Please wait",
+     "The cat says ask it",
+     "The dog says: whatever",
+     "The stars say: you guess",
+     "The wind blew the answer away",
+     "The lots are empty. Later",
+     "Almanac: rest, don't act",
+     "Luck is stuck in traffic",
+     "The book went on break",
+     "Fate's keyboard jammed",
+     "Yes and also no",
+     "Right and also wrong",
+     "Whatever. Let it go",
+     "You decide",
+     "Leave it to fate",
+     "Do your part. Then let go",
+     "Cannot say. Cannot say",
+     "Only half the secret",
+     "If you don't get it, ask again",
+     "Alright. Turn the page",
+     "Asking may get no answer",
+     "Answering may get no belief",
+     "Or: stop asking. Go live",
+     "Stand it up and ask again",
+     "Today's quota is used up",
+     "Mortal, know your limits",
+     "You made the book nervous",
+     "The door is ajar. Push it",
+     "The moon isn't full. Wait",
+     "The cat is still asleep",
+     "Cupid is still typing",
+     "Bad signal. Try again",
+     "Ask again. Same line",
+     "The tree says: be still",
+     "The cloud says: drift",
+     "Three guts tied. Shake again",
+     "Figure out the other half",
+     "Let your heart decide",
+     "A clear conscience is enough",
+     "The universe skipped this one",
+     "If pigs fly, ask again",
+     "Plan it. Then leave the rest",
+     "You know. I know. That's it",
+     "So: ask one more time",
  };
  
  void answer_book_show_random_answer(void)
@@ -1654,11 +1654,12 @@
  //buttion add function screen_main
  static void screen_main_status_refresh_async(void *unused);
  
+ /* 与 setup_scr_screen_main 中 cont_main 子控件创建顺序一致（flex 横滑顺序） */
  static const lv_coord_t s_main_nav_icon_x[] = {
-     77, 98, 120, 142, 163, 187, 211, 232
+     75, 93, 113, 130, 151, 169, 185, 205, 223, 240
  };
  static const lv_coord_t s_main_nav_point_x[] = {
-     83, 103, 125, 147, 168, 193, 216, 236
+     80, 97, 117, 137, 156, 174, 191, 209, 228, 244
  };
  static int8_t s_main_nav_prev_index = -1;
  
@@ -1667,11 +1668,13 @@
      lv_obj_t *icons[] = {
          guider_ui.screen_main_img_todo_icon,
          guider_ui.screen_main_img_done_icon,
-         guider_ui.screen_main_img_book_icon,
          guider_ui.screen_main_img_timer_icon,
          guider_ui.screen_main_img_ai_icon,
+         guider_ui.screen_main_img_gash_icon,
+         guider_ui.screen_main_img_book_icon,
          guider_ui.screen_main_img_fun_icon,
          guider_ui.screen_main_img_photo_icon,
+         guider_ui.screen_main_img_game_icon,
          guider_ui.screen_main_img_setting_icon,
      };
      return index < sizeof(icons) / sizeof(icons[0]) ? icons[index] : NULL;
@@ -1682,11 +1685,13 @@
      lv_obj_t *buttons[] = {
          guider_ui.screen_main_btn_todolist,
          guider_ui.screen_main_btn_done,
-         guider_ui.screen_main_btn_word,
          guider_ui.screen_main_btn_timer,
          guider_ui.screen_main_btn_ai,
+         guider_ui.screen_main_btn_gashapon,
+         guider_ui.screen_main_btn_word,
          guider_ui.screen_main_btn_fun,
          guider_ui.screen_main_btn_photo,
+         guider_ui.screen_main_btn_game,
          guider_ui.screen_main_btn_setting,
      };
      for (uint8_t i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
@@ -1824,11 +1829,13 @@
      lv_obj_t *buttons[] = {
          guider_ui.screen_main_btn_todolist,
          guider_ui.screen_main_btn_done,
-         guider_ui.screen_main_btn_word,
          guider_ui.screen_main_btn_timer,
          guider_ui.screen_main_btn_ai,
+         guider_ui.screen_main_btn_gashapon,
+         guider_ui.screen_main_btn_word,
          guider_ui.screen_main_btn_fun,
          guider_ui.screen_main_btn_photo,
+         guider_ui.screen_main_btn_game,
          guider_ui.screen_main_btn_setting,
          guider_ui.screen_main_btn_realtime,
      };
@@ -2430,11 +2437,13 @@
      lv_obj_t *buttons[] = {
          guider_ui.screen_main_btn_todolist,
          guider_ui.screen_main_btn_done,
-         guider_ui.screen_main_btn_word,
          guider_ui.screen_main_btn_timer,
          guider_ui.screen_main_btn_ai,
+         guider_ui.screen_main_btn_gashapon,
+         guider_ui.screen_main_btn_word,
          guider_ui.screen_main_btn_fun,
          guider_ui.screen_main_btn_photo,
+         guider_ui.screen_main_btn_game,
          guider_ui.screen_main_btn_setting,
          guider_ui.screen_main_btn_realtime,
      };
@@ -2471,6 +2480,22 @@
      lv_async_call(screen_main_cat_focus_init_async, NULL);
  }
  
+ static void screen_main_extra_scr_clicked(lv_event_t *e);
+ static void screen_main_gash_init_async(void *unused);
+ static void screen_main_game_init_async(void *unused);
+
+ static void screen_main_gash_init_async(void *unused)
+ {
+     LV_UNUSED(unused);
+     screen_gash_custom_init();
+ }
+
+ static void screen_main_game_init_async(void *unused)
+ {
+     LV_UNUSED(unused);
+     screen_game_custom_init();
+ }
+
  void screen_main_buttion_add(){
      if(g == NULL) {
          g = lv_group_create();
@@ -2486,28 +2511,45 @@
              lv_indev_set_group(indev, g);
          }
      }
-     lv_group_add_obj(g, guider_ui.screen_main_btn_todolist);  
-     lv_group_add_obj(g, guider_ui.screen_main_btn_done); 
-     lv_group_add_obj(g, guider_ui.screen_main_btn_word); 
+     lv_group_add_obj(g, guider_ui.screen_main_btn_todolist);
+     lv_group_add_obj(g, guider_ui.screen_main_btn_done);
      lv_group_add_obj(g, guider_ui.screen_main_btn_timer);
-     lv_group_add_obj(g, guider_ui.screen_main_btn_ai); 
+     lv_group_add_obj(g, guider_ui.screen_main_btn_ai);
+     lv_group_add_obj(g, guider_ui.screen_main_btn_gashapon);
+     lv_group_add_obj(g, guider_ui.screen_main_btn_word);
      lv_group_add_obj(g, guider_ui.screen_main_btn_fun);
      lv_group_add_obj(g, guider_ui.screen_main_btn_photo);
+     lv_group_add_obj(g, guider_ui.screen_main_btn_game);
      lv_group_add_obj(g, guider_ui.screen_main_btn_setting);
      lv_group_add_obj(g, guider_ui.screen_main_btn_realtime);
      //clear focus box
      clear_focus_box(guider_ui.screen_main_btn_todolist);
      clear_focus_box(guider_ui.screen_main_btn_done);
-     clear_focus_box(guider_ui.screen_main_btn_word);
      clear_focus_box(guider_ui.screen_main_btn_timer);
      clear_focus_box(guider_ui.screen_main_btn_ai);
+     clear_focus_box(guider_ui.screen_main_btn_gashapon);
+     clear_focus_box(guider_ui.screen_main_btn_word);
      clear_focus_box(guider_ui.screen_main_btn_fun);
      clear_focus_box(guider_ui.screen_main_btn_photo);
+     clear_focus_box(guider_ui.screen_main_btn_game);
      clear_focus_box(guider_ui.screen_main_btn_setting);
      clear_focus_box(guider_ui.screen_main_btn_realtime);
      screen_main_nav_effect_bind_hooks();
      screen_main_realtime_card_bind_hook();
      screen_main_cat_focus_bind_hook();
+     if (guider_ui.screen_main_btn_gashapon != NULL &&
+         lv_obj_is_valid(guider_ui.screen_main_btn_gashapon)) {
+         /* PRESSED 在 Guider 的 CLICKED(clean 主页) 之前，才能排到异步初始化。 */
+         lv_obj_add_event_cb(guider_ui.screen_main_btn_gashapon,
+                             screen_main_extra_scr_clicked,
+                             LV_EVENT_PRESSED, NULL);
+     }
+     if (guider_ui.screen_main_btn_game != NULL &&
+         lv_obj_is_valid(guider_ui.screen_main_btn_game)) {
+         lv_obj_add_event_cb(guider_ui.screen_main_btn_game,
+                             screen_main_extra_scr_clicked,
+                             LV_EVENT_PRESSED, NULL);
+     }
      lv_async_call(screen_main_status_refresh_async, NULL);
  }
  
@@ -4373,6 +4415,27 @@ void screen_pomodoro_buttion_add(){
          }
      }
      screen_setting_list_setup();
+     if (guider_ui.screen_setting_label_about != NULL &&
+         lv_obj_is_valid(guider_ui.screen_setting_label_about)) {
+         lv_label_set_text(guider_ui.screen_setting_label_about, "About");
+     }
+     if (guider_ui.screen_setting_label_txt1 != NULL &&
+         lv_obj_is_valid(guider_ui.screen_setting_label_txt1)) {
+         lv_label_set_text(guider_ui.screen_setting_label_txt1, "Device");
+     }
+     if (guider_ui.screen_setting_label_txt2 != NULL &&
+         lv_obj_is_valid(guider_ui.screen_setting_label_txt2)) {
+         lv_label_set_text(guider_ui.screen_setting_label_txt2, "Model");
+     }
+     if (guider_ui.screen_setting_label_txt4 != NULL &&
+         lv_obj_is_valid(guider_ui.screen_setting_label_txt4)) {
+         lv_label_set_text(guider_ui.screen_setting_label_txt4, "Hardware");
+         lv_obj_set_width(guider_ui.screen_setting_label_txt4, 72);
+     }
+     if (guider_ui.screen_setting_label_info2 != NULL &&
+         lv_obj_is_valid(guider_ui.screen_setting_label_info2)) {
+         lv_label_set_text(guider_ui.screen_setting_label_info2, "Reppo Zero");
+     }
      lv_group_add_obj(g, guider_ui.screen_setting_btn_wifi);  
      lv_group_add_obj(g, guider_ui.screen_setting_btn_ble);
      lv_group_add_obj(g, guider_ui.screen_setting_btn_volume);
@@ -5347,6 +5410,149 @@ void screen_pomodoro_buttion_add(){
      screen_picture_buttion_add();
      picture_bridge_screen_on_load();
      lv_obj_invalidate(guider_ui.screen_picture_img_picture);
+ }
+ 
+ static void screen_keypad_group_reset(void)
+ {
+     if(g == NULL) {
+         g = lv_group_create();
+     } else {
+         lv_group_remove_all_objs(g);
+     }
+     lv_group_set_default(g);
+     lv_indev_t * indev = NULL;
+     while ((indev = lv_indev_get_next(indev))) {
+         if (lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
+             lv_indev_set_group(indev, g);
+         }
+     }
+ }
+ 
+ static void screen_load_main_from(bool *old_scr_del)
+ {
+     ui_load_scr_animation(&guider_ui, &guider_ui.screen_main,
+                           guider_ui.screen_main_del, old_scr_del,
+                           setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON,
+                           100, 100, true, true);
+ }
+ 
+ /* GUI Guider 预览用弱符号；ESP32 固件由 main/gash_machine.c 强符号覆盖。 */
+ __attribute__((weak)) void screen_gash_buttion_add(void)
+ {
+     screen_keypad_group_reset();
+     if (guider_ui.screen_gash_btn_addtodo != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_btn_addtodo)) {
+         lv_group_add_obj(g, guider_ui.screen_gash_btn_addtodo);
+         clear_focus_box(guider_ui.screen_gash_btn_addtodo);
+         group_focus_obj(guider_ui.screen_gash_btn_addtodo);
+     }
+     if (guider_ui.screen_gash_btn_again != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_btn_again)) {
+         lv_group_add_obj(g, guider_ui.screen_gash_btn_again);
+         clear_focus_box(guider_ui.screen_gash_btn_again);
+     }
+ }
+
+ __attribute__((weak)) void screen_gash_custom_init(void)
+ {
+     if (guider_ui.screen_gash == NULL ||
+         !lv_obj_is_valid(guider_ui.screen_gash)) {
+         return;
+     }
+     if (guider_ui.screen_gash_img_claw2 != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_img_claw2)) {
+         lv_obj_add_flag(guider_ui.screen_gash_img_claw2, LV_OBJ_FLAG_HIDDEN);
+     }
+     if (guider_ui.screen_gash_img_claw3 != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_img_claw3)) {
+         lv_obj_add_flag(guider_ui.screen_gash_img_claw3, LV_OBJ_FLAG_HIDDEN);
+     }
+     if (guider_ui.screen_gash_img_ball1 != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_img_ball1)) {
+         lv_obj_add_flag(guider_ui.screen_gash_img_ball1, LV_OBJ_FLAG_HIDDEN);
+     }
+     if (guider_ui.screen_gash_img_ball2 != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_img_ball2)) {
+         lv_obj_add_flag(guider_ui.screen_gash_img_ball2, LV_OBJ_FLAG_HIDDEN);
+     }
+     if (guider_ui.screen_gash_img_ball3 != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_img_ball3)) {
+         lv_obj_add_flag(guider_ui.screen_gash_img_ball3, LV_OBJ_FLAG_HIDDEN);
+     }
+     if (guider_ui.screen_gash_img_ball4 != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_img_ball4)) {
+         lv_obj_add_flag(guider_ui.screen_gash_img_ball4, LV_OBJ_FLAG_HIDDEN);
+     }
+     if (guider_ui.screen_gash_img_randontask != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_img_randontask)) {
+         lv_obj_add_flag(guider_ui.screen_gash_img_randontask, LV_OBJ_FLAG_HIDDEN);
+     }
+     if (guider_ui.screen_gash_btn_addtodo != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_btn_addtodo)) {
+         lv_obj_add_flag(guider_ui.screen_gash_btn_addtodo, LV_OBJ_FLAG_HIDDEN);
+     }
+     if (guider_ui.screen_gash_btn_again != NULL &&
+         lv_obj_is_valid(guider_ui.screen_gash_btn_again)) {
+         lv_obj_add_flag(guider_ui.screen_gash_btn_again, LV_OBJ_FLAG_HIDDEN);
+     }
+     screen_gash_buttion_add();
+ }
+
+ static void screen_game_back_clicked(lv_event_t *e)
+ {
+     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+         return;
+     }
+     screen_load_main_from(&guider_ui.screen_game_del);
+ }
+ 
+ void screen_game_buttion_add(void)
+ {
+     screen_keypad_group_reset();
+     if (guider_ui.screen_game == NULL ||
+         !lv_obj_is_valid(guider_ui.screen_game)) {
+         return;
+     }
+     lv_obj_add_flag(guider_ui.screen_game, LV_OBJ_FLAG_CLICKABLE);
+     lv_obj_add_flag(guider_ui.screen_game, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+     lv_obj_add_event_cb(guider_ui.screen_game, screen_game_back_clicked,
+                         LV_EVENT_CLICKED, NULL);
+     lv_group_add_obj(g, guider_ui.screen_game);
+     clear_focus_box(guider_ui.screen_game);
+     group_focus_obj(guider_ui.screen_game);
+ }
+ 
+ void screen_game_custom_init(void)
+ {
+     lv_obj_t *label;
+     if (guider_ui.screen_game == NULL ||
+         !lv_obj_is_valid(guider_ui.screen_game)) {
+         return;
+     }
+     lv_obj_set_style_bg_opa(guider_ui.screen_game, 255,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_color(guider_ui.screen_game, lv_color_hex(0x0e1b28),
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+     label = lv_label_create(guider_ui.screen_game);
+     lv_label_set_text(label, "Coming soon");
+     lv_obj_set_style_text_color(label, lv_color_hex(0xffffff),
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(label, &lv_font_montserratMedium_16,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_center(label);
+     screen_game_buttion_add();
+ }
+ 
+ static void screen_main_extra_scr_clicked(lv_event_t *e)
+ {
+     if (lv_event_get_code(e) != LV_EVENT_PRESSED) {
+         return;
+     }
+     if (lv_event_get_target(e) == guider_ui.screen_main_btn_gashapon) {
+         lv_async_call(screen_main_gash_init_async, NULL);
+     } else if (lv_event_get_target(e) == guider_ui.screen_main_btn_game) {
+         lv_async_call(screen_main_game_init_async, NULL);
+     }
  }
  
  void custom_init(lv_ui *ui)
