@@ -6,18 +6,15 @@
 #include "app_globals.h"
 #include "app_led.h"
 #include "app_ui.h"
-#include "ai_chat_secrets.h"
-#include "ai_demo_task.h"
+#include "bsp_ble.h"
 #include "custom.h"
 #include "focus_bridge.h"
 #include "gash_machine.h"
 #include "keep_machine.h"
 #include "esp_random.h"
 #include "todo_storage.h"
-#include "wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include <string.h>
 
 /** 答案之书：由 UI 置位，主循环写入随机数并启动 loading 流水灯 */
 static void main_loop_handle_answer_book(void)
@@ -48,112 +45,6 @@ static void main_loop_handle_countdown_timeout(void)
     }
     countdown_timeout_pending = 0;
     app_led_start_buzzer_timeout_task();
-}
-
-/** 启动日/周 AI 分析任务 */
-static void main_loop_start_ai_summary(ai_summary_type_t kind)
-{
-    if (ai_request_pending) {
-        return;
-    }
-    ai_request_pending = 1;
-    g_ai_task_failed = 0;
-    ai_request_deadline = xTaskGetTickCount() + pdMS_TO_TICKS(AI_ANALYSIS_TIMEOUT_MS);
-    app_led_ai_wait_start();
-#if AI_CHAT_USE_PROXY
-    if (!start_ai_summary(kind, &init_ntp, AI_DEVICE_TOKEN)) {
-#else
-    if (!start_ai_summary(kind, &init_ntp, AI_CHAT_API_KEY)) {
-#endif
-        app_led_ai_wait_stop();
-        app_led_ai_result_show(false, 3);
-        ai_request_pending = 0;
-    }
-}
-
-static void main_loop_handle_ai_requests(void)
-{
-    if (ai_day_start) {
-        ai_day_start = 0;
-        if (!is_wifi_connected()) {
-            app_led_ai_result_show(false, 3);
-        } else if (!ai_summary_rate_limit_ok(AI_SUMMARY_DAILY)) {
-            int remain = ai_summary_cooldown_remain_sec(AI_SUMMARY_DAILY);
-            printf("[AI Demo] 每日总结冷却中，剩余 %d 秒\r\n", remain);
-            app_led_ai_cooldown_show(3);
-        } else {
-            main_loop_start_ai_summary(AI_SUMMARY_DAILY);
-        }
-    }
-    if (ai_week_start) {
-        ai_week_start = 0;
-        if (!is_wifi_connected()) {
-            app_led_ai_result_show(false, 3);
-        } else if (!ai_summary_rate_limit_ok(AI_SUMMARY_WEEKLY)) {
-            int remain = ai_summary_cooldown_remain_sec(AI_SUMMARY_WEEKLY);
-            printf("[AI Demo] 每周总结冷却中，剩余 %d 秒\r\n", remain);
-            app_led_ai_cooldown_show(3);
-        } else {
-            main_loop_start_ai_summary(AI_SUMMARY_WEEKLY);
-        }
-    }
-}
-
-/** AI 结果就绪：同步缓存并刷新 screen_ai */
-static void main_loop_handle_ai_results(void)
-{
-    if (!g_ai_daily_result_ready && !g_ai_weekly_result_ready) {
-        return;
-    }
-
-    bool is_daily = (bool)g_ai_daily_result_ready;
-    ai_result_t local_copy;
-    ai_result_t *src = is_daily ? &g_ai_daily_result : &g_ai_weekly_result;
-    memcpy(&local_copy, src, sizeof(ai_result_t));
-
-    if (is_daily) {
-        g_ai_daily_result_ready = false;
-    } else {
-        g_ai_weekly_result_ready = false;
-    }
-
-    ui_ai_result_t *dst = is_daily ? &g_ui_daily_result : &g_ui_weekly_result;
-    memcpy(dst, &local_copy, sizeof(ui_ai_result_t));
-
-    (void)local_copy;
-
-    if (ai_request_pending) {
-        app_led_ai_wait_stop();
-        app_led_ai_result_show(true, 3);
-        ai_request_pending = 0;
-    }
-}
-
-/** AI 任务失败：立即红灯，不再等超时 */
-static void main_loop_handle_ai_failure(void)
-{
-    if (!g_ai_task_failed) {
-        return;
-    }
-    g_ai_task_failed = false;
-
-    if (!ai_request_pending) {
-        return;
-    }
-    app_led_ai_wait_stop();
-    app_led_ai_result_show(false, 3);
-    ai_request_pending = 0;
-}
-
-/** AI 超时视为失败 */
-static void main_loop_handle_ai_timeout(void)
-{
-    if (!ai_request_pending || xTaskGetTickCount() <= ai_request_deadline) {
-        return;
-    }
-    app_led_ai_wait_stop();
-    app_led_ai_result_show(false, 3);
-    ai_request_pending = 0;
 }
 
 static void main_loop_handle_ble_ui(void)
@@ -244,8 +135,28 @@ static void main_loop_handle_battery_plug_ui(void)
     xSemaphoreGive(lvgl_mutex);
 }
 
+static void main_loop_handle_phone_time_sync(void)
+{
+    static bool ui_refresh_pending;
+
+    if (bsp_ble_time_poll()) {
+        keep_machine_refresh_today();
+        ui_refresh_pending = true;
+    }
+    if (!ui_refresh_pending) {
+        return;
+    }
+    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
+        return;
+    }
+    app_ui_rtc_labels_refresh_now();
+    ui_refresh_pending = false;
+    xSemaphoreGive(lvgl_mutex);
+}
+
 void app_main_loop_once(void)
 {
+    main_loop_handle_phone_time_sync();
     main_loop_handle_wordcard_ui();
     main_loop_handle_answer_book();
     main_loop_handle_answer_loading_led();
@@ -253,10 +164,6 @@ void app_main_loop_once(void)
     focus_bridge_on_countdown_complete();
     keep_machine_tick();
     main_loop_handle_battery_plug_ui();
-    main_loop_handle_ai_requests();
-    main_loop_handle_ai_results();
-    main_loop_handle_ai_failure();
-    main_loop_handle_ai_timeout();
     main_loop_handle_ble_ui();
     main_loop_handle_donelist_reload();
 }

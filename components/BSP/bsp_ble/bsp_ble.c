@@ -3,6 +3,8 @@
 #include "todo_storage.h"
 #include "badge_storage.h"
 #include "word_storage.h"
+#include "rx8130.h"
+#include "driver/i2c.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -37,6 +39,7 @@ static const char *TAG = "REPPO_BLE_Device";
 #define JSON_BUFFER_SIZE   16384
 #define BLE_PREFERRED_MTU  512
 #define BLE_SYNC_NOTIFY_DELAY_MS 150
+#define BLE_TIME_STATUS_POLL_MS 50
 
 #ifndef BLE_HS_CONN_HANDLE_NONE
 #define BLE_HS_CONN_HANDLE_NONE 0xffff
@@ -69,10 +72,22 @@ static void schedule_sync_notify_delayed(void);
 static void badge_notify_status(uint8_t status, uint8_t progress);
 static void wordbook_notify_status(uint8_t status, uint8_t progress, uint8_t detail);
 static uint32_t ble_read_u32_le(const uint8_t *p);
+static uint16_t ble_read_u16_le(const uint8_t *p);
 static int notify_todo_chunk(uint8_t cmd, const uint8_t *payload, uint16_t payload_len);
+static int time_notify_status(uint8_t status);
 static uint32_t s_word_ble_total;
 static uint8_t s_word_ble_last_progress;
 static TaskHandle_t s_word_commit_task_handle;
+/* Only copy mailbox state under this lock; never do I2C or GATT calls in it. */
+static portMUX_TYPE s_phone_time_mux = portMUX_INITIALIZER_UNLOCKED;
+static rx8130_time_t s_pending_phone_time;
+static bool s_phone_time_pending;
+static bool s_phone_time_connected;
+static bool s_phone_time_in_flight;
+static bool s_phone_time_status_pending;
+static uint8_t s_phone_time_status;
+static uint32_t s_phone_time_session;
+static struct ble_npl_callout s_phone_time_status_callout;
 
 static uint8_t wordbook_error_detail(esp_err_t err)
 {
@@ -121,6 +136,127 @@ static uint32_t ble_read_u32_le(const uint8_t *p)
          | ((uint32_t)p[1] << 8)
          | ((uint32_t)p[2] << 16)
          | ((uint32_t)p[3] << 24);
+}
+
+static uint16_t ble_read_u16_le(const uint8_t *p)
+{
+    return (uint16_t)p[0] | ((uint16_t)p[1] << 8);
+}
+
+static int weekday_from_ymd(int y, int m, int d)
+{
+    static const int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+    if (m < 3) {
+        y -= 1;
+    }
+    return (y + y / 4 - y / 100 + y / 400 + t[m - 1] + d) % 7;
+}
+
+static int days_in_month(int year, int month)
+{
+    static const int days[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (month == 2) {
+        bool leap = ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
+        return leap ? 29 : 28;
+    }
+    if (month < 1 || month > 12) {
+        return 0;
+    }
+    return days[month];
+}
+
+static bool phone_time_from_payload(const uint8_t *payload, uint16_t payload_len,
+                                   rx8130_time_t *out)
+{
+    if (payload == NULL || out == NULL ||
+        (payload_len != 7 && payload_len != 8)) {
+        return false;
+    }
+
+    uint16_t year = ble_read_u16_le(payload);
+    uint8_t month = payload[2];
+    uint8_t date = payload[3];
+    uint8_t hour = payload[4];
+    uint8_t minute = payload[5];
+    uint8_t second = payload[6];
+    uint8_t wday;
+
+    if (year < 2000 || year > 2099 ||
+        month < 1 || month > 12 ||
+        date < 1 || date > (uint8_t)days_in_month((int)year, (int)month) ||
+        hour > 23 || minute > 59 || second > 59) {
+        return false;
+    }
+
+    if (payload_len == 8 && payload[7] > 6) {
+        return false;
+    }
+    /* The calendar is authoritative, including when the App supplies wday. */
+    wday = (uint8_t)weekday_from_ymd((int)year, (int)month, (int)date);
+
+    out->year = year;
+    out->month = month;
+    out->date = date;
+    out->hour = hour;
+    out->minute = minute;
+    out->second = second;
+    out->day = wday;
+    return true;
+}
+
+/* Called only by the NimBLE host, so a reconnect cannot steal an old ACK. */
+static int time_notify_status(uint8_t status)
+{
+    uint8_t payload[1] = { status };
+    int rc = notify_todo_chunk(BLE_CMD_TIME_STATUS, payload, sizeof(payload));
+    if (rc != 0 && rc != BLE_HS_ENOTCONN) {
+        ESP_LOGW(TAG, "TIME STATUS notify failed: rc=%d", rc);
+    }
+    return rc;
+}
+
+static void time_sync_reset(bool connected)
+{
+    portENTER_CRITICAL(&s_phone_time_mux);
+    ++s_phone_time_session;
+    s_phone_time_connected = connected;
+    s_phone_time_pending = false;
+    s_phone_time_in_flight = false;
+    s_phone_time_status_pending = false;
+    portEXIT_CRITICAL(&s_phone_time_mux);
+}
+
+/* Deliver the RTC result on the host task, after the main-loop I2C write.
+ * Keep it until notify is subscribed / available, or this connection ends. */
+static void time_status_poll_cb(struct ble_npl_event *event)
+{
+    (void)event;
+    portENTER_CRITICAL(&s_phone_time_mux);
+    bool connected = s_phone_time_connected;
+    bool pending = s_phone_time_status_pending;
+    uint8_t status = s_phone_time_status;
+    uint32_t session = s_phone_time_session;
+    portEXIT_CRITICAL(&s_phone_time_mux);
+
+    if (!connected) {
+        return;
+    }
+    if (pending && time_notify_status(status) == 0) {
+        portENTER_CRITICAL(&s_phone_time_mux);
+        if (session == s_phone_time_session) {
+            s_phone_time_status_pending = false;
+            s_phone_time_in_flight = false;
+        }
+        portEXIT_CRITICAL(&s_phone_time_mux);
+    }
+
+    portENTER_CRITICAL(&s_phone_time_mux);
+    bool retry = s_phone_time_connected && s_phone_time_in_flight;
+    portEXIT_CRITICAL(&s_phone_time_mux);
+    if (retry) {
+        ble_npl_callout_reset(&s_phone_time_status_callout,
+                             ble_npl_time_ms_to_ticks32(BLE_TIME_STATUS_POLL_MS));
+    }
 }
 
 static void badge_notify_status(uint8_t status, uint8_t progress)
@@ -394,6 +530,36 @@ static int device_write_cb(uint16_t conn_handle,
             return BLE_ATT_ERR_UNLIKELY;
         }
         ESP_LOGI(TAG, "WORD COMMIT scheduled");
+    } else if (cmd == BLE_CMD_TIME_SET) {
+        /* There is no request ID on the wire: finish one sync before the next. */
+        portENTER_CRITICAL(&s_phone_time_mux);
+        bool busy = s_phone_time_in_flight;
+        bool connected = s_phone_time_connected;
+        portEXIT_CRITICAL(&s_phone_time_mux);
+        if (!connected || conn_handle != active_conn_handle) {
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+        if (busy) {
+            return BLE_ATT_ERR_INSUFFICIENT_RES;
+        }
+        rx8130_time_t phone_time = {0};
+        if (!phone_time_from_payload(payload, payload_len, &phone_time)) {
+            ESP_LOGW(TAG, "TIME SET rejected: len=%u", (unsigned)payload_len);
+            (void)time_notify_status(BLE_TIME_STATUS_ERR);
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        }
+        portENTER_CRITICAL(&s_phone_time_mux);
+        s_pending_phone_time = phone_time;
+        s_phone_time_pending = true;
+        s_phone_time_in_flight = true;
+        portEXIT_CRITICAL(&s_phone_time_mux);
+        ble_npl_callout_reset(&s_phone_time_status_callout,
+                             ble_npl_time_ms_to_ticks32(BLE_TIME_STATUS_POLL_MS));
+        ESP_LOGI(TAG, "TIME SET queued %04u-%02u-%02u %02u:%02u:%02u wday=%u",
+                 (unsigned)phone_time.year, (unsigned)phone_time.month,
+                 (unsigned)phone_time.date, (unsigned)phone_time.hour,
+                 (unsigned)phone_time.minute, (unsigned)phone_time.second,
+                 (unsigned)phone_time.day);
     } else if (cmd == BLE_CMD_DEMO_BOOT_START) {
 #if REPPO_DEMO_BLE_BOOT_GATE
         ESP_LOGI(TAG, "Demo boot START (0x30) — release normal boot");
@@ -431,6 +597,8 @@ static int bsp_ble_gap_event(struct ble_gap_event *event, void *arg)
         ESP_LOGI(TAG, "BLE GAP EVENT CONNECT %s", event->connect.status == 0 ? "OK" : "Failed");
         if (event->connect.status == 0) {
             active_conn_handle = event->connect.conn_handle;
+            notify_enabled = false;
+            time_sync_reset(true);
             ble_success = true;
             ble_ui_refresh_req = true;
             ESP_LOGI(TAG, "Char 0x%04X value handle=%u (READ primary, NOTIFY optional)",
@@ -450,6 +618,8 @@ static int bsp_ble_gap_event(struct ble_gap_event *event, void *arg)
         }
         s_word_ble_total = 0;
         s_word_ble_last_progress = 0;
+        time_sync_reset(false);
+        ble_npl_callout_stop(&s_phone_time_status_callout);
         active_conn_handle = BLE_HS_CONN_HANDLE_NONE;
         notify_enabled = false;
         ble_success = false;
@@ -649,6 +819,12 @@ static void ble_app_on_sync(void)
 static void ble_app_on_reset(int reason)
 {
     ESP_LOGI(TAG, "Resetting state; reason=%d", reason);
+    time_sync_reset(false);
+    ble_npl_callout_stop(&s_phone_time_status_callout);
+    active_conn_handle = BLE_HS_CONN_HANDLE_NONE;
+    notify_enabled = false;
+    ble_success = false;
+    ble_ui_refresh_req = true;
 }
 
 static void ble_host_task(void *param)
@@ -724,6 +900,17 @@ void bsp_ble_init(void)
     ble_store_config_init();
     ble_att_set_preferred_mtu(BLE_PREFERRED_MTU);
 
+    rc = ble_npl_callout_init(&s_phone_time_status_callout,
+                              nimble_port_get_dflt_eventq(), time_status_poll_cb, NULL);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "Time status callout init failed: %d", rc);
+        nimble_port_deinit();
+        ble_enabled = false;
+        ble_ui_refresh_req = true;
+        return;
+    }
+    time_sync_reset(false);
+
 #if !REPPO_DEMO_BLE_BOOT_GATE
     ble_refresh_stored_read_bundle();
 #endif
@@ -741,6 +928,8 @@ void bsp_ble_deinit(void)
     }
 
     s_ble_active = false;
+    time_sync_reset(false);
+    ble_npl_callout_stop(&s_phone_time_status_callout);
 
     if (sync_notify_task_handle != NULL) {
         xTaskNotifyGive(sync_notify_task_handle);
@@ -762,6 +951,9 @@ void bsp_ble_deinit(void)
 
     int rc = nimble_port_stop();
     if (rc == 0) {
+        /* The host can no longer re-arm the callout; release it before NPL. */
+        ble_npl_callout_stop(&s_phone_time_status_callout);
+        ble_npl_callout_deinit(&s_phone_time_status_callout);
         nimble_port_deinit();
         ESP_LOGI(TAG, "NimBLE deinitialized");
     } else {
@@ -772,6 +964,39 @@ void bsp_ble_deinit(void)
     ble_success = false;
     ble_enabled = false;
     ble_ui_refresh_req = true;
+}
+
+bool bsp_ble_time_poll(void)
+{
+    portENTER_CRITICAL(&s_phone_time_mux);
+    if (!s_phone_time_connected || !s_phone_time_pending) {
+        portEXIT_CRITICAL(&s_phone_time_mux);
+        return false;
+    }
+
+    rx8130_time_t phone_time = s_pending_phone_time;
+    uint32_t session = s_phone_time_session;
+    s_phone_time_pending = false;
+    portEXIT_CRITICAL(&s_phone_time_mux);
+
+    esp_err_t err = rx8130_set_time(I2C_NUM_0, &phone_time);
+    portENTER_CRITICAL(&s_phone_time_mux);
+    /* Ignore an in-progress old connection's result after disconnect/reset. */
+    if (s_phone_time_connected && session == s_phone_time_session) {
+        s_phone_time_status = err == ESP_OK ? BLE_TIME_STATUS_OK : BLE_TIME_STATUS_ERR;
+        s_phone_time_status_pending = true;
+    }
+    portEXIT_CRITICAL(&s_phone_time_mux);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "TIME SET RTC write failed: %s", esp_err_to_name(err));
+        return false;
+    }
+
+    ESP_LOGI(TAG, "RTC synced from phone %04u-%02u-%02u %02u:%02u:%02u",
+             (unsigned)phone_time.year, (unsigned)phone_time.month,
+             (unsigned)phone_time.date, (unsigned)phone_time.hour,
+             (unsigned)phone_time.minute, (unsigned)phone_time.second);
+    return true;
 }
 
 #if REPPO_DEMO_BLE_BOOT_GATE

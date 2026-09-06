@@ -1092,6 +1092,7 @@ static const char * const keep_talk_wither[KEEP_LEVEL_COUNT][KEEP_TALK_PER_LEVEL
 static struct {
     bool alive;
     bool leaving;
+    bool displayed_withered;
     lv_obj_t *bound_scr;
     int last_ymd;
     int today_ymd;
@@ -1368,6 +1369,7 @@ static void keep_refresh_ui(void)
     keep_collect_plant_imgs(ok, wither);
     keep_level_from_focus(&level, &span_cur, &span_need, &next_total);
     wilted = keep_is_withered();
+    s_keep.displayed_withered = wilted;
     shown = all_focus_time < 0 ? 0 : all_focus_time;
 
     for (i = 0; i < KEEP_LEVEL_COUNT; i++) {
@@ -1508,6 +1510,13 @@ void keep_note_activity(void)
 #endif
 }
 
+void keep_machine_refresh_today(void)
+{
+#ifdef ESP_PLATFORM
+    keep_cache_today();
+#endif
+}
+
 void keep_machine_tick(void)
 {
 #ifdef ESP_PLATFORM
@@ -1537,6 +1546,11 @@ void keep_machine_poll(void)
         return;
     }
     if (s_keep.alive && s_keep.bound_scr == act) {
+        /* RTC sync or a day change can alter the plant while this page stays open.
+         * poll runs under the LVGL mutex; cache updates never touch widgets. */
+        if (s_keep.displayed_withered != keep_is_withered()) {
+            keep_refresh_ui();
+        }
         return;
     }
     screen_keep_custom_init();

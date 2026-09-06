@@ -7,7 +7,6 @@
 #include "app_nvs_worker.h"
 #include "app_ui.h"
 #include "app_wifi_worker.h"
-#include "ai_demo_task.h"
 #include "bat_percent.h"
 #include "buzzer.h"
 #include "custom.h"
@@ -33,7 +32,6 @@
 #include "driver/i2c.h"
 #include "esp_log.h"
 #include "lvgl.h"
-#include <string.h>
 
 void app_init_hardware(void)
 {
@@ -48,7 +46,7 @@ void app_init_hardware(void)
         if (rx8130_startup(I2C_NUM_0, &rtc_lost_power) != ESP_OK) {
             ESP_LOGW("RTC", "RX8130 startup failed");
         } else if (rtc_lost_power) {
-            ESP_LOGW("RTC", "RX8130 lost power — sync time via WiFi/NTP when possible");
+            ESP_LOGW("RTC", "RX8130 lost power — waiting for phone time sync over BLE");
         }
     }
 }
@@ -67,12 +65,6 @@ void app_init_storage_and_data(void)
     focus_time_init();
     keep_machine_init();
 
-    ai_daily_result_load();
-    ai_weekly_result_load();
-    ai_rate_limit_init();
-    memcpy(&g_ui_daily_result, &g_ai_daily_result, sizeof(ui_ai_result_t));
-    memcpy(&g_ui_weekly_result, &g_ai_weekly_result, sizeof(ui_ai_result_t));
-
     init_spiffs();
     badge_storage_init();
     picture_bridge_init();
@@ -86,7 +78,6 @@ void app_init_storage_and_data(void)
 
     init_wifi();
     app_wifi_register_callbacks();
-    init_ntp = false;
 }
 
 void app_init_lvgl_ui(void)

@@ -1,11 +1,9 @@
 #include "wifi.h"
-#include "rx8130.h"
-#include "driver/i2c.h"
-#include "esp_timer.h"
-#include "lwip/ip4_addr.h"
 #include "freertos/semphr.h"
+#include <stdlib.h>
+#include <string.h>
 
-static const char *TAG = "NTP_TIME";
+static const char *TAG = "WIFI";
 
 #define WIFI_CONNECT_MAX_ATTEMPTS      3
 #define WIFI_CONNECT_TIMEOUT_MS        15000
@@ -13,8 +11,6 @@ static const char *TAG = "NTP_TIME";
 /* 单位 0.25 dBm；64=16dBm。略降发射功率可减轻 WiFi 峰值电流引起的背光变暗 */
 #define WIFI_MAX_TX_POWER_Q4_DBM       64
 
-static bool s_sntp_started = false;
-static int64_t s_last_sntp_retry_us = 0;
 static SemaphoreHandle_t s_wifi_ip_sem = NULL;
 static volatile bool s_connect_wait_active = false;
 static volatile int s_last_disc_reason = -1;
@@ -22,111 +18,6 @@ static wifi_disconnect_cb_t s_disconnect_cb = NULL;
 
 wifi_scan_info_t g_scan_results[MAX_SCAN_RECORDS];
 uint16_t g_scan_ap_num = 0;
-
-static void sntp_on_sync(struct timeval *tv)
-{
-    (void)tv;
-    ESP_LOGI(TAG, "NTP time synchronized");
-    /* 主屏时钟读 RTC; 必须在 NTP 成功时写入芯片, 不能只在 timing 屏才同步 */
-    if (rx8130_sync_from_system(I2C_NUM_0) != ESP_OK) {
-        ESP_LOGW(TAG, "RTC sync from NTP failed");
-    }
-}
-
-static bool system_time_valid_from_tm(const struct tm *timeinfo)
-{
-    return timeinfo && (timeinfo->tm_year + 1900 >= 2025);
-}
-
-bool is_system_time_valid(void)
-{
-    time_t now = 0;
-    struct tm timeinfo = {0};
-    time(&now);
-    localtime_r(&now, &timeinfo);
-    return system_time_valid_from_tm(&timeinfo);
-}
-
-void ensure_sntp_started(void)
-{
-    if (s_sntp_started) {
-        esp_sntp_restart();
-        ESP_LOGI(TAG, "SNTP restart");
-        return;
-    }
-
-    ESP_LOGI(TAG, "Initializing SNTP");
-    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    esp_sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
-    esp_sntp_set_time_sync_notification_cb(sntp_on_sync);
-
-    /* 优先 IP，避免手机热点 DNS 慢/失败；再备域名 */
-    ip_addr_t ip_aliyun;
-    IP4_ADDR(&ip_aliyun.u_addr.ip4, 203, 107, 6, 88);
-    ip_aliyun.type = IPADDR_TYPE_V4;
-    esp_sntp_setserver(0, &ip_aliyun);
-
-    ip_addr_t ip_ntp_cn;
-    IP4_ADDR(&ip_ntp_cn.u_addr.ip4, 114, 118, 7, 163);
-    ip_ntp_cn.type = IPADDR_TYPE_V4;
-    esp_sntp_setserver(1, &ip_ntp_cn);
-
-    esp_sntp_setservername(2, "ntp1.aliyun.com");
-
-    esp_sntp_init();
-    setenv("TZ", "CST-8", 1);
-    tzset();
-    s_sntp_started = true;
-    s_last_sntp_retry_us = esp_timer_get_time();
-}
-
-void initialize_sntp(void)
-{
-    ensure_sntp_started();
-}
-
-void sntp_retry_if_needed(void)
-{
-    if (is_system_time_valid()) {
-        return;
-    }
-    if (!s_sntp_started) {
-        ensure_sntp_started();
-        return;
-    }
-
-    int64_t now_us = esp_timer_get_time();
-    if (now_us - s_last_sntp_retry_us < 30 * 1000000LL) {
-        return;
-    }
-    s_last_sntp_retry_us = now_us;
-    ESP_LOGW(TAG, "NTP still unsynced, retry SNTP (common on phone hotspot)");
-    esp_sntp_restart();
-}
-
-bool wait_system_time_sync(uint32_t timeout_ms)
-{
-    uint32_t waited = 0;
-    while (waited < timeout_ms) {
-        sntp_retry_if_needed();
-        if (is_system_time_valid()) {
-            return true;
-        }
-        vTaskDelay(pdMS_TO_TICKS(500));
-        waited += 500;
-    }
-    return is_system_time_valid();
-}
-
-void stop_sntp(void)
-{
-    if (!s_sntp_started) {
-        return;
-    }
-    esp_sntp_stop();
-    s_sntp_started = false;
-    ESP_LOGI(TAG, "SNTP stopped");
-}
 
 void wifi_set_disconnect_callback(wifi_disconnect_cb_t cb)
 {
@@ -144,7 +35,6 @@ static void my_esp_event(void* event_handler_arg, esp_event_base_t event_base, i
             if (s_connect_wait_active) {
                 s_last_disc_reason = reason;
             }
-            stop_sntp();
             if (s_disconnect_cb != NULL) {
                 s_disconnect_cb();
             }
@@ -158,8 +48,6 @@ static void my_esp_event(void* event_handler_arg, esp_event_base_t event_base, i
         if (s_wifi_ip_sem != NULL) {
             xSemaphoreGive(s_wifi_ip_sem);
         }
-        /* 拿到 IP 后再启 SNTP，比固定 delay 更稳（尤其手机热点） */
-        ensure_sntp_started();
     }
 }
 

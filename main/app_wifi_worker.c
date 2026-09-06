@@ -1,6 +1,6 @@
 /**
  * @file app_wifi_worker.c
- * @brief WiFi 与时间相关后台逻辑（与 LVGL 通过 lvgl_mutex 交互）
+ * @brief WiFi 扫描/连接，以及 timing 屏从 RTC 刷新时间
  */
 #include "app_wifi_worker.h"
 #include "app_globals.h"
@@ -15,15 +15,12 @@
 #include "freertos/task.h"
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 
-static const char *TAG_REALTIME = "REAL_TIME";
 static const char *TAG_WIFI = "WIFI";
 
 static void app_wifi_on_sta_disconnected(void)
 {
     wifi_success = 0;
-    init_ntp = false;
 }
 
 void app_wifi_register_callbacks(void)
@@ -31,69 +28,8 @@ void app_wifi_register_callbacks(void)
     wifi_set_disconnect_callback(app_wifi_on_sta_disconnected);
 }
 
-/** 将 NTP 时间写入全局 timing_* 并刷新 timing 屏 */
-static void wifi_worker_timing_labels_from_tm(const struct tm *timeinfo)
-{
-    timing_year = timeinfo->tm_year + 1900;
-    timing_month = timeinfo->tm_mon + 1;
-    timing_day = timeinfo->tm_mday;
-    timing_weekday = timeinfo->tm_wday;
-
-    char date_str[30];
-    char time_str[20];
-    snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d",
-             timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday);
-    snprintf(time_str, sizeof(time_str), "%02d:%02d",
-             timeinfo->tm_hour, timeinfo->tm_min);
-
-    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
-        return;
-    }
-    if (timeinfo->tm_year + 1900 >= 2026) {
-        int wday = timeinfo->tm_wday;
-        if (wday < 0 || wday > 6) {
-            wday = 0;
-        }
-        app_ui_timing_labels_update(date_str, time_str, week_days[wday]);
-    }
-    if (app_ui_timing_screen_is_alive()) {
-        app_ui_timing_status_update(true);
-    }
-    xSemaphoreGive(lvgl_mutex);
-}
-
-/** NTP 校时到 RX8130 */
-static void wifi_worker_sync_rtc_from_tm(const struct tm *timeinfo)
-{
-    (void)timeinfo;
-    rx8130_sync_from_system(I2C_NUM_0);
-}
-
-/** WiFi 已连接：NTP 取时并刷新 UI */
-static void wifi_worker_handle_realtime_online(void)
-{
-    sntp_retry_if_needed();
-
-    time_t now;
-    struct tm timeinfo;
-    time(&now);
-    localtime_r(&now, &timeinfo);
-
-    if (is_system_time_valid()) {
-        ESP_LOGI(TAG_REALTIME, "Current time: %04d-%02d-%02d %02d:%02d:%02d",
-                 timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
-                 timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-        wifi_worker_timing_labels_from_tm(&timeinfo);
-        wifi_worker_sync_rtc_from_tm(&timeinfo);
-    } else {
-        ESP_LOGW(TAG_REALTIME, "NTP not synced yet (%04d), retrying...",
-                 timeinfo.tm_year + 1900);
-    }
-    vTaskDelay(pdMS_TO_TICKS(990));
-}
-
-/** 无 WiFi：从 RX8130 读时间并刷新 UI */
-static void wifi_worker_handle_realtime_offline(void)
+/** 从 RX8130 读时间并刷新 timing 屏（不再用 NTP 覆盖 RTC） */
+static void wifi_worker_handle_realtime(void)
 {
     rx8130_time_t now = {0};
     esp_err_t rtc_err = rx8130_get_time(I2C_NUM_0, &now);
@@ -104,14 +40,22 @@ static void wifi_worker_handle_realtime_offline(void)
     snprintf(time_str, sizeof(time_str), "%02d:%02d", now.hour, now.minute);
     int wday = (rtc_err == ESP_OK && now.day < 7) ? now.day : 0;
 
+    if (rtc_err == ESP_OK) {
+        timing_year = now.year;
+        timing_month = now.month;
+        timing_day = now.date;
+        timing_weekday = wday;
+    }
+
     if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
+        vTaskDelay(pdMS_TO_TICKS(990));
         return;
     }
     if (rtc_err == ESP_OK) {
         app_ui_timing_labels_update(date_str, time_str, week_days[wday]);
     }
     if (app_ui_timing_screen_is_alive()) {
-        app_ui_timing_status_update(false);
+        app_ui_timing_status_update(is_wifi_connected());
     }
     xSemaphoreGive(lvgl_mutex);
     vTaskDelay(pdMS_TO_TICKS(990));
@@ -185,8 +129,6 @@ static void wifi_worker_handle_connect(void)
             ESP_LOGW(TAG_WIFI, "Failed to save WiFi credential: %s", esp_err_to_name(cred_err));
         }
         wifi_connect_show();
-        ensure_sntp_started();
-        init_ntp = true;
     } else {
         wifi_disconnect_show();
     }
@@ -200,8 +142,6 @@ static void wifi_worker_handle_disconnect(void)
     esp_wifi_disconnect();
     wifi_disconnect_en = 0;
     wifi_success = 0;
-    init_ntp = false;
-    stop_sntp();
 }
 
 void app_wifi_worker_task(void *arg)
@@ -209,11 +149,7 @@ void app_wifi_worker_task(void *arg)
     (void)arg;
     while (1) {
         if (task_real_time_en) {
-            if (is_wifi_connected()) {
-                wifi_worker_handle_realtime_online();
-            } else {
-                wifi_worker_handle_realtime_offline();
-            }
+            wifi_worker_handle_realtime();
         } else if (wifi_scan_en) {
             wifi_worker_handle_scan();
         } else if (wifi_connect_en) {

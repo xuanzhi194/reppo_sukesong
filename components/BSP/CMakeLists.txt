@@ -11,7 +11,6 @@ set(src_dirs
             encoder
             bsp_ble
             badge_storage
-            ai_chat
  
 )
  
@@ -28,7 +27,6 @@ set(include_dirs
             encoder
             bsp_ble
             badge_storage
-            ai_chat
 )
  
 set(requires
@@ -47,7 +45,6 @@ set(requires
             esp_adc
             led_strip
             bt
-            esp_http_client
             json
             mbedtls
 

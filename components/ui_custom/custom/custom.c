@@ -122,7 +122,7 @@
  int     all_focus_time = 0;
  int     focus_level_hour[10] = {3,9,15,30,60,100,150,230,350,500};
  int     max_focus_time = 30000;
- /* AI 结果 UI 缓存，由 main.c 负责从 g_ai_* 同步进来 */
+ /* screen_ai 残留缓存；云端 AI 已移除，events_init 删屏前仍会引用 */
  ui_ai_result_t g_ui_daily_result  = {0};
  ui_ai_result_t g_ui_weekly_result = {0};
  
@@ -1015,6 +1015,8 @@ void screen_ai_apply_result(const ui_ai_result_t *r)
 void screen_ai_load_nvs_data(bool day_or_week)
 {
     (void)day_or_week;
+    ai_day_start = 0;
+    ai_week_start = 0;
 }
 
 void screen_ai_update_focus_level(void)

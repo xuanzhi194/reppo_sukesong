@@ -416,3 +416,29 @@ void app_ui_realtime_clock_timer_cb(lv_timer_t *timer)
     }
     app_ui_main_clock_update(false);
 }
+
+void app_ui_rtc_labels_refresh_now(void)
+{
+    if (guider_ui.screen_main != NULL &&
+        lv_obj_is_valid(guider_ui.screen_main) &&
+        lv_scr_act() == guider_ui.screen_main) {
+        app_ui_main_clock_update(true);
+    }
+
+    if (!timing_screen_is_alive()) {
+        return;
+    }
+
+    rx8130_time_t now;
+    if (rx8130_get_time(I2C_NUM_0, &now) != ESP_OK) {
+        return;
+    }
+
+    char date_str[16];
+    char time_str[8];
+    int wday = (now.day < 7) ? now.day : 0;
+    snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d",
+             now.year, now.month, now.date);
+    snprintf(time_str, sizeof(time_str), "%02d:%02d", now.hour, now.minute);
+    app_ui_timing_labels_update(date_str, time_str, week_days[wday]);
+}

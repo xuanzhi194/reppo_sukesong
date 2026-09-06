@@ -1,6 +1,6 @@
 /**
  * @file app_wifi_worker.h
- * @brief WiFi 扫描、连接、NTP/RTC 时间同步后台任务
+ * @brief WiFi 扫描、连接，以及 timing 屏从 RTC 刷新时间
  */
 #ifndef APP_WIFI_WORKER_H
 #define APP_WIFI_WORKER_H

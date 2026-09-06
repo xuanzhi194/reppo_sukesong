@@ -128,7 +128,7 @@ esp_err_t rx8130_startup(i2c_port_t port, bool *lost_power)
 
     if (vlf) {
         ESP_LOGW(TAG,
-                 "VLF=1: power-loss or first boot — calendar may be invalid, need NTP/WiFi sync");
+                 "VLF=1: power-loss or first boot — calendar may be invalid, need phone BLE sync");
     }
     if (flag & RX8130_FLAG_VBFF) {
         ESP_LOGW(TAG, "VBFF=1: backup battery voltage low — check VBAT/coin cell");
@@ -274,37 +274,36 @@ esp_err_t rx8130_set_time(i2c_port_t port, rx8130_time_t *time) {
     if (err != ESP_OK) {
         return err;
     }
+    const uint8_t running_ctrl0 = (uint8_t)(ctrl0 & ~RX8130_CTRL0_STOP);
     /* datasheet: set STOP before changing calendar */
     err = rx8130_write_reg(port, RX8130_REG_CTRL0, (uint8_t)(ctrl0 | RX8130_CTRL0_STOP));
-    if (err != ESP_OK) {
-        return err;
+    if (err == ESP_OK) {
+        uint8_t data[8];
+        data[0] = RX8130_REG_SEC;
+        data[1] = dec2bcd(time->second);
+        data[2] = dec2bcd(time->minute);
+        data[3] = dec2bcd((uint8_t)(time->hour & 0x3F));
+        data[4] = weekday_to_reg(time->day);
+        data[5] = dec2bcd(time->date);
+        data[6] = dec2bcd(time->month);
+        data[7] = dec2bcd((uint8_t)(time->year % 100));
+
+        err = i2c_master_write_to_device(port, RX8130_ADDR, data, sizeof(data), pdMS_TO_TICKS(1000));
     }
 
-    uint8_t data[8];
-    data[0] = RX8130_REG_SEC;
-    data[1] = dec2bcd(time->second);
-    data[2] = dec2bcd(time->minute);
-    data[3] = dec2bcd((uint8_t)(time->hour & 0x3F));
-    data[4] = weekday_to_reg(time->day);
-    data[5] = dec2bcd(time->date);
-    data[6] = dec2bcd(time->month);
-    data[7] = dec2bcd((uint8_t)(time->year % 100));
-
-    err = i2c_master_write_to_device(port, RX8130_ADDR, data, sizeof(data), pdMS_TO_TICKS(1000));
-    if (err != ESP_OK) {
-        return err;
+    /* Always restore ticking, even when a failed transfer may have set STOP.
+     * Use the saved control bits so recovery does not depend on another read. */
+    esp_err_t resume_err = rx8130_write_reg(port, RX8130_REG_CTRL0, running_ctrl0);
+    if (resume_err != ESP_OK) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+        if (rx8130_write_reg(port, RX8130_REG_CTRL0, running_ctrl0) != ESP_OK) {
+            ESP_LOGE(TAG, "set_time: failed to clear STOP, clock may be halted");
+        } else {
+            ESP_LOGW(TAG, "set_time: STOP recovered on retry; time sync still failed");
+        }
     }
-
-    /* clear STOP to resume ticking (must succeed or clock stays frozen) */
-    err = rx8130_read_reg(port, RX8130_REG_CTRL0, &ctrl0);
-    if (err != ESP_OK) {
-        return err;
-    }
-    err = rx8130_write_reg(port, RX8130_REG_CTRL0, (uint8_t)(ctrl0 & ~RX8130_CTRL0_STOP));
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "set_time: failed to clear STOP, clock may be halted");
-    }
-    return err;
+    /* Recovery never converts a failed calendar write or restart into success. */
+    return (err != ESP_OK) ? err : resume_err;
 }
 
 esp_err_t rx8130_get_time(i2c_port_t port, rx8130_time_t *time) {

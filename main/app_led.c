@@ -12,8 +12,6 @@
 #define POMODORO_ALARM_LIGHT_MS  3000
 
 static bool s_timeout_alarm_light_running = false;
-static bool s_ai_wait_light_running = false;
-static TaskHandle_t s_ai_wait_light_task_handle = NULL;
 static bool s_answer_loading_light_running = false;
 static TaskHandle_t s_answer_loading_light_task_handle = NULL;
 
@@ -46,34 +44,6 @@ static void buzzer_timeout_task(void *param)
     vTaskDelete(NULL);
 }
 
-static void ai_wait_light_task(void *param)
-{
-    (void)param;
-    while (s_ai_wait_light_running) {
-        set_flow_light(30, 52, 83);
-    }
-    s_ai_wait_light_task_handle = NULL;
-    vTaskDelete(NULL);
-}
-
-void app_led_ai_wait_start(void)
-{
-    if (s_ai_wait_light_running || s_ai_wait_light_task_handle != NULL) {
-        return;
-    }
-    s_ai_wait_light_running = true;
-    xTaskCreatePinnedToCore(ai_wait_light_task, "ai_wait_light_task",
-                            2048, NULL, 7, &s_ai_wait_light_task_handle, 0);
-}
-
-void app_led_ai_wait_stop(void)
-{
-    s_ai_wait_light_running = false;
-    for (int i = 0; i < 100 && s_ai_wait_light_task_handle != NULL; i++) {
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
-
 static void answer_loading_light_task(void *param)
 {
     (void)param;
@@ -97,28 +67,6 @@ void app_led_answer_loading_start(void)
 void app_led_answer_loading_stop(void)
 {
     s_answer_loading_light_running = false;
-}
-
-void app_led_ai_result_show(bool success, uint8_t retry_count)
-{
-    if (success) {
-        for (int i = 0; i < retry_count; i++) {
-            set_flow_light(34, 80, 32);
-        }
-    } else {
-        for (int i = 0; i < retry_count; i++) {
-            set_flow_light(80, 32, 33);
-        }
-    }
-    set_flow_light(0, 0, 0);
-}
-
-void app_led_ai_cooldown_show(uint8_t retry_count)
-{
-    for (int i = 0; i < retry_count; i++) {
-        set_flow_light(80, 60, 0);
-    }
-    set_flow_light(0, 0, 0);
 }
 
 void app_led_start_buzzer_timeout_task(void)

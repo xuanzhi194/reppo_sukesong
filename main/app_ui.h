@@ -23,6 +23,9 @@ void app_ui_realtime_clock_timer_cb(lv_timer_t *timer);
 /** 进入主屏时立即刷新电量与时间（调用前须已持有 lvgl_mutex 或在 LVGL 线程内） */
 void app_ui_main_refresh_now(void);
 
+/** BLE 对时后立刻刷新主屏/timing 屏时钟（调用前须已持有 lvgl_mutex） */
+void app_ui_rtc_labels_refresh_now(void);
+
 /** 充电插拔 UI 状态变化时立即刷新主屏 arc / timing 图标（须在 lvgl_mutex 内） */
 void app_ui_battery_poll_plug_change(void);
 
