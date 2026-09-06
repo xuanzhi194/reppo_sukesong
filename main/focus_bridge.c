@@ -3,6 +3,7 @@
  */
 #include "focus_bridge.h"
 #include "custom.h"
+#include "keep_machine.h"
 #include "todo_storage.h"
 #include "nvs.h"
 
@@ -63,6 +64,7 @@ void focus_bridge_on_countdown_complete(void)
     if (focus_session_minutes > 0) {
         all_focus_time += focus_session_minutes;
         focus_time_save();
+        keep_note_activity();
     }
     focus_session_minutes = 0;
 }

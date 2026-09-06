@@ -338,6 +338,35 @@ typedef struct
 	lv_obj_t *screen_gash_btn_again_label;
 	lv_obj_t *screen_game;
 	bool screen_game_del;
+	lv_obj_t *screen_keep;
+	bool screen_keep_del;
+	lv_obj_t *screen_keep_img_bg;
+	lv_obj_t *screen_keep_img_lv10_wither;
+	lv_obj_t *screen_keep_img_lv10;
+	lv_obj_t *screen_keep_img_lv9_wither;
+	lv_obj_t *screen_keep_img_lv9;
+	lv_obj_t *screen_keep_img_lv8_wither;
+	lv_obj_t *screen_keep_img_lv8;
+	lv_obj_t *screen_keep_img_lv7_wither;
+	lv_obj_t *screen_keep_img_lv7;
+	lv_obj_t *screen_keep_img_lv6_wither;
+	lv_obj_t *screen_keep_img_lv6;
+	lv_obj_t *screen_keep_img_lv5_wither;
+	lv_obj_t *screen_keep_img_lv5;
+	lv_obj_t *screen_keep_img_lv4_wither;
+	lv_obj_t *screen_keep_img_lv4;
+	lv_obj_t *screen_keep_img_lv3_wither;
+	lv_obj_t *screen_keep_img_lv3;
+	lv_obj_t *screen_keep_img_lv2_wither;
+	lv_obj_t *screen_keep_img_lv2;
+	lv_obj_t *screen_keep_img_lv1;
+	lv_obj_t *screen_keep_img_lv1_wither;
+	lv_obj_t *screen_keep_bar_focustime;
+	lv_obj_t *screen_keep_img_process_icon;
+	lv_obj_t *screen_keep_img_dialog;
+	lv_obj_t *screen_keep_label_state;
+	lv_obj_t *screen_keep_label_conversion;
+	lv_obj_t *screen_keep_label_focustime;
 	lv_obj_t *g_kb_top_layer;
 }lv_ui;
 
@@ -382,6 +411,7 @@ void setup_scr_screen_getanswer(lv_ui *ui);
 void setup_scr_screen_picture(lv_ui *ui);
 void setup_scr_screen_gash(lv_ui *ui);
 void setup_scr_screen_game(lv_ui *ui);
+void setup_scr_screen_keep(lv_ui *ui);
 #include "extra/widgets/animimg/lv_animimg.h"
 LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_00);
 LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_01);
@@ -598,9 +628,9 @@ LV_IMG_DECLARE(_AAA_Overview_v1_alpha_304x158);
 
 LV_IMG_DECLARE(_AAA_done_bg_320x170);
 
-LV_IMG_DECLARE(_AAA_answer_start_bg_320x170);
+LV_IMG_DECLARE(_AAA_answer_1_0905_320x170);
 
-LV_IMG_DECLARE(_AAA_answer_wait_bg_320x170);
+LV_IMG_DECLARE(_AAA_answer_2_0905_320x170);
 LV_IMG_DECLARE(_AAA_answer_icon_bg_alpha_58x58);
 
 LV_IMG_DECLARE(_AAA__answer_end_bg_320x170);
@@ -616,6 +646,29 @@ LV_IMG_DECLARE(_AAA_ball2_0905_alpha_26x26);
 LV_IMG_DECLARE(_AAA_ball3_0905_alpha_26x26);
 LV_IMG_DECLARE(_AAA_ball4_0905_alpha_26x26);
 LV_IMG_DECLARE(_AAA_randomtask_0905_alpha_199x140);
+LV_IMG_DECLARE(_AAA_keep_bg_alpha_312x137);
+LV_IMG_DECLARE(_AAA_keep_LV10_wither_alpha_200x150);
+LV_IMG_DECLARE(_AAA_keep_LV10_alpha_184x160);
+LV_IMG_DECLARE(_AAA_keep_LV9_wither_alpha_170x155);
+LV_IMG_DECLARE(_AAA_keep_LV9_alpha_165x161);
+LV_IMG_DECLARE(_AAA_keep_LV8_wither_alpha_154x170);
+LV_IMG_DECLARE(_AAA_keep_LV8_alpha_154x170);
+LV_IMG_DECLARE(_AAA_keep_LV7_wither_alpha_186x170);
+LV_IMG_DECLARE(_AAA_keep_LV7_alpha_186x170);
+LV_IMG_DECLARE(_AAA_keep_LV6_wither_alpha_180x160);
+LV_IMG_DECLARE(_AAA_keep_LV6_alpha_189x160);
+LV_IMG_DECLARE(_AAA_keep_LV5_wither_alpha_170x158);
+LV_IMG_DECLARE(_AAA_keep_LV5_alpha_170x158);
+LV_IMG_DECLARE(_AAA_keep_LV4_wither_alpha_164x152);
+LV_IMG_DECLARE(_AAA_keep_LV4_alpha_164x149);
+LV_IMG_DECLARE(_AAA_keep_LV3_wither_alpha_114x147);
+LV_IMG_DECLARE(_AAA_keep_LV3_alpha_114x147);
+LV_IMG_DECLARE(_AAA_keep_LV2_wither_alpha_88x141);
+LV_IMG_DECLARE(_AAA_keep_LV2_alpha_88x141);
+LV_IMG_DECLARE(_AAA_keep_LV1_alpha_96x107);
+LV_IMG_DECLARE(_AAA_keep_LV1_wither_alpha_94x106);
+LV_IMG_DECLARE(_AAA_keep_icon_alpha_14x14);
+LV_IMG_DECLARE(_AAA_keep_dialogbox_alpha_204x78);
 
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)
@@ -638,6 +691,7 @@ LV_FONT_DECLARE(lv_font_montserratMedium_25)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_12)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_11)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_13)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Normal_10)
 
 
 #ifdef __cplusplus

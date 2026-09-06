@@ -95,6 +95,7 @@ void init_scr_del_flag(lv_ui *ui)
     ui->screen_picture_del = true;
     ui->screen_gash_del = true;
     ui->screen_game_del = true;
+    ui->screen_keep_del = true;
 }
 
 void setup_ui(lv_ui *ui)

@@ -217,6 +217,8 @@ void screen_picture_custom_init();
 /* 入口留在 custom；扭蛋机实现在 main/gash_machine.c，避免下次覆盖 custom 时丢失。 */
 void screen_gash_buttion_add();
 void screen_gash_custom_init();
+void screen_keep_buttion_add();
+void screen_keep_custom_init();
 void screen_game_buttion_add();
 void screen_game_custom_init();
 /** 弱符号默认在 custom.c；固件强符号见 main/picture_bridge.c */

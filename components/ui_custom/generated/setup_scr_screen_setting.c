@@ -348,7 +348,7 @@ void setup_scr_screen_setting(lv_ui *ui)
 
     //Write codes screen_setting_label_about
     ui->screen_setting_label_about = lv_label_create(ui->screen_setting);
-    lv_label_set_text(ui->screen_setting_label_about, "关于Reppo");
+    lv_label_set_text(ui->screen_setting_label_about, "About Reppo");
     lv_label_set_long_mode(ui->screen_setting_label_about, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_setting_label_about, 167, 35);
     lv_obj_set_size(ui->screen_setting_label_about, 109, 18);
@@ -371,16 +371,16 @@ void setup_scr_screen_setting(lv_ui *ui)
 
     //Write codes screen_setting_label_txt1
     ui->screen_setting_label_txt1 = lv_label_create(ui->screen_setting);
-    lv_label_set_text(ui->screen_setting_label_txt1, "设备名称");
+    lv_label_set_text(ui->screen_setting_label_txt1, "Device");
     lv_label_set_long_mode(ui->screen_setting_label_txt1, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_setting_label_txt1, 139, 60);
-    lv_obj_set_size(ui->screen_setting_label_txt1, 60, 16);
+    lv_obj_set_size(ui->screen_setting_label_txt1, 78, 14);
 
     //Write style for screen_setting_label_txt1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_setting_label_txt1, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_setting_label_txt1, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_txt1, &lv_font_SourceHanSansSC_Medium_12, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_setting_label_txt1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_setting_label_txt1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -394,16 +394,16 @@ void setup_scr_screen_setting(lv_ui *ui)
 
     //Write codes screen_setting_label_txt2
     ui->screen_setting_label_txt2 = lv_label_create(ui->screen_setting);
-    lv_label_set_text(ui->screen_setting_label_txt2, "型号名称");
+    lv_label_set_text(ui->screen_setting_label_txt2, "Model");
     lv_label_set_long_mode(ui->screen_setting_label_txt2, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_setting_label_txt2, 139, 85);
-    lv_obj_set_size(ui->screen_setting_label_txt2, 60, 16);
+    lv_obj_set_size(ui->screen_setting_label_txt2, 72, 16);
 
     //Write style for screen_setting_label_txt2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_setting_label_txt2, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_setting_label_txt2, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_txt2, &lv_font_SourceHanSansSC_Medium_12, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_setting_label_txt2, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_setting_label_txt2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -420,13 +420,13 @@ void setup_scr_screen_setting(lv_ui *ui)
     lv_label_set_text(ui->screen_setting_label_txt3, "Reppo OS");
     lv_label_set_long_mode(ui->screen_setting_label_txt3, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_setting_label_txt3, 139, 110);
-    lv_obj_set_size(ui->screen_setting_label_txt3, 72, 16);
+    lv_obj_set_size(ui->screen_setting_label_txt3, 59, 15);
 
     //Write style for screen_setting_label_txt3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_setting_label_txt3, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_setting_label_txt3, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_txt3, &lv_font_SourceHanSansSC_Medium_12, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_setting_label_txt3, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_setting_label_txt3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -440,16 +440,16 @@ void setup_scr_screen_setting(lv_ui *ui)
 
     //Write codes screen_setting_label_txt4
     ui->screen_setting_label_txt4 = lv_label_create(ui->screen_setting);
-    lv_label_set_text(ui->screen_setting_label_txt4, "硬件版本");
+    lv_label_set_text(ui->screen_setting_label_txt4, "Hardware");
     lv_label_set_long_mode(ui->screen_setting_label_txt4, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_setting_label_txt4, 139, 135);
-    lv_obj_set_size(ui->screen_setting_label_txt4, 60, 16);
+    lv_obj_set_size(ui->screen_setting_label_txt4, 67, 18);
 
     //Write style for screen_setting_label_txt4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_setting_label_txt4, lv_color_hex(0x274a6e), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_setting_label_txt4, &lv_font_SourceHanSansSC_Medium_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_setting_label_txt4, &lv_font_SourceHanSansSC_Medium_12, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_setting_label_txt4, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_setting_label_txt4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -486,7 +486,7 @@ void setup_scr_screen_setting(lv_ui *ui)
 
     //Write codes screen_setting_label_info2
     ui->screen_setting_label_info2 = lv_label_create(ui->screen_setting);
-    lv_label_set_text(ui->screen_setting_label_info2, "Reppo R1");
+    lv_label_set_text(ui->screen_setting_label_info2, "Reppo Zero");
     lv_label_set_long_mode(ui->screen_setting_label_info2, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_setting_label_info2, 232, 85);
     lv_obj_set_size(ui->screen_setting_label_info2, 70, 16);
@@ -509,7 +509,7 @@ void setup_scr_screen_setting(lv_ui *ui)
 
     //Write codes screen_setting_label_info3
     ui->screen_setting_label_info3 = lv_label_create(ui->screen_setting);
-    lv_label_set_text(ui->screen_setting_label_info3, "1.5");
+    lv_label_set_text(ui->screen_setting_label_info3, "2.0");
     lv_label_set_long_mode(ui->screen_setting_label_info3, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_setting_label_info3, 232, 110);
     lv_obj_set_size(ui->screen_setting_label_info3, 70, 16);
@@ -532,7 +532,7 @@ void setup_scr_screen_setting(lv_ui *ui)
 
     //Write codes screen_setting_label_info4
     ui->screen_setting_label_info4 = lv_label_create(ui->screen_setting);
-    lv_label_set_text(ui->screen_setting_label_info4, "3.6");
+    lv_label_set_text(ui->screen_setting_label_info4, "4.0");
     lv_label_set_long_mode(ui->screen_setting_label_info4, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_setting_label_info4, 232, 135);
     lv_obj_set_size(ui->screen_setting_label_info4, 70, 16);

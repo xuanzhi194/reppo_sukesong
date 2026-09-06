@@ -179,7 +179,7 @@ static void screen_main_btn_timer_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"Pomodoro");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Focus");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -213,7 +213,7 @@ static void screen_main_btn_ai_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-        ui_load_scr_animation(&guider_ui, &guider_ui.screen_ai, guider_ui.screen_ai_del, &guider_ui.screen_main_del, setup_scr_screen_ai, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
+        ui_load_scr_animation(&guider_ui, &guider_ui.screen_keep, guider_ui.screen_keep_del, &guider_ui.screen_main_del, setup_scr_screen_keep, LV_SCR_LOAD_ANIM_FADE_ON, 100, 100, true, true);
         break;
     }
     case LV_EVENT_FOCUSED:

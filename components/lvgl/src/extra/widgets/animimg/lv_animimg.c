@@ -6,6 +6,7 @@
 /*********************
  *      INCLUDES
  *********************/
+#define LV_ANIMIMG_NO_GUIDER_COMPAT
 #include "lv_animimg.h"
 #if LV_USE_ANIMIMG != 0
 

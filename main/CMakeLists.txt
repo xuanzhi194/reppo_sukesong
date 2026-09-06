@@ -16,7 +16,7 @@ set(priv_requires
 )
  
 idf_component_register(
-                        SRCS "main.c"
+                        SRCS "keep_machine.c" "main.c"
                                "demo_boot_gate.c"
                                "app_globals.c"
                                "app_init.c"

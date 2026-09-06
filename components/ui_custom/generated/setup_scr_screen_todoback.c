@@ -31,7 +31,7 @@ void setup_scr_screen_todoback(lv_ui *ui)
 
     //Write codes screen_todoback_label_name
     ui->screen_todoback_label_name = lv_label_create(ui->screen_todoback);
-    lv_label_set_text(ui->screen_todoback_label_name, "阅读一小时");
+    lv_label_set_text(ui->screen_todoback_label_name, "Reading for one hour");
     lv_label_set_long_mode(ui->screen_todoback_label_name, LV_LABEL_LONG_SCROLL);
     lv_obj_set_pos(ui->screen_todoback_label_name, 84, 67);
     lv_obj_set_size(ui->screen_todoback_label_name, 150, 16);

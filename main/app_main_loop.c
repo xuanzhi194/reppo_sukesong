@@ -11,6 +11,7 @@
 #include "custom.h"
 #include "focus_bridge.h"
 #include "gash_machine.h"
+#include "keep_machine.h"
 #include "esp_random.h"
 #include "todo_storage.h"
 #include "wifi.h"
@@ -119,13 +120,7 @@ static void main_loop_handle_ai_results(void)
     ui_ai_result_t *dst = is_daily ? &g_ui_daily_result : &g_ui_weekly_result;
     memcpy(dst, &local_copy, sizeof(ui_ai_result_t));
 
-    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-        if (guider_ui.screen_ai != NULL && lv_obj_is_valid(guider_ui.screen_ai) &&
-            lv_scr_act() == guider_ui.screen_ai) {
-            screen_ai_apply_result((const ui_ai_result_t *)&local_copy);
-        }
-        xSemaphoreGive(lvgl_mutex);
-    }
+    (void)local_copy;
 
     if (ai_request_pending) {
         app_led_ai_wait_stop();
@@ -256,6 +251,7 @@ void app_main_loop_once(void)
     main_loop_handle_answer_loading_led();
     main_loop_handle_countdown_timeout();
     focus_bridge_on_countdown_complete();
+    keep_machine_tick();
     main_loop_handle_battery_plug_ui();
     main_loop_handle_ai_requests();
     main_loop_handle_ai_results();
@@ -272,6 +268,7 @@ void app_main_loop_lvgl_tick(void)
         /* Guider 切屏会先 clean 主页按钮，CLICKED 里的 custom_init 到不了。
          * setup_scr 之后立刻在这里接上扭蛋机。 */
         gash_machine_poll();
+        keep_machine_poll();
         xSemaphoreGive(lvgl_mutex);
     }
 }

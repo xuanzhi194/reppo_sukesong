@@ -789,7 +789,7 @@ void setup_scr_screen_main(lv_ui *ui)
 
     //Write codes screen_main_cat_left
     ui->screen_main_cat_left = lv_animimg_create(ui->screen_main);
-    lv_animimg_set_src(ui->screen_main_cat_left, (const void **) screen_main_cat_left_imgs, 30);
+    lv_animimg_set_src(ui->screen_main_cat_left, (const void **) screen_main_cat_left_imgs, 30, false);
     lv_animimg_set_duration(ui->screen_main_cat_left, 70*30);
     lv_animimg_set_repeat_count(ui->screen_main_cat_left, LV_ANIM_REPEAT_INFINITE);
     lv_animimg_start(ui->screen_main_cat_left);
@@ -799,7 +799,7 @@ void setup_scr_screen_main(lv_ui *ui)
 
     //Write codes screen_main_cat_right
     ui->screen_main_cat_right = lv_animimg_create(ui->screen_main);
-    lv_animimg_set_src(ui->screen_main_cat_right, (const void **) screen_main_cat_right_imgs, 30);
+    lv_animimg_set_src(ui->screen_main_cat_right, (const void **) screen_main_cat_right_imgs, 30, false);
     lv_animimg_set_duration(ui->screen_main_cat_right, 70*30);
     lv_animimg_set_repeat_count(ui->screen_main_cat_right, LV_ANIM_REPEAT_INFINITE);
     lv_animimg_start(ui->screen_main_cat_right);

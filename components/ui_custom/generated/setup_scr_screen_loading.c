@@ -25,7 +25,7 @@ void setup_scr_screen_loading(lv_ui *ui)
 
     //Write style for screen_loading, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_bg_opa(ui->screen_loading, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_src(ui->screen_loading, &_AAA_answer_wait_bg_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_src(ui->screen_loading, &_AAA_answer_2_0905_320x170, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_opa(ui->screen_loading, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_recolor_opa(ui->screen_loading, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 

@@ -7,6 +7,7 @@
 #include "bsp_ble.h"
 #include "custom.h"
 #include "nvs_flash.h"
+#include "keep_machine.h"
 #include "todo_storage.h"
 #include "ws2812b.h"
 #include "freertos/FreeRTOS.h"
@@ -71,6 +72,7 @@ static void nvs_worker_handle_todo_archive(void)
     todo_sum = g_todo_list.count - done_sum;
     donelist_load_from_csv();
     donelist_load_label = 1;
+    keep_note_activity();
 }
 
 /** 单词卡流水灯：异步播放，不阻塞 UI 切词 */

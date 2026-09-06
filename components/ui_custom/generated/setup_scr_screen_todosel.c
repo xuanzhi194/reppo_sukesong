@@ -136,7 +136,7 @@ void setup_scr_screen_todosel(lv_ui *ui)
 
     //Write codes screen_todosel_label_task
     ui->screen_todosel_label_task = lv_label_create(ui->screen_todosel);
-    lv_label_set_text(ui->screen_todosel_label_task, "阅读一小时");
+    lv_label_set_text(ui->screen_todosel_label_task, "Reading for one hour");
     lv_label_set_long_mode(ui->screen_todosel_label_task, LV_LABEL_LONG_SCROLL);
     lv_obj_set_pos(ui->screen_todosel_label_task, 84, 59);
     lv_obj_set_size(ui->screen_todosel_label_task, 150, 16);

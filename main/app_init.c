@@ -26,6 +26,7 @@
 #include "brightness_bridge.h"
 #include "sleep_bridge.h"
 #include "focus_bridge.h"
+#include "keep_machine.h"
 #include "word_storage.h"
 #include "badge_storage.h"
 #include "picture_bridge.h"
@@ -64,6 +65,7 @@ void app_init_storage_and_data(void)
     brightness_bridge_init();
     sleep_bridge_init();
     focus_time_init();
+    keep_machine_init();
 
     ai_daily_result_load();
     ai_weekly_result_load();

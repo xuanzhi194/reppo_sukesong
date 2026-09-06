@@ -71,6 +71,12 @@ lv_obj_t * lv_animimg_create(lv_obj_t * parent);
  */
 void lv_animimg_set_src(lv_obj_t * img, const void * dsc[], uint8_t num);
 
+/* GUI Guider emits a 4th reverse flag; this LVGL 8 API only takes 3 args. */
+#ifndef LV_ANIMIMG_NO_GUIDER_COMPAT
+#define lv_animimg_set_src(img, dsc, num, ...) \
+    lv_animimg_set_src((img), (dsc), (uint8_t)(num))
+#endif
+
 /**
  * Startup the image animation.
  * @param obj pointer to an animation image object
