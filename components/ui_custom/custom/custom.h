@@ -133,7 +133,6 @@ extern volatile bool ble_disconnect_req;
 extern bool ble_flow_led_en;
 extern volatile bool ble_ui_refresh_req;
 extern volatile bool todo_ble_ui_refresh_label;
-extern volatile bool wordbook_ble_ui_refresh_label;
 void screen_setting_ble_refresh_icons(void);
 void todo_ble_sync_ui_refresh(void);
 /* 答案之书：custom 置位请求，main 写入 answer_book_rand */
@@ -171,7 +170,6 @@ extern void wifi_connect_show();
 extern void wifi_disconnect_show();
 void wificfg_show_connect_ui(lv_obj_t *list_btn, const char *password, bool focus_connect_btn);
 /* 模拟器用 custom.c 弱符号默认实现；ESP32 固件由 main/wificfg_bridge.c 强符号覆盖 */
-void wordcard_on_menu_enter(void);
 void volume_on_enabled(void);
 void volume_on_disabled(void);
 void brightness_apply(void);
@@ -193,16 +191,12 @@ void screen_main_buttion_add();
 void screen_log_buttion_add();
 void screen_timing_buttion_add();
 void screen_pomodoro_buttion_add();
+/* 单词三页将在 Guider 删除；这些符号仅供当前 events_init 链接，无页面逻辑。 */
 void screen_wordcard_buttion_add();
-void wordcard_screen_custom_init(lv_ui *ui);
 void wordcard_show_dog_dui(void);
 void wordcard_show_dog_cuo(void);
 void wordcard_hide_dog_anims(void);
-void reviewcard_show_dog_dui(void);
-void wordcard_content_change_effect(bool review_mode);
 void screen_wordmenu_buttion_add();
-void wordmenu_stats_sync_values(void);
-void screen_wordmenu_stats_refresh(void);
 void screen_reviewcard_buttion_add();
 void screen_setting_buttion_add();
 /** 按 WIFI/BLE 同规格追加设置按钮，纳入左侧滚动列表与旋钮焦点。 */

@@ -8,11 +8,8 @@
 #include "custom.h"
 #include "rx8130.h"
 #include "wifi.h"
-#include "word_storage.h"
 #include "driver/i2c.h"
 #include <string.h>
-
-static int s_last_review_cards_num = 0;
 
 #define BAT_ARC_COLOR_NORMAL   0x0a2a4c
 #define BAT_ARC_COLOR_CHARGING 0x8fd68f
@@ -63,119 +60,11 @@ static bool timing_label_is_ready(lv_obj_t *label)
         && lv_obj_get_parent(label) == guider_ui.screen_timing;
 }
 
-static inline bool wordcard_screen_is_alive(void)
-{
-    return guider_ui.screen_wordcard != NULL
-        && lv_obj_is_valid(guider_ui.screen_wordcard)
-        && lv_scr_act() == guider_ui.screen_wordcard;
-}
-
-static inline bool reviewcard_screen_is_alive(void)
-{
-    return guider_ui.screen_reviewcard != NULL
-        && lv_obj_is_valid(guider_ui.screen_reviewcard)
-        && lv_scr_act() == guider_ui.screen_reviewcard;
-}
-
 static inline bool wificfg_screen_is_alive(void)
 {
     return guider_ui.screen_wificfg != NULL
         && lv_obj_is_valid(guider_ui.screen_wificfg)
         && lv_scr_act() == guider_ui.screen_wificfg;
-}
-
-/* -------------------------------------------------------------------------- */
-/* 单词卡 / 复习卡渲染（供 NVS 工作线程调用）                                   */
-/* -------------------------------------------------------------------------- */
-
-static void wordcard_render(const word_session_state_t *st)
-{
-    if (!wordcard_screen_is_alive()) {
-        return;
-    }
-    if (st->finished || !st->valid) {
-        return;
-    }
-    lv_obj_clear_state(guider_ui.screen_wordcard_btn_dui, LV_STATE_DISABLED);
-    lv_obj_clear_state(guider_ui.screen_wordcard_btn_cuo, LV_STATE_DISABLED);
-    lv_label_set_text(guider_ui.screen_wordcard_label_spelling, st->word.word);
-    lv_label_set_text(guider_ui.screen_wordcard_label_phonetic, st->word.phonetic);
-    lv_label_set_text(guider_ui.screen_wordcard_label_meaning, st->word.definition);
-    wordcard_content_change_effect(false);
-}
-
-static void reviewcard_render(const word_session_state_t *st)
-{
-    if (!reviewcard_screen_is_alive()) {
-        return;
-    }
-    if (st->finished || !st->valid) {
-        lv_label_set_text(guider_ui.screen_reviewcard_label_index, "0/0");
-        lv_label_set_text(guider_ui.screen_reviewcard_label_spelling, "Good Job!");
-        lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic, "");
-        lv_label_set_text(guider_ui.screen_reviewcard_label_meaning, "No word need to review");
-        lv_obj_add_state(guider_ui.screen_reviewcard_btn_dui, LV_STATE_DISABLED);
-        if (guider_ui.screen_reviewcard_dog_dance != NULL &&
-            lv_obj_is_valid(guider_ui.screen_reviewcard_dog_dance)) {
-            lv_obj_clear_flag(guider_ui.screen_reviewcard_dog_dance, LV_OBJ_FLAG_HIDDEN);
-        }
-        wordcard_content_change_effect(true);
-        return;
-    }
-    if (guider_ui.screen_reviewcard_dog_dance != NULL &&
-        lv_obj_is_valid(guider_ui.screen_reviewcard_dog_dance)) {
-        lv_obj_add_flag(guider_ui.screen_reviewcard_dog_dance, LV_OBJ_FLAG_HIDDEN);
-    }
-    lv_label_set_text(guider_ui.screen_reviewcard_label_spelling, st->word.word);
-    lv_label_set_text(guider_ui.screen_reviewcard_label_phonetic, st->word.phonetic);
-    lv_label_set_text(guider_ui.screen_reviewcard_label_meaning, st->word.definition);
-    wordcard_content_change_effect(true);
-}
-
-void app_ui_wordcard_process_change(void)
-{
-    if (!wordcard_screen_is_alive()) {
-        wordcard_change = 0;
-        return;
-    }
-    if (wordcard_session_start) {
-        wordcard_session_start = 0;
-        round_cards_num = word_storage_learn_start(WORDCARD_ROUND_SIZE);
-        cards_index = (round_cards_num > 0) ? 1 : 0;
-    }
-    bool marked_wrong = (review_cards_num > s_last_review_cards_num);
-    word_session_state_t st;
-    word_storage_learn_signal(marked_wrong, &st);
-    review_cards_num = word_storage_get_review_count();
-    learned_cards_num = word_storage_get_learned_count();
-    s_last_review_cards_num = review_cards_num;
-    wordcard_render(&st);
-}
-
-void app_ui_reviewcard_process_change(void)
-{
-    if (!reviewcard_screen_is_alive()) {
-        reviewcard_change = 0;
-        return;
-    }
-    if (reviewcard_session_start) {
-        reviewcard_session_start = 0;
-        word_storage_review_start();
-    }
-    word_session_state_t st;
-    word_storage_review_signal(&st);
-    review_cards_num = word_storage_get_review_count();
-    s_last_review_cards_num = review_cards_num;
-    reviewcard_render(&st);
-}
-
-void app_ui_init_word_counters(void)
-{
-    int word_total = word_storage_get_total_count();
-    total_cards_num = (word_total > 0) ? word_total : 1;
-    learned_cards_num = word_storage_get_learned_count();
-    review_cards_num = word_storage_get_review_count();
-    s_last_review_cards_num = review_cards_num;
 }
 
 bool app_ui_wificfg_screen_is_alive(void)

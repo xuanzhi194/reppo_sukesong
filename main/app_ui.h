@@ -31,15 +31,6 @@ void app_ui_battery_poll_plug_change(void);
 
 void app_ui_init_clock_label_static(void);
 
-/** 从 SPIFFS 统计初始化单词卡计数（app_init 调用） */
-void app_ui_init_word_counters(void);
-
-/** 处理 wordcard_change 标志（需在 lvgl_mutex 内调用） */
-void app_ui_wordcard_process_change(void);
-
-/** 处理 reviewcard_change 标志（需在 lvgl_mutex 内调用） */
-void app_ui_reviewcard_process_change(void);
-
 /** timing / wificfg 屏是否仍为当前活动屏 */
 bool app_ui_timing_screen_is_alive(void);
 bool app_ui_wificfg_screen_is_alive(void);

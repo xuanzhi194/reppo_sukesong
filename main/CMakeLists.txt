@@ -26,7 +26,6 @@ idf_component_register(
                                "app_nvs_worker.c"
                                "app_wifi_worker.c"
                                "wificfg_bridge.c"
-                               "wordcard_bridge.c"
                                "volume_bridge.c"
                                "brightness_bridge.c"
                                "sleep_bridge.c"

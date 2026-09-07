@@ -2,7 +2,6 @@ set(src_dirs
             LCD
             keypad
             wifi
-            word_storage
             todo_storage
             buzzer
             bat_percent
@@ -18,7 +17,6 @@ set(include_dirs
             LCD
             keypad
             wifi
-            word_storage
             todo_storage
             buzzer
             bat_percent

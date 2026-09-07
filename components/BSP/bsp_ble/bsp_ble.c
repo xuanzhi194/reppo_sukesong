@@ -2,7 +2,6 @@
 #include "reppo_demo_mode.h"
 #include "todo_storage.h"
 #include "badge_storage.h"
-#include "word_storage.h"
 #include "rx8130.h"
 #include "driver/i2c.h"
 #include "esp_attr.h"
@@ -16,7 +15,6 @@ extern volatile bool todo_ble_ui_refresh_label;
 extern bool ble_success;
 extern bool ble_enabled;
 extern volatile bool ble_ui_refresh_req;
-extern volatile bool wordbook_ble_ui_refresh_label;
 extern todo_list_t ui_todo_list;
 
 /* NimBLE */
@@ -70,14 +68,10 @@ static int send_todo_json_via_notify(void);
 static bool ble_refresh_stored_read_bundle(void);
 static void schedule_sync_notify_delayed(void);
 static void badge_notify_status(uint8_t status, uint8_t progress);
-static void wordbook_notify_status(uint8_t status, uint8_t progress, uint8_t detail);
 static uint32_t ble_read_u32_le(const uint8_t *p);
 static uint16_t ble_read_u16_le(const uint8_t *p);
 static int notify_todo_chunk(uint8_t cmd, const uint8_t *payload, uint16_t payload_len);
 static int time_notify_status(uint8_t status);
-static uint32_t s_word_ble_total;
-static uint8_t s_word_ble_last_progress;
-static TaskHandle_t s_word_commit_task_handle;
 /* Only copy mailbox state under this lock; never do I2C or GATT calls in it. */
 static portMUX_TYPE s_phone_time_mux = portMUX_INITIALIZER_UNLOCKED;
 static rx8130_time_t s_pending_phone_time;
@@ -88,28 +82,6 @@ static bool s_phone_time_status_pending;
 static uint8_t s_phone_time_status;
 static uint32_t s_phone_time_session;
 static struct ble_npl_callout s_phone_time_status_callout;
-
-static uint8_t wordbook_error_detail(esp_err_t err)
-{
-    switch (err) {
-    case ESP_ERR_INVALID_CRC:
-        return 5;
-    case ESP_ERR_INVALID_ARG:
-        return 6;
-    case ESP_ERR_INVALID_SIZE:
-        return 7;
-    case ESP_ERR_NOT_FOUND:
-        return 8;
-    case ESP_ERR_INVALID_STATE:
-        return 9;
-    case ESP_ERR_NOT_SUPPORTED:
-        return 10;
-    case ESP_FAIL:
-        return 11;
-    default:
-        return 4;
-    }
-}
 
 static bool ble_refresh_stored_read_bundle(void)
 {
@@ -275,43 +247,6 @@ static void badge_notify_status(uint8_t status, uint8_t progress)
     }
 }
 
-static void wordbook_notify_status(uint8_t status, uint8_t progress, uint8_t detail)
-{
-    if (!notify_enabled || active_conn_handle == BLE_HS_CONN_HANDLE_NONE) {
-        return;
-    }
-    uint8_t payload[3] = { status, progress, detail };
-    for (int attempt = 0; attempt < 5; attempt++) {
-        int rc = notify_todo_chunk(BLE_CMD_WORD_STATUS, payload, sizeof(payload));
-        if (rc == 0) {
-            return;
-        }
-        ESP_LOGW(TAG, "wordbook status notify failed rc=%d attempt=%d",
-                 rc, attempt + 1);
-        vTaskDelay(pdMS_TO_TICKS(20));
-    }
-}
-
-static void wordbook_commit_task(void *arg)
-{
-    (void)arg;
-    esp_err_t err = word_storage_rx_commit();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "WORD COMMIT failed: %s", esp_err_to_name(err));
-        wordbook_notify_status(WORD_STATUS_ERR, s_word_ble_last_progress,
-                               wordbook_error_detail(err));
-    } else {
-        s_word_ble_total = 0;
-        s_word_ble_last_progress = 100;
-        wordbook_ble_ui_refresh_label = true;
-        wordbook_notify_status(WORD_STATUS_OK, 100, 0);
-        ESP_LOGI(TAG, "Wordbook saved and activated");
-    }
-
-    s_word_commit_task_handle = NULL;
-    vTaskDelete(NULL);
-}
-
 static int device_write_cb(uint16_t conn_handle,
                            uint16_t attr_handle,
                            struct ble_gatt_access_ctxt *ctxt,
@@ -465,71 +400,6 @@ static int device_write_cb(uint16_t conn_handle,
         }
         badge_notify_status(BADGE_STATUS_OK, 100);
         ESP_LOGI(TAG, "Badge image saved");
-    } else if (cmd == BLE_CMD_WORD_INFO) {
-        if (payload_len < 13) {
-            ESP_LOGW(TAG, "WORD INFO rejected: len=%u", (unsigned)payload_len);
-            wordbook_notify_status(WORD_STATUS_ERR, 0, 1);
-            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
-        }
-        uint32_t total = ble_read_u32_le(payload);
-        uint32_t crc32 = ble_read_u32_le(payload + 4);
-        uint32_t words = ble_read_u32_le(payload + 8);
-        uint8_t format = payload[12];
-        esp_err_t err = word_storage_rx_begin(total, crc32, words, format);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "WORD INFO begin failed: %s", esp_err_to_name(err));
-            wordbook_notify_status(WORD_STATUS_ERR, 0, 2);
-            return BLE_ATT_ERR_UNLIKELY;
-        }
-        s_word_ble_total = total;
-        s_word_ble_last_progress = 0;
-        wordbook_notify_status(WORD_STATUS_BUSY, 0, 0);
-    } else if (cmd == BLE_CMD_WORD_DATA) {
-        if (payload_len < 5) {
-            ESP_LOGW(TAG, "WORD DATA rejected: len=%u", (unsigned)payload_len);
-            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
-        }
-        uint32_t offset = ble_read_u32_le(payload);
-        const uint8_t *chunk = payload + 4;
-        uint16_t chunk_len = payload_len - 4;
-        esp_err_t err = word_storage_rx_write(offset, chunk, chunk_len);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "WORD DATA write failed off=%lu: %s",
-                     (unsigned long)offset, esp_err_to_name(err));
-            wordbook_notify_status(WORD_STATUS_ERR, s_word_ble_last_progress, 3);
-            word_storage_rx_abort();
-            return BLE_ATT_ERR_UNLIKELY;
-        }
-        if (s_word_ble_total > 0) {
-            uint32_t end = offset + chunk_len;
-            uint8_t progress = (end >= s_word_ble_total)
-                ? 100
-                : (uint8_t)((end * 100U) / s_word_ble_total);
-            if (progress >= s_word_ble_last_progress + 5 || progress == 100) {
-                s_word_ble_last_progress = progress;
-                wordbook_notify_status(WORD_STATUS_PROGRESS, progress, 0);
-            }
-        }
-    } else if (cmd == BLE_CMD_WORD_COMMIT) {
-        if (s_word_commit_task_handle != NULL) {
-            ESP_LOGW(TAG, "WORD COMMIT ignored: commit already running");
-            wordbook_notify_status(WORD_STATUS_BUSY, s_word_ble_last_progress, 12);
-            return 0;
-        }
-        BaseType_t rc = xTaskCreatePinnedToCore(wordbook_commit_task,
-                                                "word_commit",
-                                                8192,
-                                                NULL,
-                                                5,
-                                                &s_word_commit_task_handle,
-                                                0);
-        if (rc != pdPASS) {
-            s_word_commit_task_handle = NULL;
-            ESP_LOGE(TAG, "WORD COMMIT task create failed");
-            wordbook_notify_status(WORD_STATUS_ERR, s_word_ble_last_progress, 13);
-            return BLE_ATT_ERR_UNLIKELY;
-        }
-        ESP_LOGI(TAG, "WORD COMMIT scheduled");
     } else if (cmd == BLE_CMD_TIME_SET) {
         /* There is no request ID on the wire: finish one sync before the next. */
         portENTER_CRITICAL(&s_phone_time_mux);
@@ -613,11 +483,6 @@ static int bsp_ble_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_DISCONNECT:
         ESP_LOGI(TAG, "BLE GAP EVENT DISCONNECTED");
         badge_storage_rx_abort();
-        if (s_word_commit_task_handle == NULL) {
-            word_storage_rx_abort();
-        }
-        s_word_ble_total = 0;
-        s_word_ble_last_progress = 0;
         time_sync_reset(false);
         ble_npl_callout_stop(&s_phone_time_status_callout);
         active_conn_handle = BLE_HS_CONN_HANDLE_NONE;
@@ -936,11 +801,6 @@ void bsp_ble_deinit(void)
     }
 
     badge_storage_rx_abort();
-    if (s_word_commit_task_handle == NULL) {
-        word_storage_rx_abort();
-    }
-    s_word_ble_total = 0;
-    s_word_ble_last_progress = 0;
 
     if (active_conn_handle != BLE_HS_CONN_HANDLE_NONE) {
         ble_gap_terminate(active_conn_handle, BLE_ERR_REM_USER_CONN_TERM);

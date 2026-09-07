@@ -67,31 +67,6 @@ static void main_loop_handle_ble_ui(void)
             }
         }
     }
-    if (wordbook_ble_ui_refresh_label) {
-        wordbook_ble_ui_refresh_label = 0;
-        wordmenu_stats_sync_values();
-    }
-}
-
-/** 归档后刷新 donelist 分页 */
-/** 单词卡切词：主循环 2ms 轮询，比后台线程更快响应 */
-static void main_loop_handle_wordcard_ui(void)
-{
-    if (!wordcard_change && !reviewcard_change) {
-        return;
-    }
-    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(20)) != pdTRUE) {
-        return;
-    }
-    if (wordcard_change) {
-        wordcard_change = 0;
-        app_ui_wordcard_process_change();
-    }
-    if (reviewcard_change) {
-        reviewcard_change = 0;
-        app_ui_reviewcard_process_change();
-    }
-    xSemaphoreGive(lvgl_mutex);
 }
 
 static void main_loop_handle_donelist_reload(void)
@@ -157,7 +132,6 @@ static void main_loop_handle_phone_time_sync(void)
 void app_main_loop_once(void)
 {
     main_loop_handle_phone_time_sync();
-    main_loop_handle_wordcard_ui();
     main_loop_handle_answer_book();
     main_loop_handle_answer_loading_led();
     main_loop_handle_countdown_timeout();

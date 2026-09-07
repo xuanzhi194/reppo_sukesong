@@ -26,7 +26,6 @@
 #include "sleep_bridge.h"
 #include "focus_bridge.h"
 #include "keep_machine.h"
-#include "word_storage.h"
 #include "badge_storage.h"
 #include "picture_bridge.h"
 #include "driver/i2c.h"
@@ -68,8 +67,6 @@ void app_init_storage_and_data(void)
     init_spiffs();
     badge_storage_init();
     picture_bridge_init();
-    word_storage_init();
-    app_ui_init_word_counters();
 
     todo_storage_init();
     ui_todo_list = g_todo_list;

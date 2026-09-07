@@ -27,6 +27,9 @@ typedef struct {
 /** 全局 RAM 缓存，外部只读，写入通过下方 API */
 extern todo_list_t g_todo_list;
 
+/** Mount the shared /spiffs partition (todo / badge / pictures). */
+void init_spiffs(void);
+
 /**
  * @brief 初始化：从 SPIFFS CSV 加载到 g_todo_list。
  *        在 init_spiffs() 之后调用一次。

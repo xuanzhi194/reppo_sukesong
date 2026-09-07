@@ -8,7 +8,7 @@
 /** 外设：RGB、编码器、蜂鸣器、电池 ADC、RTC、WiFi 栈前置 */
 void app_init_hardware(void);
 
-/** NVS、凭据、SPIFFS、单词/待办/AI 缓存 */
+/** NVS、凭据、SPIFFS、待办缓存 */
 void app_init_storage_and_data(void);
 
 /** LVGL、GUI Guider、定时器、互斥锁 */
