@@ -2370,6 +2370,8 @@ int donelist_load_from_csv(void)
  static void screen_main_gash_init_async(void *unused)
  {
      LV_UNUSED(unused);
+     /* PRESSED 时 fade delay 尚未结束，lv_scr_act() 仍是被 clean 的主页。
+      * custom_init 只会先绑 DELETE；真正抢 keypad group 要等 poll / 本屏已是 act。 */
      screen_gash_custom_init();
  }
 
@@ -2382,6 +2384,12 @@ int donelist_load_from_csv(void)
  static void screen_main_game_init_async(void *unused)
  {
      LV_UNUSED(unused);
+     if (guider_ui.screen_game != NULL &&
+         lv_obj_is_valid(guider_ui.screen_game) &&
+         lv_scr_act() != guider_ui.screen_game) {
+         lv_async_call(screen_main_game_init_async, NULL);
+         return;
+     }
      screen_game_custom_init();
  }
 
@@ -2389,7 +2397,9 @@ int donelist_load_from_csv(void)
      if(g == NULL) {
          g = lv_group_create();
      } else {
-         lv_group_remove_all_objs(g); 
+         lv_group_remove_all_objs(g);
+         lv_group_set_edge_cb(g, NULL);
+         lv_group_set_wrap(g, true);
      }
      //setting default group
      lv_group_set_default(g);
@@ -4958,6 +4968,8 @@ typedef enum {
          g = lv_group_create();
      } else {
          lv_group_remove_all_objs(g);
+         lv_group_set_edge_cb(g, NULL);
+         lv_group_set_wrap(g, true);
      }
      lv_group_set_default(g);
      lv_indev_t * indev = NULL;
@@ -5092,9 +5104,26 @@ typedef enum {
      screen_keep_buttion_add();
  }
 
+ static bool s_game_events_bound;
+
+ static void screen_game_on_delete(lv_event_t *e)
+ {
+     if (lv_event_get_code(e) != LV_EVENT_DELETE) {
+         return;
+     }
+     if (lv_event_get_target(e) == guider_ui.screen_game) {
+         guider_ui.screen_game = NULL;
+     }
+     s_game_events_bound = false;
+     lv_async_call_cancel(screen_main_game_init_async, NULL);
+ }
+
  static void screen_game_back_clicked(lv_event_t *e)
  {
      if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+         return;
+     }
+     if (lv_scr_act() != guider_ui.screen_game) {
          return;
      }
      screen_load_main_from(&guider_ui.screen_game_del);
@@ -5102,15 +5131,21 @@ typedef enum {
  
  void screen_game_buttion_add(void)
  {
-     screen_keypad_group_reset();
      if (guider_ui.screen_game == NULL ||
-         !lv_obj_is_valid(guider_ui.screen_game)) {
+         !lv_obj_is_valid(guider_ui.screen_game) ||
+         lv_scr_act() != guider_ui.screen_game) {
          return;
      }
+     screen_keypad_group_reset();
      lv_obj_add_flag(guider_ui.screen_game, LV_OBJ_FLAG_CLICKABLE);
      lv_obj_add_flag(guider_ui.screen_game, LV_OBJ_FLAG_CLICK_FOCUSABLE);
-     lv_obj_add_event_cb(guider_ui.screen_game, screen_game_back_clicked,
-                         LV_EVENT_CLICKED, NULL);
+     if (!s_game_events_bound) {
+         lv_obj_add_event_cb(guider_ui.screen_game, screen_game_on_delete,
+                             LV_EVENT_DELETE, NULL);
+         lv_obj_add_event_cb(guider_ui.screen_game, screen_game_back_clicked,
+                             LV_EVENT_CLICKED, NULL);
+         s_game_events_bound = true;
+     }
      lv_group_add_obj(g, guider_ui.screen_game);
      clear_focus_box(guider_ui.screen_game);
      group_focus_obj(guider_ui.screen_game);
@@ -5120,7 +5155,8 @@ typedef enum {
  {
      lv_obj_t *label;
      if (guider_ui.screen_game == NULL ||
-         !lv_obj_is_valid(guider_ui.screen_game)) {
+         !lv_obj_is_valid(guider_ui.screen_game) ||
+         lv_scr_act() != guider_ui.screen_game) {
          return;
      }
      lv_obj_set_style_bg_opa(guider_ui.screen_game, 255,

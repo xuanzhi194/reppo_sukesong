@@ -34,6 +34,8 @@ static void gash_keypad_group_reset(void)
         g = lv_group_create();
     } else {
         lv_group_remove_all_objs(g);
+        lv_group_set_edge_cb(g, NULL);
+        lv_group_set_wrap(g, true);
     }
     lv_group_set_default(g);
     lv_indev_t *indev = NULL;
@@ -46,6 +48,10 @@ static void gash_keypad_group_reset(void)
 
 static void gash_load_main(void)
 {
+    if (g != NULL) {
+        lv_group_set_edge_cb(g, NULL);
+        lv_group_set_wrap(g, true);
+    }
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_main,
                           guider_ui.screen_main_del, &guider_ui.screen_gash_del,
                           setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON,
@@ -126,6 +132,11 @@ static bool gash_obj_ok(lv_obj_t *obj)
 
 static bool gash_scr_ok(void)
 {
+    if (guider_ui.screen_gash != NULL &&
+        !lv_obj_is_valid(guider_ui.screen_gash)) {
+        guider_ui.screen_gash = NULL;
+        return false;
+    }
     return gash_obj_ok(guider_ui.screen_gash);
 }
 
@@ -683,6 +694,9 @@ static void gash_on_aim_clicked(lv_event_t *e)
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+    if (!gash_scr_ok() || lv_scr_act() != guider_ui.screen_gash) {
+        return;
+    }
     if (s_gash.phase == GASH_PHASE_AIM) {
         gash_start_grab();
     }
@@ -932,6 +946,9 @@ static void gash_ensure_catcher(void)
 
 static void gash_aim_group_bind(void)
 {
+    if (!gash_scr_ok() || lv_scr_act() != guider_ui.screen_gash) {
+        return;
+    }
     gash_keypad_group_reset();
     gash_ensure_catcher();
     if (gash_obj_ok(s_gash.catcher)) {
@@ -947,6 +964,9 @@ static void gash_aim_group_bind(void)
 
 static void gash_result_group_bind(void)
 {
+    if (!gash_scr_ok() || lv_scr_act() != guider_ui.screen_gash) {
+        return;
+    }
     gash_keypad_group_reset();
     gash_clear_group_hooks();
     if (gash_obj_ok(s_gash.catcher)) {
@@ -954,10 +974,12 @@ static void gash_result_group_bind(void)
     }
     if (gash_obj_ok(guider_ui.screen_gash_btn_addtodo)) {
         lv_group_add_obj(g, guider_ui.screen_gash_btn_addtodo);
+        clear_focus_box(guider_ui.screen_gash_btn_addtodo);
         group_focus_obj(guider_ui.screen_gash_btn_addtodo);
     }
     if (gash_obj_ok(guider_ui.screen_gash_btn_again)) {
         lv_group_add_obj(g, guider_ui.screen_gash_btn_again);
+        clear_focus_box(guider_ui.screen_gash_btn_again);
     }
     if (g != NULL) {
         lv_group_set_wrap(g, true);
@@ -1000,12 +1022,17 @@ void screen_gash_custom_init(void)
     if (!gash_scr_ok() || s_gash.leaving) {
         return;
     }
+    /* Bind DELETE as soon as the object exists so auto_del cannot leave a
+     * dangling guider_ui.screen_gash that later aliases screen_main/keep. */
+    gash_bind_events();
+    if (lv_scr_act() != guider_ui.screen_gash) {
+        return;
+    }
     lv_async_call_cancel(gash_leave_to_main_async, NULL);
     gash_stop_motion();
     s_gash.phase = GASH_PHASE_AIM;
     s_gash.grab_step = GASH_GRAB_EXTEND;
     s_gash.alive = true;
-    gash_bind_events();
     gash_prepare_widgets();
     gash_aim_group_bind();
 #ifdef ESP_PLATFORM
@@ -1020,11 +1047,11 @@ void gash_machine_poll(void)
     if (s_gash.leaving) {
         return;
     }
-    act = lv_scr_act();
-    if (act == NULL || act != guider_ui.screen_gash) {
+    if (!gash_scr_ok()) {
         return;
     }
-    if (!lv_obj_is_valid(act)) {
+    act = lv_scr_act();
+    if (act == NULL || act != guider_ui.screen_gash) {
         return;
     }
     if (s_gash.alive && s_gash.bound_scr == act) {

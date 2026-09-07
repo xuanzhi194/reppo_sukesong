@@ -1092,6 +1092,8 @@ static const char * const keep_talk_wither[KEEP_LEVEL_COUNT][KEEP_TALK_PER_LEVEL
 static struct {
     bool alive;
     bool leaving;
+    bool events_bound;
+    bool back_bound;
     bool displayed_withered;
     lv_obj_t *bound_scr;
     int last_ymd;
@@ -1116,6 +1118,8 @@ static void keep_keypad_group_reset(void)
         g = lv_group_create();
     } else {
         lv_group_remove_all_objs(g);
+        lv_group_set_edge_cb(g, NULL);
+        lv_group_set_wrap(g, true);
     }
     lv_group_set_default(g);
     lv_indev_t *indev = NULL;
@@ -1126,9 +1130,34 @@ static void keep_keypad_group_reset(void)
     }
 }
 
+static void keep_forget_screen(void)
+{
+    if (guider_ui.screen_keep != NULL &&
+        !lv_obj_is_valid(guider_ui.screen_keep)) {
+        guider_ui.screen_keep = NULL;
+        guider_ui.screen_keep_img_bg = NULL;
+        guider_ui.screen_keep_img_dialog = NULL;
+        guider_ui.screen_keep_label_state = NULL;
+        guider_ui.screen_keep_label_conversion = NULL;
+        guider_ui.screen_keep_label_focustime = NULL;
+        guider_ui.screen_keep_bar_focustime = NULL;
+        guider_ui.screen_keep_img_process_icon = NULL;
+    }
+    s_keep.alive = false;
+    s_keep.bound_scr = NULL;
+    s_keep.events_bound = false;
+    s_keep.back_bound = false;
+    s_keep.leaving = false;
+}
+
 static bool keep_scr_ok(void)
 {
-    return guider_ui.screen_keep != NULL && lv_obj_is_valid(guider_ui.screen_keep);
+    if (guider_ui.screen_keep == NULL ||
+        !lv_obj_is_valid(guider_ui.screen_keep)) {
+        keep_forget_screen();
+        return false;
+    }
+    return true;
 }
 
 static bool keep_obj_ok(lv_obj_t *obj)
@@ -1425,10 +1454,39 @@ static void keep_leave_to_main_async(void *unused)
         s_keep.leaving = false;
         return;
     }
+    if (g != NULL) {
+        lv_group_set_edge_cb(g, NULL);
+        lv_group_set_wrap(g, true);
+    }
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_main,
                           guider_ui.screen_main_del, &guider_ui.screen_keep_del,
                           setup_scr_screen_main, LV_SCR_LOAD_ANIM_FADE_ON,
                           100, 100, true, true);
+}
+
+static void keep_on_screen_delete(lv_event_t *e)
+{
+    lv_obj_t *target;
+
+    if (lv_event_get_code(e) != LV_EVENT_DELETE) {
+        return;
+    }
+    target = lv_event_get_target(e);
+    if (guider_ui.screen_keep == target) {
+        guider_ui.screen_keep = NULL;
+        guider_ui.screen_keep_img_bg = NULL;
+        guider_ui.screen_keep_img_dialog = NULL;
+        guider_ui.screen_keep_label_state = NULL;
+        guider_ui.screen_keep_label_conversion = NULL;
+        guider_ui.screen_keep_label_focustime = NULL;
+        guider_ui.screen_keep_bar_focustime = NULL;
+        guider_ui.screen_keep_img_process_icon = NULL;
+    }
+    s_keep.alive = false;
+    s_keep.bound_scr = NULL;
+    s_keep.events_bound = false;
+    s_keep.back_bound = false;
+    s_keep.leaving = false;
 }
 
 static void keep_on_back(lv_event_t *e)
@@ -1437,6 +1495,9 @@ static void keep_on_back(lv_event_t *e)
         return;
     }
     if (s_keep.leaving) {
+        return;
+    }
+    if (!keep_scr_ok() || lv_scr_act() != guider_ui.screen_keep) {
         return;
     }
     s_keep.leaving = true;
@@ -1452,20 +1513,34 @@ static void keep_bind_back_obj(lv_obj_t *obj)
     lv_obj_add_event_cb(obj, keep_on_back, LV_EVENT_CLICKED, NULL);
 }
 
-void screen_keep_buttion_add(void)
+static void keep_bind_delete(void)
 {
-    if (!keep_scr_ok()) {
+    if (!keep_obj_ok(guider_ui.screen_keep) || s_keep.events_bound) {
         return;
     }
+    lv_obj_add_event_cb(guider_ui.screen_keep, keep_on_screen_delete,
+                        LV_EVENT_DELETE, NULL);
+    s_keep.events_bound = true;
+}
+
+void screen_keep_buttion_add(void)
+{
+    if (!keep_scr_ok() || lv_scr_act() != guider_ui.screen_keep) {
+        return;
+    }
+    keep_bind_delete();
     keep_keypad_group_reset();
     lv_obj_add_flag(guider_ui.screen_keep, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_flag(guider_ui.screen_keep, LV_OBJ_FLAG_CLICK_FOCUSABLE);
-    keep_bind_back_obj(guider_ui.screen_keep);
-    keep_bind_back_obj(guider_ui.screen_keep_img_bg);
-    keep_bind_back_obj(guider_ui.screen_keep_img_dialog);
-    keep_bind_back_obj(guider_ui.screen_keep_label_state);
-    keep_bind_back_obj(guider_ui.screen_keep_label_conversion);
-    keep_bind_back_obj(guider_ui.screen_keep_label_focustime);
+    if (!s_keep.back_bound) {
+        keep_bind_back_obj(guider_ui.screen_keep);
+        keep_bind_back_obj(guider_ui.screen_keep_img_bg);
+        keep_bind_back_obj(guider_ui.screen_keep_img_dialog);
+        keep_bind_back_obj(guider_ui.screen_keep_label_state);
+        keep_bind_back_obj(guider_ui.screen_keep_label_conversion);
+        keep_bind_back_obj(guider_ui.screen_keep_label_focustime);
+        s_keep.back_bound = true;
+    }
     lv_group_add_obj(g, guider_ui.screen_keep);
     keep_clear_focus_box(guider_ui.screen_keep);
     group_focus_obj(guider_ui.screen_keep);
@@ -1474,6 +1549,12 @@ void screen_keep_buttion_add(void)
 void screen_keep_custom_init(void)
 {
     if (!keep_scr_ok() || s_keep.leaving) {
+        return;
+    }
+    /* Bind DELETE before the fade delay ends so auto_del cannot leak the
+     * pointer. Do not steal the shared keypad group until this screen is act. */
+    keep_bind_delete();
+    if (lv_scr_act() != guider_ui.screen_keep) {
         return;
     }
     lv_async_call_cancel(keep_leave_to_main_async, NULL);
@@ -1536,10 +1617,11 @@ void keep_machine_poll(void)
 {
     lv_obj_t *act = lv_scr_act();
 
-    if (act == NULL || act != guider_ui.screen_keep || !lv_obj_is_valid(act)) {
-        s_keep.alive = false;
-        s_keep.bound_scr = NULL;
-        s_keep.leaving = false;
+    if (!keep_scr_ok() || act == NULL || act != guider_ui.screen_keep) {
+        if (!s_keep.leaving) {
+            s_keep.alive = false;
+            s_keep.bound_scr = NULL;
+        }
         return;
     }
     if (s_keep.leaving) {
