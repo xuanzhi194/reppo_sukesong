@@ -1,0 +1,73 @@
+# Reppo ebook v1
+# UTF-8 text stored on SPIFFS as /spiffs/book.txt
+# App may overwrite this file, then call book_machine_reload().
+#
+# Directives begin with @ in column 0:
+#   @title   Book title
+#   @author  Author name (device shows "- Author")
+#   @part    Chapter title; also inserts a chapter title page
+#   @page    Reading page. Following lines are body until the next @ line.
+# Keep each @page around 8-9 wrapped lines (~340 characters) for 310x151 arial_16.
+
+@title Siddhartha
+@author Hermann Hesse
+
+@part The son of the Brahman
+@page
+In the shade of the mango grove the boy sat with his father. The river moved like a quiet thought beside the house, carrying a few fallen flowers toward the bend. He already knew the verses by heart, yet a restlessness stayed in his chest, as if every holy word pointed past the garden wall toward a life he had not touched.
+@page
+At dawn he bathed, recited, and watched the smoke of offerings rise into a pale sky. Friends called him wise. His mother watched him with pride and a little fear. The same question returned when the lesson ended: if the self can be named and washed and sung, why does naming not quiet it? Birds crossed the water. Nothing in the ritual was wrong.
+@page
+He walked the village paths and felt how easily people believed him finished. Priests nodded. Girls looked away and then looked back. Still the river kept moving, and he could not make his mind sit as still as the stone under his feet. He wanted a teaching that would not stay in the mouth, a teaching that would change the way he woke.
+@page
+One evening he told his father he would leave with the wandering monks. The old man was silent for a long time, listening to the insects in the dark trees. Then he placed a hand on his son's shoulder. Permission, when it came, was not joy. It was a door opening onto a road neither of them could see, and both of them already missed.
+
+@part With the Samanas
+@page
+The Samanas walked thin and brown under a hard sun. They taught him to fast, to wait, to let hunger become a kind of listening. Nights were cold on the packed earth. He learned how little a body needs, and how much a mind can invent when the body is still. Dust covered their feet. The road itself became the lesson.
+@page
+He could empty himself until the forest seemed to speak through him, until breath was only weather moving in a hollow chest. Yet when the trance ended, the same young man stood up and reached for water. Escape was a skill. It was not the river he had hoped to find. Denial, he began to suspect, was only another kind of thirst.
+@page
+They crossed dry country and slept near other people's fires without joining the talk. Siddhartha watched merchants, mothers, and tired soldiers, and wondered why a path away from the world still needed the world as its opposite. If leaving was holy, why did the faces on the road stay in him longer than the chants?
+@page
+Govinda stayed loyal, waiting for the next austerity to become peace. Siddhartha loved him and could not pretend. He had learned to vanish. He had not learned to arrive. When news of a new teacher drifted up the valley, he felt not hope exactly, but the relief of being allowed to walk again toward something unnamed.
+
+@part Gotama
+@page
+In a town by the grove they heard of Gotama. People said the Buddha's voice was like clear water poured into a clean bowl. Siddhartha went to listen, not to join a crowd, but to test whether another man's peace could become his own without first becoming a costume. The grove held hundreds, and still the air felt strangely uncrowded.
+@page
+The teaching was beautiful and complete. It named suffering without decorating it. Govinda's face opened like a door. Siddhartha bowed with the others, then knew he would not stay. He would not wear a truth that had been finished by someone else, however gently it had been finished. The path, if it existed, would have to be walked with his own feet.
+@page
+He found Gotama in the morning shade and spoke without cleverness. The Illustrious One did not argue him into remaining. That kindness struck deeper than any verse. Siddhartha left the grove lighter and more alone. Behind him the sangha settled like birds. Ahead, the road had no name, only heat, carts, and the smell of crushed grass.
+@page
+Govinda stayed. They parted without anger, which made the parting cleaner and harder. Siddhartha walked until the chanting was only memory. For the first time he felt not like a student hunting a master, but like a man who would have to become his own field, his own weather, and, in time, his own harvest.
+
+@part Kamala
+@page
+The city smelled of fruit, oil, river mud, and money changing hands. Kamala taught him the art of being seen. He learned to speak more slowly, to wash, to dress as if he belonged among merchants. Desire, he found, has its own discipline: timing, patience, the courage to ask without begging. The grove felt very far, and also very near.
+@page
+She sent him to work, to earn, to return with gifts and stories that could sit beside her perfume. He became good at the world's game. He learned numbers, favors, and how a smile can be a tool. Some nights he remembered the mango shade and felt a thin crack in the pleasure, as if a door in another house had been left open on purpose.
+@page
+Kamaswami trusted his cleverness. Rooms filled with cushions, accounts, and easy laughter. Siddhartha could hold a room the way he once held a breath. He told himself this too was a study. Yet the more skillfully he lived, the more he watched himself live, as if a quiet stranger sat behind his eyes and refused to be entertained.
+@page
+Kamala understood more than she said. She did not ask him to become a monk again, and she did not pretend the city was a grove. Between them there was warmth and a kind of honest bargaining. He left her courtyard with perfume on his sleeve and a question he could not sell: what if pleasure was a teacher that never dismissed the class?
+
+@part Amongst the People
+@page
+Years gathered like coins in a box he no longer counted. He owned a house, a name, a cleverness that people trusted with their worries. Dice and wine made the evenings shorter. The restlessness did not leave; it only learned to wear perfume and laugh on time. Servants knew his habits. He almost believed he had chosen them.
+@page
+He won and lost and won again, and felt less each time. The city river looked dirtier at night, full of rind and oil. In a bronze plate his own face looked like a stranger who had stayed too long at a feast. He was not tragic. He was simply full, and fullness without hunger began to taste like dust on sweet fruit.
+@page
+Friends said he had succeeded. They toasted his luck and asked for advice. He gave it, because giving advice is easy when you have practiced sounding finished. After they left, the house was large and thin. He walked from room to room as if looking for a person who had lived there before the furniture arrived.
+@page
+One night he left before dawn, taking almost nothing. The road did not ask who he had been in the city, how much he had owned, or whom he had charmed. It only asked if he would keep walking. Behind him the lamps went out one by one. Ahead, the dark smelled like wet leaves and a life that had not yet been priced.
+
+@part The Ferryman
+@page
+A ferryman lived by the wide water and listened more than he spoke. Siddhartha asked to stay, to learn the boat, the poles, the patience of crossing. The river took people to both banks and kept none of them. Work was simple and exacting. He slept near the sound he had been trying to name since he was a boy in the grove.
+@page
+Vasudeva taught without speeches. He pointed at the water when words would have made the lesson smaller. Siddhartha learned the weight of a current, the mood of fog, the way a passenger's silence can be heavier than luggage. In time he heard that the river said the same things his childhood verses had tried to say, only without the need to be right.
+@page
+People came with grief, trade, gossip, and the wish to be elsewhere. He ferried them and let them go. Some stories stayed in him the way a ripple stays after a boat has passed. He no longer tried to empty himself, and he no longer tried to fill himself. He sat. He worked. He grew old beside a sound that was never finished.
+@page
+Years later the water still would not explain itself, and that was the peace. He had been a Brahman's son, a monk, a lover, a merchant, and a man who left. None of those names could hold the river. For the first time the day felt wide enough. He listened, and the listening was already a kind of home.

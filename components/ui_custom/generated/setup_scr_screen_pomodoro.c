@@ -72,7 +72,7 @@ void setup_scr_screen_pomodoro(lv_ui *ui)
     //Write codes screen_pomodoro_label_pomodoro
     ui->screen_pomodoro_label_pomodoro = lv_label_create(ui->screen_pomodoro);
     lv_label_set_text(ui->screen_pomodoro_label_pomodoro, "Pomodoro Focus");
-    lv_label_set_long_mode(ui->screen_pomodoro_label_pomodoro, LV_LABEL_LONG_WRAP);
+    lv_label_set_long_mode(ui->screen_pomodoro_label_pomodoro, LV_LABEL_LONG_SCROLL);
     lv_obj_set_pos(ui->screen_pomodoro_label_pomodoro, 60, 5);
     lv_obj_set_size(ui->screen_pomodoro_label_pomodoro, 210, 17);
 

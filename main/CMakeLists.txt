@@ -2,6 +2,10 @@ set(include_dirs
                 ./
 
 )
+
+set(embed_files
+                "${CMAKE_CURRENT_LIST_DIR}/../data/book.txt"
+)
  
 set(priv_requires
                     driver
@@ -32,6 +36,7 @@ idf_component_register(
                                "focus_bridge.c"
                                "picture_bridge.c"
                                "gash_machine.c"
+                               "book_machine.c"
                         INCLUDE_DIRS ${include_dirs} 
                         PRIV_REQUIRES ${priv_requires}
                         EMBED_FILES  ${embed_files}

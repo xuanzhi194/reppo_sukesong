@@ -217,6 +217,8 @@ void screen_keep_buttion_add();
 void screen_keep_custom_init();
 void screen_game_buttion_add();
 void screen_game_custom_init();
+void screen_book_buttion_add();
+void screen_book_custom_init();
 /** 弱符号默认在 custom.c；固件强符号见 main/picture_bridge.c */
 void picture_bridge_screen_on_load(void);
 void main_screen_status_refresh(void);

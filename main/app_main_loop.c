@@ -11,6 +11,7 @@
 #include "focus_bridge.h"
 #include "gash_machine.h"
 #include "keep_machine.h"
+#include "book_machine.h"
 #include "esp_random.h"
 #include "todo_storage.h"
 #include "freertos/FreeRTOS.h"
@@ -150,6 +151,7 @@ void app_main_loop_lvgl_tick(void)
          * setup_scr 之后立刻在这里接上扭蛋机。 */
         gash_machine_poll();
         keep_machine_poll();
+        book_machine_poll();
         xSemaphoreGive(lvgl_mutex);
     }
 }

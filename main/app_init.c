@@ -26,6 +26,7 @@
 #include "sleep_bridge.h"
 #include "focus_bridge.h"
 #include "keep_machine.h"
+#include "book_machine.h"
 #include "badge_storage.h"
 #include "picture_bridge.h"
 #include "driver/i2c.h"
@@ -65,6 +66,7 @@ void app_init_storage_and_data(void)
     keep_machine_init();
 
     init_spiffs();
+    book_machine_init();
     badge_storage_init();
     picture_bridge_init();
 

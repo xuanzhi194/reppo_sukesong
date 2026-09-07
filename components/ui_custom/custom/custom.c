@@ -22,11 +22,9 @@
  #include "ws2812b.h"
  #include "lcd.h"
  #include "bat_percent.h"
- #define CUSTOM_DISPLAY_FONT lv_font_SourceHanSansSC_Medium_28
- #else
- /* Guider 删掉 wordcard 后不再生成 Medium_28，模拟器用仍在工程里的 30 号字。 */
- #define CUSTOM_DISPLAY_FONT lv_font_Abel_regular_30
  #endif
+ /* Medium_28 随单词页从 Guider 工程移除；时钟/Sleep 用两边都还在的 30 号字。 */
+ #define CUSTOM_DISPLAY_FONT lv_font_Abel_regular_30
  
  //lv group define
  lv_group_t *g = NULL;
@@ -2361,6 +2359,7 @@ int donelist_load_from_csv(void)
  static void screen_main_gash_init_async(void *unused);
  static void screen_main_keep_init_async(void *unused);
  static void screen_main_game_init_async(void *unused);
+ static void screen_main_book_init_async(void *unused);
 
  static void screen_main_gash_init_async(void *unused)
  {
@@ -2386,6 +2385,14 @@ int donelist_load_from_csv(void)
          return;
      }
      screen_game_custom_init();
+ }
+
+ static void screen_main_book_init_async(void *unused)
+ {
+     LV_UNUSED(unused);
+     /* PRESSED 时 fade delay 尚未结束，lv_scr_act() 仍是被 clean 的主页。
+      * custom_init 只会先绑 DELETE；真正抢 keypad group 要等 poll / 本屏已是 act。 */
+     screen_book_custom_init();
  }
 
  void screen_main_buttion_add(){
@@ -2447,6 +2454,12 @@ int donelist_load_from_csv(void)
      if (guider_ui.screen_main_btn_game != NULL &&
          lv_obj_is_valid(guider_ui.screen_main_btn_game)) {
          lv_obj_add_event_cb(guider_ui.screen_main_btn_game,
+                             screen_main_extra_scr_clicked,
+                             LV_EVENT_PRESSED, NULL);
+     }
+     if (guider_ui.screen_main_btn_word != NULL &&
+         lv_obj_is_valid(guider_ui.screen_main_btn_word)) {
+         lv_obj_add_event_cb(guider_ui.screen_main_btn_word,
                              screen_main_extra_scr_clicked,
                              LV_EVENT_PRESSED, NULL);
      }
@@ -4712,6 +4725,42 @@ typedef enum {
      screen_keep_buttion_add();
  }
 
+ /* GUI Guider 预览用弱符号；ESP32 固件由 main/book_machine.c 强符号覆盖。 */
+ __attribute__((weak)) void screen_book_buttion_add(void)
+ {
+     screen_keypad_group_reset();
+     if (guider_ui.screen_book == NULL ||
+         !lv_obj_is_valid(guider_ui.screen_book)) {
+         return;
+     }
+     lv_obj_add_flag(guider_ui.screen_book, LV_OBJ_FLAG_CLICKABLE);
+     lv_obj_add_flag(guider_ui.screen_book, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+     lv_group_add_obj(g, guider_ui.screen_book);
+     clear_focus_box(guider_ui.screen_book);
+     group_focus_obj(guider_ui.screen_book);
+ }
+
+ __attribute__((weak)) void screen_book_custom_init(void)
+ {
+     if (guider_ui.screen_book == NULL ||
+         !lv_obj_is_valid(guider_ui.screen_book)) {
+         return;
+     }
+     if (guider_ui.screen_book_img_content_bg != NULL &&
+         lv_obj_is_valid(guider_ui.screen_book_img_content_bg)) {
+         lv_obj_add_flag(guider_ui.screen_book_img_content_bg, LV_OBJ_FLAG_HIDDEN);
+     }
+     if (guider_ui.screen_book_list_part != NULL &&
+         lv_obj_is_valid(guider_ui.screen_book_list_part)) {
+         lv_obj_add_flag(guider_ui.screen_book_list_part, LV_OBJ_FLAG_HIDDEN);
+     }
+     if (guider_ui.screen_book_btn_back != NULL &&
+         lv_obj_is_valid(guider_ui.screen_book_btn_back)) {
+         lv_obj_add_flag(guider_ui.screen_book_btn_back, LV_OBJ_FLAG_HIDDEN);
+     }
+     screen_book_buttion_add();
+ }
+
  static bool s_game_events_bound;
 
  static void screen_game_on_delete(lv_event_t *e)
@@ -4792,6 +4841,8 @@ typedef enum {
          lv_async_call(screen_main_keep_init_async, NULL);
      } else if (lv_event_get_target(e) == guider_ui.screen_main_btn_game) {
          lv_async_call(screen_main_game_init_async, NULL);
+     } else if (lv_event_get_target(e) == guider_ui.screen_main_btn_word) {
+         lv_async_call(screen_main_book_init_async, NULL);
      }
  }
  

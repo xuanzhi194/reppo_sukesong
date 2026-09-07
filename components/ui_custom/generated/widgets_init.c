@@ -167,26 +167,3 @@ const lv_img_dsc_t * screen_main_cat_right_imgs[30] = {
     &screen_main_cat_rightAAA_yuexin_cat_right_28,
     &screen_main_cat_rightAAA_yuexin_cat_right_29,
 };
-const lv_img_dsc_t * screen_wordcard_dog_cuo_imgs[6] = {
-    &screen_wordcard_dog_cuoAAA_dog_shake_0,
-    &screen_wordcard_dog_cuoAAA_dog_shake_1,
-    &screen_wordcard_dog_cuoAAA_dog_shake_2,
-    &screen_wordcard_dog_cuoAAA_dog_shake_3,
-    &screen_wordcard_dog_cuoAAA_dog_shake_4,
-    &screen_wordcard_dog_cuoAAA_dog_shake_5,
-};
-const lv_img_dsc_t * screen_wordcard_dog_dui_imgs[3] = {
-    &screen_wordcard_dog_duiAAA_dog_love_0,
-    &screen_wordcard_dog_duiAAA_dog_love_1,
-    &screen_wordcard_dog_duiAAA_dog_love_2,
-};
-const lv_img_dsc_t * screen_reviewcard_dog_dance_imgs[3] = {
-    &screen_reviewcard_dog_danceAAA_dog_dance_0,
-    &screen_reviewcard_dog_danceAAA_dog_dance_1,
-    &screen_reviewcard_dog_danceAAA_dog_dance_2,
-};
-const lv_img_dsc_t * screen_reviewcard_dog_dui_imgs[3] = {
-    &screen_reviewcard_dog_duiAAA_dog_love_2_0,
-    &screen_reviewcard_dog_duiAAA_dog_love_2_1,
-    &screen_reviewcard_dog_duiAAA_dog_love_2_2,
-};

@@ -80,14 +80,10 @@ void init_scr_del_flag(lv_ui *ui)
     ui->screen_todolist_del = true;
     ui->screen_todosel_del = true;
     ui->screen_todoback_del = true;
-    ui->screen_wordcard_del = true;
     ui->screen_timing_del = true;
-    ui->screen_wordmeun_del = true;
-    ui->screen_reviewcard_del = true;
     ui->screen_pomodoro_del = true;
     ui->screen_setting_del = true;
     ui->screen_wificfg_del = true;
-    ui->screen_ai_del = true;
     ui->screen_donelist_del = true;
     ui->screen_answer_del = true;
     ui->screen_loading_del = true;
@@ -96,6 +92,7 @@ void init_scr_del_flag(lv_ui *ui)
     ui->screen_gash_del = true;
     ui->screen_game_del = true;
     ui->screen_keep_del = true;
+    ui->screen_book_del = true;
 }
 
 void setup_ui(lv_ui *ui)

@@ -106,20 +106,6 @@ typedef struct
 	lv_obj_t *screen_todoback_btn_cancel_label;
 	lv_obj_t *screen_todoback_btn_recover;
 	lv_obj_t *screen_todoback_btn_recover_label;
-	lv_obj_t *screen_wordcard;
-	bool screen_wordcard_del;
-	lv_obj_t *screen_wordcard_label_index;
-	lv_obj_t *screen_wordcard_label_phonetic;
-	lv_obj_t *screen_wordcard_label_meaning;
-	lv_obj_t *screen_wordcard_btn_dui;
-	lv_obj_t *screen_wordcard_btn_dui_label;
-	lv_obj_t *screen_wordcard_btn_cuo;
-	lv_obj_t *screen_wordcard_btn_cuo_label;
-	lv_obj_t *screen_wordcard_btn_back;
-	lv_obj_t *screen_wordcard_btn_back_label;
-	lv_obj_t *screen_wordcard_label_spelling;
-	lv_obj_t *screen_wordcard_dog_cuo;
-	lv_obj_t *screen_wordcard_dog_dui;
 	lv_obj_t *screen_timing;
 	bool screen_timing_del;
 	lv_obj_t *screen_timing_btn_main;
@@ -131,29 +117,6 @@ typedef struct
 	lv_obj_t *screen_timing_img_baticon;
 	lv_obj_t *screen_timing_img_wificonnect;
 	lv_obj_t *screen_timing_img_wifidis;
-	lv_obj_t *screen_wordmeun;
-	bool screen_wordmeun_del;
-	lv_obj_t *screen_wordmeun_bar_process;
-	lv_obj_t *screen_wordmeun_label_wordpercent;
-	lv_obj_t *screen_wordmeun_label_reviewnum;
-	lv_obj_t *screen_wordmeun_btn_learn;
-	lv_obj_t *screen_wordmeun_btn_learn_label;
-	lv_obj_t *screen_wordmeun_btn_review;
-	lv_obj_t *screen_wordmeun_btn_review_label;
-	lv_obj_t *screen_wordmeun_btn_back;
-	lv_obj_t *screen_wordmeun_btn_back_label;
-	lv_obj_t *screen_reviewcard;
-	bool screen_reviewcard_del;
-	lv_obj_t *screen_reviewcard_label_index;
-	lv_obj_t *screen_reviewcard_label_spelling;
-	lv_obj_t *screen_reviewcard_label_phonetic;
-	lv_obj_t *screen_reviewcard_label_meaning;
-	lv_obj_t *screen_reviewcard_btn_dui;
-	lv_obj_t *screen_reviewcard_btn_dui_label;
-	lv_obj_t *screen_reviewcard_btn_back;
-	lv_obj_t *screen_reviewcard_btn_back_label;
-	lv_obj_t *screen_reviewcard_dog_dance;
-	lv_obj_t *screen_reviewcard_dog_dui;
 	lv_obj_t *screen_pomodoro;
 	bool screen_pomodoro_del;
 	lv_obj_t *screen_pomodoro_img_pomorect1;
@@ -240,44 +203,6 @@ typedef struct
 	lv_obj_t *screen_wificfg_ta_password;
 	lv_obj_t *screen_wificfg_img_passicon;
 	lv_obj_t *screen_wificfg_spinner_connect;
-	lv_obj_t *screen_ai;
-	bool screen_ai_del;
-	lv_obj_t *screen_ai_ai_cont;
-	lv_obj_t *screen_ai_arc_1;
-	lv_obj_t *screen_ai_arc_2;
-	lv_obj_t *screen_ai_arc_3;
-	lv_obj_t *screen_ai_label_cat3;
-	lv_obj_t *screen_ai_label_cat2;
-	lv_obj_t *screen_ai_label_cat1;
-	lv_obj_t *screen_ai_label_cat3_num;
-	lv_obj_t *screen_ai_label_cat2_num;
-	lv_obj_t *screen_ai_label_cat1_num;
-	lv_obj_t *screen_ai_line_1;
-	lv_obj_t *screen_ai_line_2;
-	lv_obj_t *screen_ai_label_quote;
-	lv_obj_t *screen_ai_label_sum;
-	lv_obj_t *screen_ai_btn_sum;
-	lv_obj_t *screen_ai_btn_sum_label;
-	lv_obj_t *screen_ai_btn_cat;
-	lv_obj_t *screen_ai_btn_cat_label;
-	lv_obj_t *screen_ai_img_v10;
-	lv_obj_t *screen_ai_img_v9;
-	lv_obj_t *screen_ai_img_v8;
-	lv_obj_t *screen_ai_img_v7;
-	lv_obj_t *screen_ai_img_v6;
-	lv_obj_t *screen_ai_img_v5;
-	lv_obj_t *screen_ai_img_v4;
-	lv_obj_t *screen_ai_img_v3;
-	lv_obj_t *screen_ai_img_v2;
-	lv_obj_t *screen_ai_img_v1;
-	lv_obj_t *screen_ai_btn_week;
-	lv_obj_t *screen_ai_btn_week_label;
-	lv_obj_t *screen_ai_btn_day;
-	lv_obj_t *screen_ai_btn_day_label;
-	lv_obj_t *screen_ai_bar_focus;
-	lv_obj_t *screen_ai_label_duration;
-	lv_obj_t *screen_ai_btn_back;
-	lv_obj_t *screen_ai_btn_back_label;
 	lv_obj_t *screen_donelist;
 	bool screen_donelist_del;
 	lv_obj_t *screen_donelist_line_4;
@@ -367,6 +292,24 @@ typedef struct
 	lv_obj_t *screen_keep_label_state;
 	lv_obj_t *screen_keep_label_conversion;
 	lv_obj_t *screen_keep_label_focustime;
+	lv_obj_t *screen_book;
+	bool screen_book_del;
+	lv_obj_t *screen_book_label_author;
+	lv_obj_t *screen_book_label_content;
+	lv_obj_t *screen_book_label_pageindex;
+	lv_obj_t *screen_book_label_partname;
+	lv_obj_t *screen_book_label_partindex;
+	lv_obj_t *screen_book_label_bookname;
+	lv_obj_t *screen_book_img_content_bg;
+	lv_obj_t *screen_book_list_part;
+	lv_obj_t *screen_book_list_part_item0;
+	lv_obj_t *screen_book_list_part_item1;
+	lv_obj_t *screen_book_list_part_item2;
+	lv_obj_t *screen_book_list_part_item3;
+	lv_obj_t *screen_book_list_part_item4;
+	lv_obj_t *screen_book_list_part_item5;
+	lv_obj_t *screen_book_btn_back;
+	lv_obj_t *screen_book_btn_back_label;
 	lv_obj_t *g_kb_top_layer;
 }lv_ui;
 
@@ -396,14 +339,10 @@ void setup_scr_screen_main(lv_ui *ui);
 void setup_scr_screen_todolist(lv_ui *ui);
 void setup_scr_screen_todosel(lv_ui *ui);
 void setup_scr_screen_todoback(lv_ui *ui);
-void setup_scr_screen_wordcard(lv_ui *ui);
 void setup_scr_screen_timing(lv_ui *ui);
-void setup_scr_screen_wordmeun(lv_ui *ui);
-void setup_scr_screen_reviewcard(lv_ui *ui);
 void setup_scr_screen_pomodoro(lv_ui *ui);
 void setup_scr_screen_setting(lv_ui *ui);
 void setup_scr_screen_wificfg(lv_ui *ui);
-void setup_scr_screen_ai(lv_ui *ui);
 void setup_scr_screen_donelist(lv_ui *ui);
 void setup_scr_screen_answer(lv_ui *ui);
 void setup_scr_screen_loading(lv_ui *ui);
@@ -412,6 +351,7 @@ void setup_scr_screen_picture(lv_ui *ui);
 void setup_scr_screen_gash(lv_ui *ui);
 void setup_scr_screen_game(lv_ui *ui);
 void setup_scr_screen_keep(lv_ui *ui);
+void setup_scr_screen_book(lv_ui *ui);
 #include "extra/widgets/animimg/lv_animimg.h"
 LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_00);
 LV_IMG_DECLARE(screen_reppo_reppo_gifAAA_reppo_start_01);
@@ -561,35 +501,10 @@ LV_IMG_DECLARE(_AAA_todosel_bg_320x170);
 
 LV_IMG_DECLARE(_AAA_todo_fanqie_bg2_320x170);
 
-LV_IMG_DECLARE(_AAA_flashcards_learn_bg_320x170);
-#include "extra/widgets/animimg/lv_animimg.h"
-LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_0);
-LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_1);
-LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_2);
-LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_3);
-LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_4);
-LV_IMG_DECLARE(screen_wordcard_dog_cuoAAA_dog_shake_5);
-#include "extra/widgets/animimg/lv_animimg.h"
-LV_IMG_DECLARE(screen_wordcard_dog_duiAAA_dog_love_0);
-LV_IMG_DECLARE(screen_wordcard_dog_duiAAA_dog_love_1);
-LV_IMG_DECLARE(screen_wordcard_dog_duiAAA_dog_love_2);
-
 LV_IMG_DECLARE(_AAA_clock_bg_320x170);
 LV_IMG_DECLARE(_AAA_shandian_icon_alpha_9x13);
 LV_IMG_DECLARE(_AAA_clock_wifi_icon_alpha_14x14);
 LV_IMG_DECLARE(_AAA_clock_wifiduan_icon_alpha_15x15);
-
-LV_IMG_DECLARE(_AAA_cishu_320x170);
-
-LV_IMG_DECLARE(_AAA_flashcards_review_bg_320x170);
-#include "extra/widgets/animimg/lv_animimg.h"
-LV_IMG_DECLARE(screen_reviewcard_dog_danceAAA_dog_dance_0);
-LV_IMG_DECLARE(screen_reviewcard_dog_danceAAA_dog_dance_1);
-LV_IMG_DECLARE(screen_reviewcard_dog_danceAAA_dog_dance_2);
-#include "extra/widgets/animimg/lv_animimg.h"
-LV_IMG_DECLARE(screen_reviewcard_dog_duiAAA_dog_love_2_0);
-LV_IMG_DECLARE(screen_reviewcard_dog_duiAAA_dog_love_2_1);
-LV_IMG_DECLARE(screen_reviewcard_dog_duiAAA_dog_love_2_2);
 
 LV_IMG_DECLARE(_AAA_fanqie_bg_320x170);
 LV_IMG_DECLARE(_pomorect_alpha_257x52);
@@ -613,18 +528,6 @@ LV_IMG_DECLARE(_AAA_wifi_kuang_alpha_145x125);
 LV_IMG_DECLARE(_AAA_wifi_icons_alpha_110x110);
 LV_IMG_DECLARE(_wifi_false_alpha_20x20);
 LV_IMG_DECLARE(_AAA_wifi_suo_icon_alpha_13x15);
-
-LV_IMG_DECLARE(_AAA_Overview_BG_320x510);
-LV_IMG_DECLARE(_AAA_Overview_v10_alpha_304x158);
-LV_IMG_DECLARE(_AAA_Overview_v9_alpha_304x158);
-LV_IMG_DECLARE(_AAA_Overview_v8_alpha_304x158);
-LV_IMG_DECLARE(_AAA_Overview_v7_alpha_304x158);
-LV_IMG_DECLARE(_AAA_Overview_v6_alpha_304x158);
-LV_IMG_DECLARE(_AAA_Overview_v5_alpha_304x158);
-LV_IMG_DECLARE(_AAA_Overview_v4_alpha_304x158);
-LV_IMG_DECLARE(_AAA_Overview_v3_alpha_304x158);
-LV_IMG_DECLARE(_AAA_Overview_v2_alpha_304x158);
-LV_IMG_DECLARE(_AAA_Overview_v1_alpha_304x158);
 
 LV_IMG_DECLARE(_AAA_done_bg_320x170);
 
@@ -670,6 +573,9 @@ LV_IMG_DECLARE(_AAA_keep_LV1_wither_alpha_94x106);
 LV_IMG_DECLARE(_AAA_keep_icon_alpha_14x14);
 LV_IMG_DECLARE(_AAA_keep_dialogbox_alpha_204x78);
 
+LV_IMG_DECLARE(_AAA_ebook_BG_320x170);
+LV_IMG_DECLARE(_AAA_ebook_contents_BG_alpha_136x170);
+
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)
 LV_FONT_DECLARE(lv_font_Acme_Regular_12)
@@ -677,21 +583,26 @@ LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_14)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_20)
 LV_FONT_DECLARE(lv_font_Acme_Regular_14)
-LV_FONT_DECLARE(lv_font_arial_14)
-LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_28)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_52)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_17)
-LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_12)
 LV_FONT_DECLARE(lv_font_Abel_regular_30)
 LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_14)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_13)
 LV_FONT_DECLARE(lv_font_AdobeFangsongStdRegular_16)
 LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_25)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_12)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_12)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_11)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_13)
+LV_FONT_DECLARE(lv_font_arial_14)
 LV_FONT_DECLARE(lv_font_SourceHanSansSC_Normal_10)
+LV_FONT_DECLARE(lv_font_AlexBrush_Regular_16)
+LV_FONT_DECLARE(lv_font_arial_16)
+LV_FONT_DECLARE(lv_font_ArchitectsDaughter_12)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_18)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Medium_20)
+LV_FONT_DECLARE(lv_font_SourceHanSansSC_Normal_16)
 
 
 #ifdef __cplusplus
