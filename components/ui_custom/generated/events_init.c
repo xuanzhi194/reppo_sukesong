@@ -250,7 +250,7 @@ static void screen_main_btn_gashapon_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"Random Todo");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Surprise");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -294,7 +294,7 @@ static void screen_main_btn_word_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"Word");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"E-book");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);
@@ -335,7 +335,7 @@ static void screen_main_btn_fun_event_handler (lv_event_t *e)
     }
     case LV_EVENT_FOCUSED:
     {
-        lv_label_set_text(guider_ui.screen_main_label_chosen,"Book of Answer");
+        lv_label_set_text(guider_ui.screen_main_label_chosen,"Ask Reppo");
         lv_obj_add_flag(guider_ui.screen_main_img_todo_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_done_icon, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(guider_ui.screen_main_img_book_icon, LV_OBJ_FLAG_HIDDEN);

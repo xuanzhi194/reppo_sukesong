@@ -2,7 +2,8 @@
 
 /**
  * Ebook lives in /spiffs/book.txt (see data/book.txt for the format).
- * App import can overwrite that file, then call book_machine_reload().
+ * App sends the same UTF-8 file over BLE 0x50/0x51/0x52; device writes
+ * SPIFFS then reloads. Limits: 1 MB file, 64 parts, 1024 pages, ~400 chars/page.
  */
 void book_machine_init(void);
 

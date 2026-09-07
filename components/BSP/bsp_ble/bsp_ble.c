@@ -51,6 +51,7 @@ static bool s_ble_active;
 static uint16_t gatt_chr_val_handle;
 static uint16_t active_conn_handle = BLE_HS_CONN_HANDLE_NONE;
 static bool notify_enabled;
+static bsp_ble_book_rx_t s_book_rx;
 
 #if REPPO_DEMO_BLE_BOOT_GATE
 static volatile bool s_demo_boot_gate_released;
@@ -68,6 +69,7 @@ static int send_todo_json_via_notify(void);
 static bool ble_refresh_stored_read_bundle(void);
 static void schedule_sync_notify_delayed(void);
 static void badge_notify_status(uint8_t status, uint8_t progress);
+static void book_notify_status(uint8_t status, uint8_t progress);
 static uint32_t ble_read_u32_le(const uint8_t *p);
 static uint16_t ble_read_u16_le(const uint8_t *p);
 static int notify_todo_chunk(uint8_t cmd, const uint8_t *payload, uint16_t payload_len);
@@ -247,6 +249,22 @@ static void badge_notify_status(uint8_t status, uint8_t progress)
     }
 }
 
+static void book_notify_status(uint8_t status, uint8_t progress)
+{
+    if (!notify_enabled || active_conn_handle == BLE_HS_CONN_HANDLE_NONE) {
+        return;
+    }
+    uint8_t payload[2] = { status, progress };
+    for (int attempt = 0; attempt < 5; attempt++) {
+        int rc = notify_todo_chunk(BLE_CMD_BOOK_STATUS, payload, sizeof(payload));
+        if (rc == 0) {
+            return;
+        }
+        ESP_LOGW(TAG, "book status notify failed rc=%d attempt=%d", rc, attempt + 1);
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+}
+
 static int device_write_cb(uint16_t conn_handle,
                            uint16_t attr_handle,
                            struct ble_gatt_access_ctxt *ctxt,
@@ -400,6 +418,60 @@ static int device_write_cb(uint16_t conn_handle,
         }
         badge_notify_status(BADGE_STATUS_OK, 100);
         ESP_LOGI(TAG, "Badge image saved");
+    } else if (cmd == BLE_CMD_BOOK_INFO) {
+        if (s_book_rx.begin == NULL) {
+            ESP_LOGW(TAG, "BOOK INFO: no rx handler");
+            book_notify_status(BLE_BOOK_STATUS_ERR, 0);
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+        if (payload_len < 9) {
+            ESP_LOGW(TAG, "BOOK INFO rejected: len=%u", (unsigned)payload_len);
+            book_notify_status(BLE_BOOK_STATUS_ERR, 0);
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        }
+        uint32_t total = ble_read_u32_le(payload);
+        uint32_t crc32 = ble_read_u32_le(payload + 4);
+        uint8_t format = payload[8];
+        esp_err_t err = s_book_rx.begin(total, crc32, format);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "BOOK INFO begin failed: %s", esp_err_to_name(err));
+            book_notify_status(BLE_BOOK_STATUS_ERR, 0);
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+        book_notify_status(BLE_BOOK_STATUS_BUSY, 0);
+    } else if (cmd == BLE_CMD_BOOK_DATA) {
+        if (s_book_rx.write == NULL) {
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+        if (payload_len < 5) {
+            ESP_LOGW(TAG, "BOOK DATA rejected: len=%u", (unsigned)payload_len);
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        }
+        uint32_t offset = ble_read_u32_le(payload);
+        const uint8_t *chunk = payload + 4;
+        uint16_t book_chunk_len = payload_len - 4;
+        esp_err_t err = s_book_rx.write(offset, chunk, book_chunk_len);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "BOOK DATA write failed off=%lu", (unsigned long)offset);
+            book_notify_status(BLE_BOOK_STATUS_ERR, 0);
+            if (s_book_rx.abort != NULL) {
+                s_book_rx.abort();
+            }
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+    } else if (cmd == BLE_CMD_BOOK_COMMIT) {
+        if (s_book_rx.commit == NULL) {
+            book_notify_status(BLE_BOOK_STATUS_ERR, 0);
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+        esp_err_t err = s_book_rx.commit();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "BOOK COMMIT failed: %s", esp_err_to_name(err));
+            book_notify_status(BLE_BOOK_STATUS_ERR, 0);
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+        book_notify_status(BLE_BOOK_STATUS_OK, 100);
+        ESP_LOGI(TAG, "Ebook saved");
     } else if (cmd == BLE_CMD_TIME_SET) {
         /* There is no request ID on the wire: finish one sync before the next. */
         portENTER_CRITICAL(&s_phone_time_mux);
@@ -483,6 +555,9 @@ static int bsp_ble_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_DISCONNECT:
         ESP_LOGI(TAG, "BLE GAP EVENT DISCONNECTED");
         badge_storage_rx_abort();
+        if (s_book_rx.abort != NULL) {
+            s_book_rx.abort();
+        }
         time_sync_reset(false);
         ble_npl_callout_stop(&s_phone_time_status_callout);
         active_conn_handle = BLE_HS_CONN_HANDLE_NONE;
@@ -720,6 +795,15 @@ void bsp_ble_disconnect(void)
     }
 }
 
+void bsp_ble_register_book_rx(const bsp_ble_book_rx_t *rx)
+{
+    if (rx == NULL) {
+        memset(&s_book_rx, 0, sizeof(s_book_rx));
+        return;
+    }
+    s_book_rx = *rx;
+}
+
 void bsp_ble_init(void)
 {
     int rc;
@@ -801,6 +885,9 @@ void bsp_ble_deinit(void)
     }
 
     badge_storage_rx_abort();
+    if (s_book_rx.abort != NULL) {
+        s_book_rx.abort();
+    }
 
     if (active_conn_handle != BLE_HS_CONN_HANDLE_NONE) {
         ble_gap_terminate(active_conn_handle, BLE_ERR_REM_USER_CONN_TERM);

@@ -1,6 +1,11 @@
 # Reppo ebook v1
 # UTF-8 text stored on SPIFFS as /spiffs/book.txt
-# App may overwrite this file, then call book_machine_reload().
+# App uploads this file over BLE (GATT 0xFF01):
+#   0x50 INFO   total_size(u32 LE) + crc32(u32 LE) + format(u8=1)
+#   0x51 DATA   offset(u32 LE) + chunk   (chunk <= 251)
+#   0x52 COMMIT
+#   0x53 STATUS notify  status(u8) + progress(u8)  0=OK 1=ERR 2=BUSY
+# CRC is IEEE zlib/esp_crc32_le. Max file 1MB, 64 parts, 1024 pages. After OK the reader reloads.
 #
 # Directives begin with @ in column 0:
 #   @title   Book title

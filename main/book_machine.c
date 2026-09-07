@@ -16,15 +16,26 @@
 #ifdef ESP_PLATFORM
 #include "nvs.h"
 #include "esp_log.h"
+#include "esp_err.h"
+#include "esp_crc.h"
+#include "esp_attr.h"
+#include "bsp_ble.h"
+#include <unistd.h>
+#include <sys/stat.h>
 extern const uint8_t book_txt_start[] asm("_binary_book_txt_start");
 extern const uint8_t book_txt_end[] asm("_binary_book_txt_end");
+#define BOOK_PSRAM EXT_RAM_BSS_ATTR
+#else
+#define BOOK_PSRAM
 #endif
 
 #define BOOK_NVS_NS            "ebook"
 #define BOOK_NVS_KEY           "page"
 #define BOOK_SPIFFS_PATH       "/spiffs/book.txt"
-#define BOOK_MAX_PARTS         32
-#define BOOK_MAX_PAGES         96
+#define BOOK_SPIFFS_TMP        "/spiffs/book.tmp"
+#define BOOK_MAX_FILE_BYTES    (1024 * 1024)
+#define BOOK_MAX_PARTS         64
+#define BOOK_MAX_PAGES         1024
 #define BOOK_PAGE_CHARS        400
 #define BOOK_NAME_LEN          48
 #define BOOK_PART_NAME_LEN     48
@@ -97,10 +108,10 @@ static const book_page_t s_fallback_pages[] = {
 
 static char s_title[BOOK_NAME_LEN];
 static char s_author_disp[BOOK_NAME_LEN + 4];
-static char s_part_names[BOOK_MAX_PARTS][BOOK_PART_NAME_LEN];
-static char s_page_texts[BOOK_MAX_PAGES][BOOK_PAGE_CHARS];
+static char s_part_names[BOOK_MAX_PARTS][BOOK_PART_NAME_LEN] BOOK_PSRAM;
+static char s_page_texts[BOOK_MAX_PAGES][BOOK_PAGE_CHARS] BOOK_PSRAM;
 static const char *s_part_ptrs[BOOK_MAX_PARTS];
-static book_page_t s_pages[BOOK_MAX_PAGES];
+static book_page_t s_pages[BOOK_MAX_PAGES] BOOK_PSRAM;
 static book_info_t s_loaded;
 
 static struct {
@@ -118,6 +129,7 @@ static struct {
     bool page_loaded;
     bool toc_rest_cached;
     bool content_draw_bound;
+    volatile bool ble_imported;
     const char *content_src;
     lv_coord_t toc_bg_x;
     lv_coord_t toc_bg_y;
@@ -135,6 +147,9 @@ static void book_toc_close(bool jump_chapter);
 static void book_leave_to_main_async(void *unused);
 static void book_anim_stop(lv_obj_t *obj);
 static void book_snap_rest(lv_obj_t *obj, lv_coord_t x, lv_coord_t y);
+#ifdef ESP_PLATFORM
+static void book_nvs_save_page(uint16_t page);
+#endif
 
 static bool book_obj_ok(lv_obj_t *obj)
 {
@@ -415,7 +430,7 @@ static bool book_load_from_path(const char *path)
         return false;
     }
     sz = ftell(f);
-    if (sz <= 0 || sz > (80 * 1024)) {
+    if (sz <= 0 || sz > BOOK_MAX_FILE_BYTES) {
         fclose(f);
         return false;
     }
@@ -488,6 +503,165 @@ static bool book_load_spiffs(void)
     return false;
 #endif
 }
+
+#ifdef ESP_PLATFORM
+static bool s_rx_active;
+static uint32_t s_rx_total;
+static uint32_t s_rx_crc_expected;
+static uint32_t s_rx_received_max;
+static FILE *s_rx_fp;
+
+static void book_rx_close_file(void)
+{
+    if (s_rx_fp != NULL) {
+        fclose(s_rx_fp);
+        s_rx_fp = NULL;
+    }
+}
+
+static uint32_t book_file_crc32(const char *path)
+{
+    FILE *f = fopen(path, "rb");
+    uint32_t crc = 0;
+    uint8_t buf[1024];
+    size_t n;
+
+    if (f == NULL) {
+        return 0;
+    }
+    while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
+        crc = esp_crc32_le(crc, buf, n);
+    }
+    fclose(f);
+    return crc;
+}
+
+static void book_ble_rx_abort(void)
+{
+    book_rx_close_file();
+    if (s_rx_active) {
+        unlink(BOOK_SPIFFS_TMP);
+    }
+    s_rx_active = false;
+    s_rx_total = 0;
+    s_rx_crc_expected = 0;
+    s_rx_received_max = 0;
+}
+
+static esp_err_t book_ble_rx_begin(uint32_t total_size, uint32_t crc32, uint8_t format)
+{
+    if (format != BLE_BOOK_FMT_TXT) {
+        ESP_LOGW(BOOK_TAG, "unsupported format %u", (unsigned)format);
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (total_size == 0 || total_size > BOOK_MAX_FILE_BYTES) {
+        ESP_LOGW(BOOK_TAG, "invalid size %lu", (unsigned long)total_size);
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    book_ble_rx_abort();
+    s_rx_fp = fopen(BOOK_SPIFFS_TMP, "wb");
+    if (s_rx_fp == NULL) {
+        ESP_LOGE(BOOK_TAG, "open tmp failed");
+        return ESP_FAIL;
+    }
+    s_rx_active = true;
+    s_rx_total = total_size;
+    s_rx_crc_expected = crc32;
+    s_rx_received_max = 0;
+    ESP_LOGI(BOOK_TAG, "RX begin size=%lu crc=0x%08lX",
+             (unsigned long)total_size, (unsigned long)crc32);
+    return ESP_OK;
+}
+
+static esp_err_t book_ble_rx_write(uint32_t offset, const uint8_t *data, size_t len)
+{
+    uint32_t end;
+
+    if (!s_rx_active || s_rx_fp == NULL || data == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (len == 0) {
+        return ESP_OK;
+    }
+    if (offset + len > s_rx_total) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if (fseek(s_rx_fp, (long)offset, SEEK_SET) != 0) {
+        return ESP_FAIL;
+    }
+    if (fwrite(data, 1, len, s_rx_fp) != len) {
+        return ESP_FAIL;
+    }
+    end = offset + (uint32_t)len;
+    if (end > s_rx_received_max) {
+        s_rx_received_max = end;
+    }
+    return ESP_OK;
+}
+
+static esp_err_t book_ble_rx_commit(void)
+{
+    struct stat st;
+    uint32_t crc;
+
+    if (!s_rx_active || s_rx_fp == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    fflush(s_rx_fp);
+    book_rx_close_file();
+
+    if (stat(BOOK_SPIFFS_TMP, &st) != 0 || (uint32_t)st.st_size != s_rx_total ||
+        s_rx_received_max < s_rx_total) {
+        ESP_LOGE(BOOK_TAG, "commit size mismatch");
+        book_ble_rx_abort();
+        return ESP_ERR_INVALID_SIZE;
+    }
+    crc = book_file_crc32(BOOK_SPIFFS_TMP);
+    if (crc != s_rx_crc_expected) {
+        ESP_LOGE(BOOK_TAG, "CRC mismatch got=0x%08lX expect=0x%08lX",
+                 (unsigned long)crc, (unsigned long)s_rx_crc_expected);
+        book_ble_rx_abort();
+        return ESP_ERR_INVALID_CRC;
+    }
+    if (!book_load_from_path(BOOK_SPIFFS_TMP)) {
+        ESP_LOGE(BOOK_TAG, "parse failed, keep previous book");
+        book_load_spiffs();
+        book_ble_rx_abort();
+        return ESP_ERR_INVALID_RESPONSE;
+    }
+    unlink(BOOK_SPIFFS_PATH);
+    if (rename(BOOK_SPIFFS_TMP, BOOK_SPIFFS_PATH) != 0) {
+        ESP_LOGE(BOOK_TAG, "rename tmp failed");
+        book_ble_rx_abort();
+        book_load_spiffs();
+        return ESP_FAIL;
+    }
+    s_rx_active = false;
+    s_rx_total = 0;
+    s_rx_crc_expected = 0;
+    s_rx_received_max = 0;
+    s_book.page = 0;
+    s_book.list_built = false;
+    s_book.ble_imported = true;
+    book_nvs_save_page(0);
+    ESP_LOGI(BOOK_TAG, "imported %u parts / %u pages",
+             (unsigned)s_loaded.part_count, (unsigned)s_loaded.page_count);
+    return ESP_OK;
+}
+
+static void book_ble_register(void)
+{
+    static const bsp_ble_book_rx_t rx = {
+        .begin = book_ble_rx_begin,
+        .write = book_ble_rx_write,
+        .commit = book_ble_rx_commit,
+        .abort = book_ble_rx_abort,
+    };
+
+    bsp_ble_register_book_rx(&rx);
+}
+#endif
 
 static void book_clear_group_hooks(void)
 {
@@ -1826,6 +2000,9 @@ void book_machine_reload(void)
 
 void book_machine_init(void)
 {
+#ifdef ESP_PLATFORM
+    book_ble_register();
+#endif
     book_machine_reload();
     if (!s_book.page_loaded) {
 #ifdef ESP_PLATFORM
@@ -1843,6 +2020,20 @@ void book_machine_poll(void)
     if (s_book.leaving) {
         return;
     }
+#ifdef ESP_PLATFORM
+    if (s_book.ble_imported) {
+        s_book.ble_imported = false;
+        if (book_scr_ok() && lv_scr_act() == guider_ui.screen_book &&
+            s_book.alive) {
+            if (s_book.toc_open) {
+                book_toc_close(false);
+            }
+            s_book.list_built = false;
+            book_list_rebuild();
+            book_render_page(BOOK_ANIM_NONE);
+        }
+    }
+#endif
     if (!book_scr_ok()) {
         return;
     }

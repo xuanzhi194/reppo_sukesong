@@ -2,6 +2,9 @@
 #define BSP_BLE_H
 
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include "esp_err.h"
 #include "reppo_demo_mode.h"
 
 /** 每次连接后，App 开启 notify，再下发本地墙钟（不做时区换算）。
@@ -12,6 +15,30 @@
 #define BLE_CMD_TIME_STATUS   0x11
 #define BLE_TIME_STATUS_OK    0
 #define BLE_TIME_STATUS_ERR   1
+
+/** Ebook UTF-8 text upload (same GATT char 0xFF01 as todo/badge).
+ * INFO  payload = total_size(u32 LE) + crc32(u32 LE) + format(u8=1)
+ * DATA  payload = offset(u32 LE) + chunk  (write packet <= 256: chunk <= 251)
+ * COMMIT payload = empty
+ * STATUS notify payload = status(u8) + progress(u8)
+ * CRC = ESP-IDF esp_crc32_le / zlib.crc32 IEEE. */
+#define BLE_CMD_BOOK_INFO     0x50
+#define BLE_CMD_BOOK_DATA     0x51
+#define BLE_CMD_BOOK_COMMIT   0x52
+#define BLE_CMD_BOOK_STATUS   0x53
+#define BLE_BOOK_FMT_TXT      1
+#define BLE_BOOK_STATUS_OK    0
+#define BLE_BOOK_STATUS_ERR   1
+#define BLE_BOOK_STATUS_BUSY  2
+
+typedef struct {
+    esp_err_t (*begin)(uint32_t total_size, uint32_t crc32, uint8_t format);
+    esp_err_t (*write)(uint32_t offset, const uint8_t *data, size_t len);
+    esp_err_t (*commit)(void);
+    void (*abort)(void);
+} bsp_ble_book_rx_t;
+
+void bsp_ble_register_book_rx(const bsp_ble_book_rx_t *rx);
 
 void bsp_ble_init(void);
 void bsp_ble_deinit(void);
