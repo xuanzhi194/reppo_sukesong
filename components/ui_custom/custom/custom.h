@@ -18,12 +18,21 @@ extern "C" {
 #ifndef TODO_MAX_ITEMS
 #define TODO_MAX_ITEMS  100
 #define TODO_NAME_LEN   128
+#ifndef TODO_LABEL_NONE
+#define TODO_LABEL_NONE  0
+#define TODO_LABEL_WORK  1  /* 工作 / gash Work */
+#define TODO_LABEL_STUDY 2  /* 学习 / gash Study */
+#define TODO_LABEL_LIFE  3  /* 生活 / gash Life */
+#define TODO_LABEL_FUN   4  /* 娱乐 / gash Fun */
+#endif
 typedef struct {
     char     name[TODO_NAME_LEN];
     uint16_t duration_min;
     uint8_t  done;
     /* 日期 YYYY-MM-DD，仅由微信小程序下发；未下发时为空，设备端不自行生成 */
     char     planned_date[16];
+    /* TODO_LABEL_*；0 = App 未选标签 */
+    uint8_t  label;
 } todo_item_t;
 typedef struct {
     uint8_t     count;
@@ -215,6 +224,7 @@ void screen_gash_buttion_add();
 void screen_gash_custom_init();
 void screen_keep_buttion_add();
 void screen_keep_custom_init();
+/* Guider preview weak stubs; independent firmware implementation in main/game_machine.c. */
 void screen_game_buttion_add();
 void screen_game_custom_init();
 void screen_book_buttion_add();

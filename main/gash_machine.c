@@ -717,25 +717,11 @@ static void gash_recalc_todo_counts(void)
 #ifdef ESP_PLATFORM
 static void gash_persist_todo_list(void)
 {
-    FILE *f;
-    uint8_t i;
-
     if (!todo_storage_lock(pdMS_TO_TICKS(200))) {
         return;
     }
     g_todo_list = ui_todo_list;
-    f = fopen("/spiffs/todo.csv", "w");
-    if (f != NULL) {
-        for (i = 0; i < g_todo_list.count; i++) {
-            fprintf(f, "%s,%u,%u,%s\n",
-                    g_todo_list.items[i].name,
-                    (unsigned)g_todo_list.items[i].duration_min,
-                    (unsigned)g_todo_list.items[i].done,
-                    g_todo_list.items[i].planned_date);
-        }
-        fclose(f);
-    }
-    _nvs_save_done();
+    (void)todo_storage_flush_locked();
     todo_storage_unlock();
 }
 #endif
@@ -758,6 +744,7 @@ static bool gash_add_current_todo(void)
     ui_todo_list.items[idx].duration_min = GASH_TASK_DURATION;
     ui_todo_list.items[idx].done = 0;
     ui_todo_list.items[idx].planned_date[0] = '\0';
+    ui_todo_list.items[idx].label = todo_label_from_gash_cat(s_gash.cat_idx);
     ui_todo_list.count++;
     gash_recalc_todo_counts();
 #ifdef ESP_PLATFORM

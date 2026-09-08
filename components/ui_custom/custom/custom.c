@@ -32,14 +32,14 @@
  todo_list_t ui_todo_list = {
      .count = 8,
      .items = {
-         {.name = "Morning standup",   .duration_min = 15, .done = 1, .planned_date = "2026-05-09"},
-         {.name = "Review PR #128",    .duration_min = 25, .done = 1, .planned_date = "2026-05-09"},
-         {.name = "Fix WiFi reconnect",.duration_min = 45, .done = 0, .planned_date = ""},
-         {.name = "LVGL animation tune", .duration_min = 30, .done = 0, .planned_date = ""},
-         {.name = "Write test notes",  .duration_min = 20, .done = 0, .planned_date = ""},
-         {.name = "Refactor timer flow", .duration_min = 35, .done = 0, .planned_date = ""},
-         {.name = "Sync NVS defaults", .duration_min = 18, .done = 0, .planned_date = ""},
-         {.name = "Polish main screen",.duration_min = 40, .done = 0, .planned_date = ""},
+         {.name = "Morning standup",   .duration_min = 15, .done = 1, .planned_date = "2026-05-09", .label = TODO_LABEL_WORK},
+         {.name = "Review PR #128",    .duration_min = 25, .done = 1, .planned_date = "2026-05-09", .label = TODO_LABEL_WORK},
+         {.name = "Fix WiFi reconnect",.duration_min = 45, .done = 0, .planned_date = "", .label = TODO_LABEL_WORK},
+         {.name = "LVGL animation tune", .duration_min = 30, .done = 0, .planned_date = "", .label = TODO_LABEL_NONE},
+         {.name = "Write test notes",  .duration_min = 20, .done = 0, .planned_date = "", .label = TODO_LABEL_STUDY},
+         {.name = "Refactor timer flow", .duration_min = 35, .done = 0, .planned_date = "", .label = TODO_LABEL_WORK},
+         {.name = "Sync NVS defaults", .duration_min = 18, .done = 0, .planned_date = "", .label = TODO_LABEL_NONE},
+         {.name = "Polish main screen",.duration_min = 40, .done = 0, .planned_date = "", .label = TODO_LABEL_FUN},
      }
  };
  bool   todosel_back = 0;
@@ -2378,12 +2378,16 @@ int donelist_load_from_csv(void)
  static void screen_main_game_init_async(void *unused)
  {
      LV_UNUSED(unused);
+#ifndef ESP_PLATFORM
+     /* The standalone Guider preview has no firmware page poll. */
      if (guider_ui.screen_game != NULL &&
          lv_obj_is_valid(guider_ui.screen_game) &&
          lv_scr_act() != guider_ui.screen_game) {
          lv_async_call(screen_main_game_init_async, NULL);
          return;
      }
+#endif
+     /* Firmware init is idempotent; main/game_machine.c polls through the fade. */
      screen_game_custom_init();
  }
 
@@ -4028,9 +4032,11 @@ void screen_pomodoro_buttion_add(){
  } 
  
  /* screen_todosel 底部 Cancel 那一行：左侧显示任务日期，右侧显示预设专注时长。
+  * 右上角显示 App/扭蛋标签类目（Work/Study/Life/Fun）；未分类则留空。
   * 该 screen 每次进入都会重建，故用 parent 校验决定是否重新创建。 */
  static lv_obj_t *s_todosel_label_date;
  static lv_obj_t *s_todosel_label_focus;
+ static lv_obj_t *s_todosel_label_cat;
 
  /* 与背景图上的 "Cancel"（x 137~177, y 130~139）同行居中；
   * 左右外沿对齐上方 Complete / Start focus 的文字列（x 30 ~ 281）。 */
@@ -4039,13 +4045,52 @@ void screen_pomodoro_buttion_add(){
  #define TODOSEL_INFO_H      14
  #define TODOSEL_INFO_DATE_X 30
  #define TODOSEL_INFO_MIN_X  181
+ #define TODOSEL_CAT_X       255
+ #define TODOSEL_CAT_Y       25
+ #define TODOSEL_CAT_W       58
+ #define TODOSEL_CAT_H       16
 
- static bool screen_todosel_info_ready(void)
+ static const char *todosel_label_text(uint8_t label)
+ {
+     switch (label) {
+     case TODO_LABEL_WORK:  return "Work";
+     case TODO_LABEL_STUDY: return "Study";
+     case TODO_LABEL_LIFE:  return "Life";
+     case TODO_LABEL_FUN:   return "Fun";
+     default:               return "";
+     }
+ }
+
+ static uint32_t todosel_label_color(uint8_t label)
+ {
+     switch (label) {
+     case TODO_LABEL_WORK:  return 0x13407a;
+     case TODO_LABEL_STUDY: return 0x2e7d4f;
+     case TODO_LABEL_LIFE:  return 0xc47b2b;
+     case TODO_LABEL_FUN:   return 0xa33d7c;
+     default:               return 0x274a6e;
+     }
+ }
+
+ static bool screen_todosel_info_date_focus_ready(void)
  {
      return s_todosel_label_date != NULL && lv_obj_is_valid(s_todosel_label_date) &&
             s_todosel_label_focus != NULL && lv_obj_is_valid(s_todosel_label_focus) &&
             guider_ui.screen_todosel != NULL &&
-            lv_obj_get_parent(s_todosel_label_date) == guider_ui.screen_todosel;
+            lv_obj_get_parent(s_todosel_label_date) == guider_ui.screen_todosel &&
+            lv_obj_get_parent(s_todosel_label_focus) == guider_ui.screen_todosel;
+ }
+
+ static bool screen_todosel_info_cat_ready(void)
+ {
+     return s_todosel_label_cat != NULL && lv_obj_is_valid(s_todosel_label_cat) &&
+            guider_ui.screen_todosel != NULL &&
+            lv_obj_get_parent(s_todosel_label_cat) == guider_ui.screen_todosel;
+ }
+
+ static bool screen_todosel_info_ready(void)
+ {
+     return screen_todosel_info_date_focus_ready() && screen_todosel_info_cat_ready();
  }
 
  static void screen_todosel_info_place(lv_obj_t *label, lv_coord_t x)
@@ -4077,14 +4122,36 @@ void screen_pomodoro_buttion_add(){
  static void screen_todosel_info_create_ui(void)
  {
      if (guider_ui.screen_todosel == NULL ||
-         !lv_obj_is_valid(guider_ui.screen_todosel) ||
-         screen_todosel_info_ready()) {
+         !lv_obj_is_valid(guider_ui.screen_todosel)) {
          return;
      }
-     s_todosel_label_date =
-         screen_todosel_info_label_create(TODOSEL_INFO_DATE_X, LV_TEXT_ALIGN_LEFT);
-     s_todosel_label_focus =
-         screen_todosel_info_label_create(TODOSEL_INFO_MIN_X, LV_TEXT_ALIGN_RIGHT);
+     if (!screen_todosel_info_date_focus_ready()) {
+         s_todosel_label_date =
+             screen_todosel_info_label_create(TODOSEL_INFO_DATE_X, LV_TEXT_ALIGN_LEFT);
+         s_todosel_label_focus =
+             screen_todosel_info_label_create(TODOSEL_INFO_MIN_X, LV_TEXT_ALIGN_RIGHT);
+     }
+     if (screen_todosel_info_cat_ready()) {
+         return;
+     }
+     s_todosel_label_cat = lv_label_create(guider_ui.screen_todosel);
+     lv_label_set_text(s_todosel_label_cat, "");
+     lv_label_set_long_mode(s_todosel_label_cat, LV_LABEL_LONG_CLIP);
+     lv_obj_set_pos(s_todosel_label_cat, TODOSEL_CAT_X, TODOSEL_CAT_Y);
+     lv_obj_set_size(s_todosel_label_cat, TODOSEL_CAT_W, TODOSEL_CAT_H);
+     lv_obj_set_style_text_font(s_todosel_label_cat, &lv_font_SourceHanSansSC_Medium_12,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_color(s_todosel_label_cat, lv_color_hex(0x274a6e),
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(s_todosel_label_cat, LV_OPA_COVER,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_align(s_todosel_label_cat, LV_TEXT_ALIGN_LEFT,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_opa(s_todosel_label_cat, LV_OPA_TRANSP,
+                             LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_pad_all(s_todosel_label_cat, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_border_width(s_todosel_label_cat, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_clear_flag(s_todosel_label_cat, LV_OBJ_FLAG_CLICKABLE);
  }
 
  static void screen_todosel_info_update(void)
@@ -4097,11 +4164,14 @@ void screen_pomodoro_buttion_add(){
      /* 每次进入都重新钉住位置，避免受任何布局副作用影响 */
      screen_todosel_info_place(s_todosel_label_date, TODOSEL_INFO_DATE_X);
      screen_todosel_info_place(s_todosel_label_focus, TODOSEL_INFO_MIN_X);
+     lv_obj_set_pos(s_todosel_label_cat, TODOSEL_CAT_X, TODOSEL_CAT_Y);
+     lv_obj_set_size(s_todosel_label_cat, TODOSEL_CAT_W, TODOSEL_CAT_H);
 
      int idx = (page_cur - 1) * 4 + todo_index;
      if (idx < 0 || idx >= (int)ui_todo_list.count) {
          lv_label_set_text(s_todosel_label_date, "");
          lv_label_set_text(s_todosel_label_focus, "");
+         lv_label_set_text(s_todosel_label_cat, "");
          return;
      }
 
@@ -4112,6 +4182,13 @@ void screen_pomodoro_buttion_add(){
                                (unsigned)ui_todo_list.items[idx].duration_min);
      } else {
          lv_label_set_text(s_todosel_label_focus, "");
+     }
+     {
+         uint8_t cat = ui_todo_list.items[idx].label;
+         lv_label_set_text(s_todosel_label_cat, todosel_label_text(cat));
+         lv_obj_set_style_text_color(s_todosel_label_cat,
+                                     lv_color_hex(todosel_label_color(cat)),
+                                     LV_PART_MAIN | LV_STATE_DEFAULT);
      }
  }
 
@@ -4786,7 +4863,7 @@ typedef enum {
      screen_load_main_from(&guider_ui.screen_game_del);
  }
  
- void screen_game_buttion_add(void)
+ __attribute__((weak)) void screen_game_buttion_add(void)
  {
      if (guider_ui.screen_game == NULL ||
          !lv_obj_is_valid(guider_ui.screen_game) ||
@@ -4808,12 +4885,13 @@ typedef enum {
      group_focus_obj(guider_ui.screen_game);
  }
  
- void screen_game_custom_init(void)
+ /* Guider-only fallback. Firmware gameplay lives in main/game_machine.c. */
+ __attribute__((weak)) void screen_game_custom_init(void)
  {
      lv_obj_t *label;
      if (guider_ui.screen_game == NULL ||
          !lv_obj_is_valid(guider_ui.screen_game) ||
-         lv_scr_act() != guider_ui.screen_game) {
+         lv_scr_act() != guider_ui.screen_game || s_game_events_bound) {
          return;
      }
      lv_obj_set_style_bg_opa(guider_ui.screen_game, 255,
@@ -4821,7 +4899,7 @@ typedef enum {
      lv_obj_set_style_bg_color(guider_ui.screen_game, lv_color_hex(0x0e1b28),
                               LV_PART_MAIN | LV_STATE_DEFAULT);
      label = lv_label_create(guider_ui.screen_game);
-     lv_label_set_text(label, "Coming soon");
+     lv_label_set_text(label, "Dino Run\nClick to return");
      lv_obj_set_style_text_color(label, lv_color_hex(0xffffff),
                                 LV_PART_MAIN | LV_STATE_DEFAULT);
      lv_obj_set_style_text_font(label, &lv_font_montserratMedium_16,
@@ -4850,4 +4928,3 @@ typedef enum {
  {
  
  }
- 

@@ -12,6 +12,7 @@
 #include "gash_machine.h"
 #include "keep_machine.h"
 #include "book_machine.h"
+#include "game_machine.h"
 #include "esp_random.h"
 #include "todo_storage.h"
 #include "freertos/FreeRTOS.h"
@@ -141,6 +142,10 @@ void app_main_loop_once(void)
     main_loop_handle_battery_plug_ui();
     main_loop_handle_ble_ui();
     main_loop_handle_donelist_reload();
+    /* Game LEDs use the strip mutex only; never wait for RMT with LVGL locked. */
+    game_machine_led_poll();
+    /* Commit new records only while the game is stopped, without the LVGL lock. */
+    game_machine_storage_poll();
 }
 
 void app_main_loop_lvgl_tick(void)
@@ -152,6 +157,7 @@ void app_main_loop_lvgl_tick(void)
         gash_machine_poll();
         keep_machine_poll();
         book_machine_poll();
+        game_machine_poll();
         xSemaphoreGive(lvgl_mutex);
     }
 }

@@ -57,6 +57,8 @@ idf_component_register(
 component_compile_options(
                             -ffast-math 
                             -O3
+                            -finput-charset=UTF-8
+                            -fexec-charset=UTF-8
                             -Wno-error=format=-Wno-format
                             -Werror=implicit-function-declaration
 )

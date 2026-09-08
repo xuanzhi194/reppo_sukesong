@@ -16,6 +16,28 @@
 #define BLE_TIME_STATUS_OK    0
 #define BLE_TIME_STATUS_ERR   1
 
+/** Todo list over the same GATT char.
+ * Write JSON array with 0x02 (single packet) or 0x03/0x04/0x05 (start/chunk/end).
+ * Pull with 0x06; device notifies {"todo":[...],"taskDone":[...]}.
+ *
+ * Each todo object:
+ *   content      string  required
+ *   durationStr  string  e.g. "25MIN" (leading integer is minutes)
+ *   done         bool
+ *   plannedDate  "YYYY-MM-DD" optional
+ *   label        optional category, same four buckets as the claw machine:
+ *                "work" | "study" | "life" | "fun"
+ *                (aliases: 工作/学习/生活/娱乐, or number 1..4)
+ *                omit / "" / null = unlabeled
+ * Also accepted: "category"/"tag" as the same string, or
+ * "categoryIndex" 0..3 matching gash Work/Study/Life/Fun.
+ */
+#define BLE_CMD_TODO_JSON_ONE    0x02
+#define BLE_CMD_TODO_JSON_START  0x03
+#define BLE_CMD_TODO_JSON_CHUNK  0x04
+#define BLE_CMD_TODO_JSON_END    0x05
+#define BLE_CMD_TODO_PULL        0x06
+
 /** Ebook UTF-8 text upload (same GATT char 0xFF01 as todo/badge).
  * INFO  payload = total_size(u32 LE) + crc32(u32 LE) + format(u8=1)
  * DATA  payload = offset(u32 LE) + chunk  (write packet <= 256: chunk <= 251)

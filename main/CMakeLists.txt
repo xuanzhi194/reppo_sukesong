@@ -16,6 +16,7 @@ set(priv_requires
                     lv_port
                     ui_custom 
                     spiffs
+                    nvs_flash
         
 )
  
@@ -37,6 +38,10 @@ idf_component_register(
                                "picture_bridge.c"
                                "gash_machine.c"
                                "book_machine.c"
+                               "game_machine.c"
+                               "game_score_storage.c"
+                               "dino_game.c"
+                               "dino_render.c"
                         INCLUDE_DIRS ${include_dirs} 
                         PRIV_REQUIRES ${priv_requires}
                         EMBED_FILES  ${embed_files}

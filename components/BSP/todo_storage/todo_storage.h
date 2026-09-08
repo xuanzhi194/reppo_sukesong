@@ -11,18 +11,29 @@ extern "C" {
 #ifndef TODO_MAX_ITEMS
 #define TODO_MAX_ITEMS  100
 #define TODO_NAME_LEN   128
+#ifndef TODO_LABEL_NONE
+#define TODO_LABEL_NONE  0
+#define TODO_LABEL_WORK  1
+#define TODO_LABEL_STUDY 2
+#define TODO_LABEL_LIFE  3
+#define TODO_LABEL_FUN   4
+#endif
 typedef struct {
     char     name[TODO_NAME_LEN];
     uint16_t duration_min;
     uint8_t  done;
     /* 日期 YYYY-MM-DD，仅由微信小程序下发；未下发时为空，设备端不自行生成 */
     char     planned_date[16];
+    /* TODO_LABEL_*：扭蛋四类；0 表示 App 未选或旧 CSV 无此列 */
+    uint8_t  label;
 } todo_item_t;
 typedef struct {
     uint8_t     count;
     todo_item_t items[TODO_MAX_ITEMS];
 } todo_list_t;
 #endif
+
+#include "todo_label.h"
 
 /** 全局 RAM 缓存，外部只读，写入通过下方 API */
 extern todo_list_t g_todo_list;
@@ -42,11 +53,17 @@ esp_err_t todo_storage_init(void);
  */
 esp_err_t todo_storage_save_list(void);
 
+/** Caller holds todo_storage_lock(). Writes g_todo_list to CSV + NVS done. */
+esp_err_t todo_storage_flush_locked(void);
+
 /**
  * @brief 解析蓝牙 JSON 任务数组，清空并覆盖 /spiffs/todo.csv
- *        （name,duration_min,done,planned_date）。
+ *        （name,duration_min,done,planned_date,label）。
  * @param json 形如
- *        [{"content":"..","durationStr":"60MIN","done":false,"plannedDate":"2026-08-28"}, ...]
+ *        [{"content":"..","durationStr":"60MIN","done":false,
+ *          "plannedDate":"2026-08-28","label":"work"}, ...]
+ *        label 可选："work"|"study"|"life"|"fun"（或中文 工作/学习/生活/娱乐）；
+ *        省略 / "" / null 表示未分类。
  */
 esp_err_t todo_storage_apply_ble_json(const char *json);
 

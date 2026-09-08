@@ -27,6 +27,7 @@
 #include "focus_bridge.h"
 #include "keep_machine.h"
 #include "book_machine.h"
+#include "game_score_storage.h"
 #include "badge_storage.h"
 #include "picture_bridge.h"
 #include "driver/i2c.h"
@@ -54,6 +55,7 @@ void app_init_hardware(void)
 void app_init_storage_and_data(void)
 {
     nvs_flash_init();
+    game_score_storage_init();
     wifi_cred_storage_init();
     /* 链入 wificfg 强符号桥接，使列表点击可从 NVS 回填密码 */
     wificfg_bridge_init();

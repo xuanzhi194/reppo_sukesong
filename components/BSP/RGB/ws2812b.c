@@ -15,11 +15,32 @@ static bool s_led_strip_ready = false;
 static SemaphoreHandle_t s_led_strip_mutex;
 
 #define LED_EFFECT_TASK_STACK 4096
+#define GAME_LED_LEGACY_QUIET_MS 200
+
+typedef enum {
+    LED_WRITER_NONE,
+    LED_WRITER_LEGACY,
+    LED_WRITER_GAME,
+} led_writer_t;
+
+/* Protected by the strip mutex. Legacy callers acquire this lock immediately
+ * before changing pixels, so a successful lock also claims the next frame.
+ * The game never updates this timestamp: repeated game frames must not extend
+ * the priority window reserved for existing effects. */
+static led_writer_t s_last_led_writer;
+static TickType_t s_last_legacy_write_tick;
+static bool s_legacy_write_seen;
 
 static bool led_strip_lock(void)
 {
-    return s_led_strip_mutex == NULL ||
-           xSemaphoreTake(s_led_strip_mutex, pdMS_TO_TICKS(250)) == pdTRUE;
+    if (s_led_strip_mutex != NULL &&
+        xSemaphoreTake(s_led_strip_mutex, pdMS_TO_TICKS(250)) != pdTRUE) {
+        return false;
+    }
+    s_last_legacy_write_tick = xTaskGetTickCount();
+    s_legacy_write_seen = true;
+    s_last_led_writer = LED_WRITER_LEGACY;
+    return true;
 }
 
 static void led_strip_unlock(void)
@@ -534,4 +555,56 @@ void clear_led_bar(void)
         led_strip_refresh(led_strip);
         led_strip_unlock();
     }
+}
+
+bool game_led_try_frame(const uint8_t rgb[10][3])
+{
+    if (rgb == NULL || !s_led_strip_ready || s_led_strip_mutex == NULL ||
+        xSemaphoreTake(s_led_strip_mutex, 0) != pdTRUE) {
+        return false;
+    }
+
+    TickType_t elapsed = xTaskGetTickCount() - s_last_legacy_write_tick;
+    if (s_legacy_write_seen && elapsed < pdMS_TO_TICKS(GAME_LED_LEGACY_QUIET_MS)) {
+        led_strip_unlock();
+        return false;
+    }
+
+    /* Own even a partially prepared frame if the driver fails, so release can
+     * clear it later instead of leaving game pixels in the driver's buffer. */
+    s_last_led_writer = LED_WRITER_GAME;
+    esp_err_t err = ESP_OK;
+    for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
+        err = led_strip_set_pixel(led_strip, i, rgb[i][0], rgb[i][1], rgb[i][2]);
+        if (err != ESP_OK) {
+            break;
+        }
+    }
+    if (err == ESP_OK) {
+        err = led_strip_refresh(led_strip);
+    }
+    led_strip_unlock();
+    return err == ESP_OK;
+}
+
+bool game_led_release(void)
+{
+    if (!s_led_strip_ready || s_led_strip_mutex == NULL) {
+        return true;
+    }
+    if (xSemaphoreTake(s_led_strip_mutex, 0) != pdTRUE) {
+        return false;
+    }
+
+    bool released = true;
+    if (s_last_led_writer == LED_WRITER_GAME) {
+        /* clear() also transmits the cleared pixels. Retain ownership on an
+         * error so the caller can retry without forgetting a still-lit frame. */
+        released = led_strip_clear(led_strip) == ESP_OK;
+        if (released) {
+            s_last_led_writer = LED_WRITER_NONE;
+        }
+    }
+    led_strip_unlock();
+    return released;
 }
