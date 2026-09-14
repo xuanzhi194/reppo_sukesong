@@ -6,6 +6,7 @@ set(src_dirs
             buzzer
             bat_percent
             RX8130
+            LSM6DSR
             RGB
             encoder
             bsp_ble
@@ -21,6 +22,7 @@ set(include_dirs
             buzzer
             bat_percent
             RX8130
+            LSM6DSR
             RGB
             encoder
             bsp_ble

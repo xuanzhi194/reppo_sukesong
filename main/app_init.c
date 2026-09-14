@@ -11,6 +11,7 @@
 #include "buzzer.h"
 #include "custom.h"
 #include "rx8130.h"
+#include "lsm6dsr.h"
 #include "ec06.h"
 #include "events_init.h"
 #include "lv_port_disp.h"
@@ -49,6 +50,10 @@ void app_init_hardware(void)
         } else if (rtc_lost_power) {
             ESP_LOGW("RTC", "RX8130 lost power — waiting for phone time sync over BLE");
         }
+    }
+    lsm6dsr_init(I2C_NUM_0);
+    if (lsm6dsr_solder_test() != ESP_OK) {
+        ESP_LOGW("IMU", "LSM6DSR solder test failed (missing on old PCB is OK)");
     }
 }
 
