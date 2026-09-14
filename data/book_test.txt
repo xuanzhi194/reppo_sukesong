@@ -1,0 +1,63 @@
+# Reppo ebook test file
+# UTF-8. Same directives as book.txt. Not the default SPIFFS book;
+# copy or upload over BLE to /spiffs/book.txt to read it on device.
+#
+# Directives begin with @ in column 0:
+#   @title   Book title
+#   @author  Author name (device shows "- Author")
+#   @part    Chapter title; also inserts a chapter title page
+#   @page    Reading page. Following lines are body until the next @ line.
+# Keep each @page around 8-9 wrapped lines (~340 characters) for 310x151 arial_16.
+
+@title The Harbor Clock
+@author Ellis Marsh
+
+@part The stopped hour
+@page
+The clock above the harbor had not moved since March. Fishermen still glanced at it out of habit, then down at their own wrists, as if the tower might have changed its mind overnight. Gulls sat on the minute hand. Salt had turned the gilt numerals the color of old bone. Nobody had climbed the stairs since the last keeper left the key on a nail and walked inland.
+@page
+Mira sold bread two streets back from the water. She heard the tower before she saw it: wind in the empty belfry, a loose shutter that knocked like a polite visitor who would not come in. Her father used to say a town that cannot tell the hour will invent other kinds of waiting. She did not want to invent anything. She wanted the boat from the north to arrive when it said it would.
+@page
+On a wet Tuesday a boy from the chandlery brought a letter with no stamp. The envelope was stiff with spray. Inside, a single sentence in a careful hand: The clock can be mended if someone still cares what noon means. There was no name. Mira turned the paper over, then looked at the tower, which looked only at the sea.
+@page
+She closed the shop at three, or at what three had been when the clock still worked. The harbor smelled of tar and cold fish. She put the letter in her coat and climbed. The stairs remembered feet. Dust rose in pale sheets. At the top the works lay open like a ribcage, and the great wheel was still, holding a silence that felt older than the town.
+
+@part The key on the nail
+@page
+The key was where the letter had promised, dark with old oil. It fit a small door behind the pendulum, and behind that door was a notebook wrapped in waxed cloth. The last keeper had written in short lines, as if paper were rationed. March 2: wind from the east, gear stiff. March 4: I can hear the sea in the teeth of the wheel. March 9: I am going. Someone else must learn the listening.
+@page
+Mira sat on the plank floor and read until the light thinned. The keeper had drawn the escape wheel twice, once correctly and once as he feared it had become. A note in the margin said: Do not force what is only dry. She had forced plenty of things in her life: dough, conversations, the lock on the flour bin. She put the notebook down and did not touch the wheel.
+@page
+Below, the evening boats came in by guess and by the color of the water. Lanterns moved along the quay like slow punctuation. Mira climbed down with the key in her pocket. She did not tell the baker's boy, or the harbormaster, or the women who measured their days by the bakery's smell instead of by bells. Some repairs begin as secrets because naming them too early makes them smaller.
+@page
+That night the rain came hard enough to wake the cats. Mira lay awake and thought of gears as a kind of grammar. If noon could be restored, the north boat would no longer be a rumor that arrived whenever the captain felt lucky. She slept late. In the morning she bought oil, a brush, and a cloth, and told her neighbor she was cleaning the attic.
+
+@part Oil and weather
+@page
+The first work was not clever. She wiped salt from brass until the metal remembered being yellow. She oiled what the notebook named and left alone what it warned against. The pendulum hung like a held breath. When she moved it a finger's width, the whole tower seemed to lean toward the harbor, then recover. Gulls lifted and settled again on the frozen hands.
+@page
+A man from the chandlery found her on the third day. He did not ask for the letter. He brought a tin of better oil and stood in the doorway as if he might be sent away. My uncle kept this clock, he said. He thought time was a thing you owed the water. Mira let him stay. Four hands are better than two when a weight is older than both of you.
+@page
+They worked without much talk. Once the great wheel shifted, a sound went down the stairs like a coin dropped in a well. Mira laughed, surprising herself. The man wrote nothing, but he listened the way the notebook had asked. Outside, the tide turned. A woman on the quay looked up, saw nothing changed, and went back to mending a net.
+@page
+By the week's end the clock was almost willing. Almost is a dangerous hour. They set the hands by a pocket watch that had traveled north and back, then waited. The first tick was small, then another, then a rhythm the tower had not made since winter. Dust fell from the rafters in time. Mira put her palm on the case and felt the town's old pulse try to remember itself.
+
+@part Noon, almost
+@page
+They did not ring the bell. They let the hands climb toward twelve as if the sky might object. At what the pocket watch called noon, the clock agreed, shyly. A few people on the dock stopped. Someone pointed. A child asked why the birds had left the minute hand. Mira, still in the tower, did not come down. She wanted the hour to belong to the harbor first, not to the person who had cleaned it.
+@page
+The north boat came in that afternoon, not because the clock had summoned it, but because the captain had always meant to. He looked at the tower, then at his own clock, then laughed in a way that made the crew look up. So the town has decided to be on time again, he said. Goods came off the deck: wool, letters, a crate of lemons that smelled like another climate.
+@page
+Mira opened the shop and sold bread that was slightly late and slightly better. People spoke of the clock as if it had chosen them. She did not correct them. The chandlery man bought a loaf and said nothing about stairs or oil. Between them the silence was friendly. Some partnerships are better when they stay the size of a key.
+@page
+At dusk she climbed once more. The works were warm. The notebook lay where she had left it. She added a line: The listening continues. Then she locked the small door, hung the key on its nail, and sat with the pendulum until the harbor lamps came on, each one a small, stubborn noon of its own.
+
+@part What the water keeps
+@page
+Weeks later the clock was simply part of the weather. Fishermen complained when it was right, which meant they trusted it. Mira kept the key and did not make a speech. On Sundays she climbed, oiled what needed oil, and watched the boats write slow sentences across the water. The town had not become new. It had only remembered a way to meet itself at the same hour.
+@page
+A letter arrived from inland, from a man who might have been the last keeper. He asked if the sea still spoke in the teeth of the wheel. Mira wrote back that it did, and that someone had learned to listen without leaving. She did not sign with a title. She signed with the name the bakery already knew. Some answers are better when they smell like bread.
+@page
+Autumn came in on a gray wind. The gilt numerals stayed the color of bone, and that was fine. Mira stood on the quay at noon and heard the tick only because she knew where to place her attention. The chandlery man passed with a coil of rope, nodded, and did not stop. The clock, above them, kept the hour as if keeping were the most ordinary kindness.
+@page
+Years on, children would say the tower had never stopped. Mira would not argue. She would sell the last loaves, wipe the counter, and glance once at the hands before locking the shop. Time, she had learned, is not a prize you win back from the sea. It is a habit two or three people agree to keep, quietly, until the whole harbor finds itself walking in step.
