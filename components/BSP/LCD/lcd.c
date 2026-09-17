@@ -108,10 +108,11 @@ void lcd_backlight_init(void)
         .speed_mode      = BLK_LEDC_MODE,
         .timer_num         = BLK_LEDC_TIMER,
         .duty_resolution   = LEDC_TIMER_10_BIT,
-        .freq_hz           = 5000,
+        .freq_hz           = LCD_BACKLIGHT_PWM_HZ,
         .clk_cfg           = LEDC_AUTO_CLK,
     };
     ESP_ERROR_CHECK(ledc_timer_config(&timer));
+    ESP_LOGI(TAG, "backlight PWM %u Hz (was 5 kHz audible)", (unsigned)LCD_BACKLIGHT_PWM_HZ);
 
     ledc_channel_config_t channel = {
         .speed_mode = BLK_LEDC_MODE,

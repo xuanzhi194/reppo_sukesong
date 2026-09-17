@@ -123,6 +123,13 @@ void lcd_init_full(bool swap_color_bytes, bool dc_inverted, bool bgr_order);
 #define LCD_BACKLIGHT_LEVEL_COUNT  5
 #endif
 
+/* 背光 PWM。旧值 5 kHz 落在可听区，电感/MLCC/无源蜂鸣器都可能跟着叫。
+ * 25 kHz 仍可用 10-bit LEDC（80 MHz / (25000*1024) 分频合法），用来排除啸叫。
+ * 对比测试可编译期改回 5000。 */
+#ifndef LCD_BACKLIGHT_PWM_HZ
+#define LCD_BACKLIGHT_PWM_HZ  25000
+#endif
+
 /* 观感大致按 sqrt(duty) 拉开，低端更密：夜灯 / 暗室 / 室内 / 明亮 / 最大。
  * 旧三档 30/65/100 对应新档 2/3/4。 */
 #ifndef LCD_BACKLIGHT_LEVEL0_PERCENT
