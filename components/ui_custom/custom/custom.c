@@ -3229,6 +3229,7 @@ void screen_pomodoro_buttion_add(){
  
  static lv_obj_t *s_screen_setting_ble_bound_screen;
  static lv_obj_t *s_screen_setting_effect_bound_screen;
+ static void screen_setting_list_teardown(void);
  
  static void screen_setting_ble_icon_bind_hooks(void)
  {
@@ -3427,6 +3428,8 @@ void screen_pomodoro_buttion_add(){
  static void screen_setting_effect_screen_event_cb(lv_event_t *e)
  {
      if (lv_event_get_code(e) == LV_EVENT_SCREEN_UNLOADED) {
+         lv_async_call_cancel(screen_setting_initial_effect_async, NULL);
+         screen_setting_list_teardown();
          s_screen_setting_ble_bound_screen = NULL;
          s_screen_setting_effect_bound_screen = NULL;
      }
@@ -3681,27 +3684,13 @@ void screen_pomodoro_buttion_add(){
      screen_setting_sleep_hide();
  }
  
- static void screen_setting_list_ensure_visible(lv_obj_t *btn)
+ static void screen_setting_reset_container_scroll(lv_obj_t *obj)
  {
-     lv_coord_t y;
-     lv_coord_t h;
-     lv_coord_t scroll;
-     lv_coord_t view_h;
- 
-     if (!screen_setting_list_ready() || btn == NULL || !lv_obj_is_valid(btn)) {
+     if (obj == NULL || !lv_obj_is_valid(obj)) {
          return;
      }
- 
-     y = lv_obj_get_y(btn);
-     h = lv_obj_get_height(btn);
-     scroll = lv_obj_get_scroll_y(s_setting_list);
-     view_h = lv_obj_get_height(s_setting_list);
- 
-     if (y < scroll) {
-         lv_obj_scroll_to_y(s_setting_list, y, LV_ANIM_ON);
-     } else if ((y + h) > (scroll + view_h)) {
-         lv_obj_scroll_to_y(s_setting_list, y + h - view_h, LV_ANIM_ON);
-     }
+     lv_obj_scroll_to_x(obj, 0, LV_ANIM_OFF);
+     lv_obj_scroll_to_y(obj, 0, LV_ANIM_OFF);
  }
  
  static void screen_setting_list_snap_y(lv_obj_t *btn, int index)
@@ -3712,22 +3701,80 @@ void screen_pomodoro_buttion_add(){
      lv_obj_set_y(btn, rest);
  }
  
+ static void screen_setting_list_snap_all(void)
+ {
+     uint8_t i;
+     lv_obj_t *btn;
+ 
+     if (!screen_setting_list_ready()) {
+         return;
+     }
+ 
+     for (i = 0; i < SETTING_LIST_CORE_COUNT; i++) {
+         btn = screen_setting_list_core_btn(i);
+         if (btn != NULL && lv_obj_is_valid(btn)) {
+             screen_setting_list_snap_y(btn, (int)i);
+         }
+     }
+     for (i = 0; i < s_setting_extra_count; i++) {
+         btn = s_setting_extra_btns[i];
+         if (btn != NULL && lv_obj_is_valid(btn)) {
+             screen_setting_list_snap_y(btn, (int)SETTING_LIST_CORE_COUNT + (int)i);
+         }
+     }
+ }
+ 
+ static void screen_setting_list_ensure_visible(int index, lv_anim_enable_t anim)
+ {
+     lv_coord_t y;
+     lv_coord_t h;
+     lv_coord_t scroll;
+     lv_coord_t view_h;
+ 
+     if (!screen_setting_list_ready() || index < 0) {
+         return;
+     }
+ 
+     y = screen_setting_list_rest_y(index);
+     if (y < 0) {
+         y = 0;
+     }
+     h = SETTING_BTN_H;
+     scroll = lv_obj_get_scroll_y(s_setting_list);
+     view_h = lv_obj_get_height(s_setting_list);
+ 
+     if (y < scroll) {
+         lv_obj_scroll_to_y(s_setting_list, y, anim);
+     } else if ((y + h) > (scroll + view_h)) {
+         lv_obj_scroll_to_y(s_setting_list, y + h - view_h, anim);
+     }
+ }
+ 
+ static void screen_setting_list_lift(lv_obj_t *btn, int index)
+ {
+     lv_coord_t rest = screen_setting_list_rest_y(index);
+ 
+     /* 与原先一致：100ms 上抬 5px，再 playback 回落，形成焦点弹跳。 */
+     lv_anim_del(btn, (lv_anim_exec_xcb_t)lv_obj_set_y);
+     lv_obj_set_y(btn, rest);
+     ui_animation(btn, 100, 0, rest, rest - SETTING_BTN_FOCUS_LIFT,
+                  &lv_anim_path_linear, 0, 0, 100, 0,
+                  (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+ }
+ 
  static void screen_setting_list_focus_cb(lv_event_t *e)
  {
      lv_obj_t *btn = lv_event_get_target(e);
      lv_event_code_t code = lv_event_get_code(e);
      int index = screen_setting_list_btn_index(btn);
-     lv_coord_t rest;
  
      if (index < 0 || btn == NULL || !lv_obj_is_valid(btn)) {
          return;
      }
  
-     rest = screen_setting_list_rest_y(index);
      if (code == LV_EVENT_FOCUSED) {
-         /* Guider 仍按屏幕绝对 Y 做弹跳，这里改回列表内坐标。 */
-         screen_setting_list_snap_y(btn, index);
-         screen_setting_list_ensure_visible(btn);
+         /* 只纠正当前项：盖掉 Guider 的屏幕绝对 Y，保留其余按钮的弹跳动效。 */
+         screen_setting_list_ensure_visible(index, LV_ANIM_ON);
          if (btn == s_setting_btn_sleep) {
              screen_setting_hide_detail_widgets();
              screen_setting_sleep_show();
@@ -3736,9 +3783,7 @@ void screen_pomodoro_buttion_add(){
          } else {
              screen_setting_sleep_hide();
          }
-         ui_animation(btn, 100, 0, rest, rest - SETTING_BTN_FOCUS_LIFT,
-                      &lv_anim_path_linear, 0, 0, 100, 0,
-                      (lv_anim_exec_xcb_t)lv_obj_set_y, NULL, NULL, NULL);
+         screen_setting_list_lift(btn, index);
      } else if (code == LV_EVENT_DEFOCUSED) {
          screen_setting_list_snap_y(btn, index);
          if (btn == s_setting_btn_sleep) {
@@ -3747,12 +3792,31 @@ void screen_pomodoro_buttion_add(){
      }
  }
  
+ static void screen_setting_list_settle(void)
+ {
+     /* 进入页只清掉屏幕误滚动，不要 snap_all / 重放 lift，以免掐掉焦点弹跳。 */
+     if (guider_ui.screen_setting != NULL && lv_obj_is_valid(guider_ui.screen_setting)) {
+         screen_setting_reset_container_scroll(guider_ui.screen_setting);
+     }
+ }
+ 
+ static void screen_setting_list_teardown(void)
+ {
+     s_setting_list = NULL;
+     memset(s_setting_extra_btns, 0, sizeof(s_setting_extra_btns));
+     s_setting_extra_count = 0;
+     s_setting_btn_sleep = NULL;
+     s_sleep_value_label = NULL;
+ }
+ 
  static void screen_setting_list_bind_btn(lv_obj_t *btn)
  {
      if (btn == NULL || !lv_obj_is_valid(btn)) {
          return;
      }
      lv_obj_add_flag(btn, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+     while (lv_obj_remove_event_cb(btn, screen_setting_list_focus_cb)) {
+     }
      lv_obj_add_event_cb(btn, screen_setting_list_focus_cb, LV_EVENT_FOCUSED, NULL);
      lv_obj_add_event_cb(btn, screen_setting_list_focus_cb, LV_EVENT_DEFOCUSED, NULL);
  }
@@ -3797,25 +3861,11 @@ void screen_pomodoro_buttion_add(){
  
  static void screen_setting_list_reset_layout(void)
  {
-     uint8_t i;
-     lv_obj_t *btn;
- 
      if (!screen_setting_list_ready()) {
          return;
      }
  
-     for (i = 0; i < SETTING_LIST_CORE_COUNT; i++) {
-         btn = screen_setting_list_core_btn(i);
-         if (btn != NULL && lv_obj_is_valid(btn)) {
-             screen_setting_list_snap_y(btn, (int)i);
-         }
-     }
-     for (i = 0; i < s_setting_extra_count; i++) {
-         btn = s_setting_extra_btns[i];
-         if (btn != NULL && lv_obj_is_valid(btn)) {
-             screen_setting_list_snap_y(btn, (int)SETTING_LIST_CORE_COUNT + (int)i);
-         }
-     }
+     screen_setting_list_snap_all();
      lv_obj_scroll_to_y(s_setting_list, 0, LV_ANIM_OFF);
      lv_obj_update_layout(s_setting_list);
  }
@@ -3888,6 +3938,9 @@ void screen_pomodoro_buttion_add(){
      lv_obj_clear_flag(s_setting_list, LV_OBJ_FLAG_SCROLL_MOMENTUM);
      lv_obj_clear_flag(s_setting_list, LV_OBJ_FLAG_SCROLL_CHAIN);
      lv_obj_clear_flag(s_setting_list, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+     lv_obj_clear_flag(s_setting_list, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+     lv_obj_clear_flag(guider_ui.screen_setting, LV_OBJ_FLAG_SCROLLABLE);
+     screen_setting_reset_container_scroll(guider_ui.screen_setting);
  
      s_setting_extra_count = 0;
      memset(s_setting_extra_btns, 0, sizeof(s_setting_extra_btns));
@@ -3935,14 +3988,20 @@ void screen_pomodoro_buttion_add(){
      } else {
          lv_group_remove_all_objs(g); 
      }
-     //setting default group
-     lv_group_set_default(g);
+     /* 创建 Sleep 等额外按钮前不要设 default group，否则会自动入组并
+      * SCROLL_ON_FOCUS 把列表/屏幕滚偏。 */
+     lv_group_set_default(NULL);
+     lv_group_focus_freeze(g, true);
      //indev with group
      lv_indev_t * indev = NULL;
      while ((indev = lv_indev_get_next(indev))) {
          if (lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
              lv_indev_set_group(indev, g);
          }
+     }
+     if (guider_ui.screen_setting != NULL && lv_obj_is_valid(guider_ui.screen_setting)) {
+         lv_obj_clear_flag(guider_ui.screen_setting, LV_OBJ_FLAG_SCROLLABLE);
+         screen_setting_reset_container_scroll(guider_ui.screen_setting);
      }
      screen_setting_list_setup();
      if (guider_ui.screen_setting_label_about != NULL &&
@@ -3966,6 +4025,7 @@ void screen_pomodoro_buttion_add(){
          lv_obj_is_valid(guider_ui.screen_setting_label_info2)) {
          lv_label_set_text(guider_ui.screen_setting_label_info2, "Reppo Zero");
      }
+     lv_group_set_default(g);
      lv_group_add_obj(g, guider_ui.screen_setting_btn_wifi);  
      lv_group_add_obj(g, guider_ui.screen_setting_btn_ble);
      lv_group_add_obj(g, guider_ui.screen_setting_btn_volume);
@@ -3985,9 +4045,13 @@ void screen_pomodoro_buttion_add(){
      clear_edge_box(guider_ui.screen_setting_btn_brightness);
     clear_edge_box(guider_ui.screen_setting_btn_general);
     clear_edge_box(guider_ui.screen_setting_btn_back);
-    /* 动态创建的 Sleep 按钮会被 LVGL 自动塞进 default group 并抢走焦点，
-     * 之后按 REFOCUS_POLICY_PREV 回卷到表尾的 General。进入本页必须停在 Wi-Fi。 */
+    if (guider_ui.screen_setting_btn_back != NULL &&
+        lv_obj_is_valid(guider_ui.screen_setting_btn_back)) {
+        lv_obj_clear_flag(guider_ui.screen_setting_btn_back, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    }
+    lv_group_focus_freeze(g, false);
     group_focus_obj(guider_ui.screen_setting_btn_wifi);
+    screen_setting_list_settle();
     screen_setting_ble_icon_bind_hooks();
      screen_setting_visual_effect_bind_hooks();
  }
