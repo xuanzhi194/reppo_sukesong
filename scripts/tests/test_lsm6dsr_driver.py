@@ -20,7 +20,7 @@ class Lsm6dsrDriverTests(unittest.TestCase):
                 [compiler, "-std=c11", "-D_POSIX_C_SOURCE=200809L", "-Wall", "-Wextra",
                  "-Werror", "-I", str(fixture / "stubs"), "-I", str(driver),
                  str(driver / "lsm6dsr.c"), str(fixture / "driver_test.c"),
-                 "-o", str(binary)],
+                 "-lm", "-o", str(binary)],
                 text=True, capture_output=True,
             )
             self.assertEqual(build.returncode, 0, build.stdout + build.stderr)

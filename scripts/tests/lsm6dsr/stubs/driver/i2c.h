@@ -11,6 +11,7 @@ typedef uint32_t TickType_t;
 #define ESP_ERR_INVALID_ARG 0x102
 #define ESP_ERR_INVALID_STATE 0x103
 #define ESP_ERR_NOT_FOUND 0x105
+#define ESP_ERR_INVALID_RESPONSE 0x108
 #define ESP_ERR_TIMEOUT 0x107
 #define I2C_NUM_0 0
 

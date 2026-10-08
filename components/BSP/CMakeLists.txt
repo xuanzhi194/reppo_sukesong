@@ -11,6 +11,7 @@ set(src_dirs
             encoder
             bsp_ble
             badge_storage
+            MIC
  
 )
  
@@ -27,6 +28,7 @@ set(include_dirs
             encoder
             bsp_ble
             badge_storage
+            MIC
 )
  
 set(requires

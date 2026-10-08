@@ -51,9 +51,14 @@ void app_init_hardware(void)
             ESP_LOGW("RTC", "RX8130 lost power — waiting for phone time sync over BLE");
         }
     }
-    lsm6dsr_init(I2C_NUM_0);
-    if (lsm6dsr_solder_test() != ESP_OK) {
-        ESP_LOGW("IMU", "LSM6DSR solder test failed (missing on old PCB is OK)");
+    /* 旧 PCB 没有 LSM6DSR 时只告警，不阻断启动。成功后 lsm6dsr_is_ready()
+     * 为真，其它任务可直接 lsm6dsr_read()。不用时 lsm6dsr_power_down()，
+     * 再用 lsm6dsr_configure(NULL) 恢复默认 104 Hz。麦克风按需 zts6672_init()，
+     * 不要在启动时打开。 */
+    if (lsm6dsr_init(I2C_NUM_0, NULL) != ESP_OK) {
+        ESP_LOGW("IMU", "LSM6DSR init failed (missing on old PCB is OK)");
+    } else if (lsm6dsr_int_gpio_init() != ESP_OK) {
+        ESP_LOGW("IMU", "LSM6DSR interrupt pins not configured");
     }
 }
 
