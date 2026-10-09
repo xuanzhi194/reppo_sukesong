@@ -25,4 +25,9 @@ void buzzer_set_sound(uint32_t freq, uint8_t volume_percent);
 void buzzer_beep(void);
 void buzzer_beep_confirm(void);
 void buzzer_timeout();
+
+/** 让正在播放的 buzzer_timeout() 在下一次 20 ms 节拍退出并静音。下一次超时任务开始前要先 clear。 */
+void buzzer_alarm_abort(void);
+void buzzer_alarm_abort_clear(void);
+bool buzzer_alarm_is_aborted(void);
 #endif

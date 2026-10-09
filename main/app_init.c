@@ -10,8 +10,10 @@
 #include "bat_percent.h"
 #include "buzzer.h"
 #include "custom.h"
+#include "ui_locale.h"
 #include "rx8130.h"
 #include "lsm6dsr.h"
+#include "imu_motion.h"
 #include "ec06.h"
 #include "events_init.h"
 #include "lv_port_disp.h"
@@ -51,14 +53,21 @@ void app_init_hardware(void)
             ESP_LOGW("RTC", "RX8130 lost power — waiting for phone time sync over BLE");
         }
     }
-    /* 旧 PCB 没有 LSM6DSR 时只告警，不阻断启动。成功后 lsm6dsr_is_ready()
-     * 为真，其它任务可直接 lsm6dsr_read()。不用时 lsm6dsr_power_down()，
-     * 再用 lsm6dsr_configure(NULL) 恢复默认 104 Hz。麦克风按需 zts6672_init()，
+    /* 开机用 26 Hz 看拿起和晃动，不把芯片留在驱动默认的 104 Hz。
+     * 旧 PCB 没有 LSM6DSR 时只告警，不阻断启动。麦克风按需 zts6672_init()，
      * 不要在启动时打开。 */
-    if (lsm6dsr_init(I2C_NUM_0, NULL) != ESP_OK) {
-        ESP_LOGW("IMU", "LSM6DSR init failed (missing on old PCB is OK)");
-    } else if (lsm6dsr_int_gpio_init() != ESP_OK) {
-        ESP_LOGW("IMU", "LSM6DSR interrupt pins not configured");
+    {
+        const lsm6dsr_config_t presence_cfg = {
+            .xl_odr = LSM6DSR_ODR_26HZ,
+            .xl_fs  = LSM6DSR_XL_FS_4G,
+            .g_odr  = LSM6DSR_ODR_26HZ,
+            .g_fs   = LSM6DSR_G_FS_500DPS,
+        };
+        if (lsm6dsr_init(I2C_NUM_0, &presence_cfg) != ESP_OK) {
+            ESP_LOGW("IMU", "LSM6DSR init failed (missing on old PCB is OK)");
+        } else if (lsm6dsr_int_gpio_init() != ESP_OK) {
+            ESP_LOGW("IMU", "LSM6DSR interrupt pins not configured");
+        }
     }
 }
 
@@ -74,6 +83,7 @@ void app_init_storage_and_data(void)
      * does not flash 100% then drop to the saved setting. */
     brightness_bridge_init();
     sleep_bridge_init();
+    ui_locale_init();
     focus_time_init();
     keep_machine_init();
 
@@ -117,4 +127,5 @@ void app_init_start_workers(void)
 {
     xTaskCreatePinnedToCore(app_nvs_worker_task, "nvs_thread", 8192, NULL, 10, NULL, 0);
     xTaskCreatePinnedToCore(app_wifi_worker_task, "time_thread", 4096, NULL, 10, NULL, 1);
+    imu_motion_start();
 }

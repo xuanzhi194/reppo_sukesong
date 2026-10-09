@@ -6,6 +6,7 @@
 #include "app_globals.h"
 #include "app_ui.h"
 #include "custom.h"
+#include "ui_locale.h"
 #include "rx8130.h"
 #include "esp_log.h"
 #include "wifi.h"
@@ -28,7 +29,7 @@ void app_wifi_register_callbacks(void)
     wifi_set_disconnect_callback(app_wifi_on_sta_disconnected);
 }
 
-/** 从 RX8130 读时间并刷新 timing 屏（不再用 NTP 覆盖 RTC） */
+/** 从 RX8130 读时间并刷新 timing 屏（RTC 由 app_time_sync / 手机蓝牙校准） */
 static void wifi_worker_handle_realtime(void)
 {
     rx8130_time_t now = {0};
@@ -52,7 +53,7 @@ static void wifi_worker_handle_realtime(void)
         return;
     }
     if (rtc_err == ESP_OK) {
-        app_ui_timing_labels_update(date_str, time_str, week_days[wday]);
+        app_ui_timing_labels_update(date_str, time_str, ui_weekday(wday));
     }
     if (app_ui_timing_screen_is_alive()) {
         app_ui_timing_status_update(is_wifi_connected());

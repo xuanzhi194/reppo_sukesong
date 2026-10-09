@@ -18,4 +18,4 @@ lv_ui guider_ui;
 SemaphoreHandle_t lvgl_mutex = NULL;
 lv_timer_t *bat_timer = NULL;
 lv_timer_t *clock_timer = NULL;
-bool buzzer_timeout_task_running = false;
+volatile bool buzzer_timeout_task_running = false;

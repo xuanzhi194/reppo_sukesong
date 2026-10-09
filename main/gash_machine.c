@@ -8,6 +8,7 @@
 #include "lvgl.h"
 #include "gui_guider.h"
 #include "custom.h"
+#include "ui_locale.h"
 #include "gash_machine.h"
 #include "gash_tasks.h"
 #ifdef ESP_PLATFORM
@@ -519,7 +520,14 @@ static void gash_show_result_ui(void)
     }
     if (gash_obj_ok(s_gash.label_cat) &&
         s_gash.cat_idx >= 0 && s_gash.cat_idx < GASH_TASK_CAT_COUNT) {
-        lv_label_set_text(s_gash.label_cat, gash_cat_names[s_gash.cat_idx]);
+        lv_label_set_text(s_gash.label_cat, ui_tr(gash_cat_names[s_gash.cat_idx],
+            s_gash.cat_idx == 0 ? "工作" :
+            s_gash.cat_idx == 1 ? "学习" :
+            s_gash.cat_idx == 2 ? "生活" : "娱乐"));
+        lv_obj_set_style_text_font(s_gash.label_cat,
+                                   ui_lang_is_zh() ? ui_font_12()
+                                                   : &lv_font_montserratMedium_12,
+                                   LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_color(s_gash.label_cat,
                                     lv_color_hex(gash_cat_colors[s_gash.cat_idx]),
                                     LV_PART_MAIN);
@@ -995,8 +1003,27 @@ static void gash_bind_events(void)
     }
 }
 
+static void gash_locale_buttons(void)
+{
+    const lv_font_t *font = ui_lang_is_zh() ? ui_font_12()
+                                            : &lv_font_montserratMedium_12;
+    if (gash_obj_ok(guider_ui.screen_gash_btn_addtodo_label)) {
+        lv_label_set_text(guider_ui.screen_gash_btn_addtodo_label,
+                          ui_tr("Add todo", "加入待办"));
+        lv_obj_set_style_text_font(guider_ui.screen_gash_btn_addtodo_label, font,
+                                   LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+    if (gash_obj_ok(guider_ui.screen_gash_btn_again_label)) {
+        lv_label_set_text(guider_ui.screen_gash_btn_again_label,
+                          ui_tr("Once again", "再来一次"));
+        lv_obj_set_style_text_font(guider_ui.screen_gash_btn_again_label, font,
+                                   LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
 void screen_gash_buttion_add(void)
 {
+    gash_locale_buttons();
     if (s_gash.phase == GASH_PHASE_RESULT) {
         gash_result_group_bind();
     } else {

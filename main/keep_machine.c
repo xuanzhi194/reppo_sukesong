@@ -8,6 +8,7 @@
 #include "lvgl.h"
 #include "gui_guider.h"
 #include "custom.h"
+#include "ui_locale.h"
 #include "keep_machine.h"
 #ifdef ESP_PLATFORM
 #include "nvs.h"
@@ -1438,7 +1439,11 @@ static void keep_refresh_ui(void)
     if (keep_obj_ok(guider_ui.screen_keep_label_state) &&
         level >= 1 && level <= KEEP_LEVEL_COUNT) {
         lv_label_set_text(guider_ui.screen_keep_label_state,
-                          keep_state_names[level - 1]);
+                          ui_tr(keep_state_names[level - 1],
+                                (const char *[]){
+                                    "初芽", "细茎", "展叶", "新枝", "向阳",
+                                    "繁叶", "初花", "青果", "冠成", "深根",
+                                }[level - 1]));
     }
     if (keep_obj_ok(guider_ui.screen_keep_label_conversion) &&
         level >= 1 && level <= KEEP_LEVEL_COUNT) {
@@ -1542,6 +1547,7 @@ void screen_keep_buttion_add(void)
         s_keep.back_bound = true;
     }
     lv_group_add_obj(g, guider_ui.screen_keep);
+    ui_font_bind(guider_ui.screen_keep);
     keep_clear_focus_box(guider_ui.screen_keep);
     group_focus_obj(guider_ui.screen_keep);
 }

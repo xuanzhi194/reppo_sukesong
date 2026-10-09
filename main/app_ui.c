@@ -6,6 +6,7 @@
 #include "app_globals.h"
 #include "bat_percent.h"
 #include "custom.h"
+#include "ui_locale.h"
 #include "rx8130.h"
 #include "wifi.h"
 #include "driver/i2c.h"
@@ -329,5 +330,5 @@ void app_ui_rtc_labels_refresh_now(void)
     snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d",
              now.year, now.month, now.date);
     snprintf(time_str, sizeof(time_str), "%02d:%02d", now.hour, now.minute);
-    app_ui_timing_labels_update(date_str, time_str, week_days[wday]);
+    app_ui_timing_labels_update(date_str, time_str, ui_weekday(wday));
 }

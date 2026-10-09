@@ -5,6 +5,7 @@
 #include "app_main_loop.h"
 #include "app_globals.h"
 #include "app_led.h"
+#include "app_time_sync.h"
 #include "app_ui.h"
 #include "bsp_ble.h"
 #include "custom.h"
@@ -13,6 +14,7 @@
 #include "keep_machine.h"
 #include "book_machine.h"
 #include "game_machine.h"
+#include "voice_todo.h"
 #include "esp_random.h"
 #include "todo_storage.h"
 #include "freertos/FreeRTOS.h"
@@ -134,6 +136,7 @@ static void main_loop_handle_phone_time_sync(void)
 void app_main_loop_once(void)
 {
     main_loop_handle_phone_time_sync();
+    app_time_sync_poll();
     main_loop_handle_answer_book();
     main_loop_handle_answer_loading_led();
     main_loop_handle_countdown_timeout();
@@ -158,6 +161,7 @@ void app_main_loop_lvgl_tick(void)
         keep_machine_poll();
         book_machine_poll();
         game_machine_poll();
+        voice_todo_poll();
         xSemaphoreGive(lvgl_mutex);
     }
 }

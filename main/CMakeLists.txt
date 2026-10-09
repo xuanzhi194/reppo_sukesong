@@ -17,17 +17,23 @@ set(priv_requires
                     ui_custom 
                     spiffs
                     nvs_flash
+                    esp_http_client
+                    esp-tls
+                    lwip
         
 )
  
 idf_component_register(
-                        SRCS "keep_machine.c" "main.c"
+                        SRCS "app_time_sync.c" "keep_machine.c" "main.c"
                                "demo_boot_gate.c"
                                "app_globals.c"
                                "app_init.c"
                                "app_main_loop.c"
                                "app_ui.c"
                                "app_led.c"
+                               "imu_motion.c"
+                               "voice_todo.c"
+                               "voice_todo_font.c" "voice_todo_title_font.c"
                                "app_nvs_worker.c"
                                "app_wifi_worker.c"
                                "wificfg_bridge.c"

@@ -1,6 +1,41 @@
 #include "buzzer.h"
 
 static bool (*s_mute_check)(void);
+static volatile bool s_alarm_abort;
+
+void buzzer_alarm_abort(void)
+{
+    s_alarm_abort = true;
+}
+
+void buzzer_alarm_abort_clear(void)
+{
+    s_alarm_abort = false;
+}
+
+bool buzzer_alarm_is_aborted(void)
+{
+    return s_alarm_abort;
+}
+
+/** 拆成 20 ms，便于晃动或按键中途停掉。返回 true 表示已经静音并应结束整段闹钟。 */
+static bool buzzer_wait(uint32_t ms)
+{
+    while (ms > 0) {
+        if (s_alarm_abort) {
+            buzzer_set_sound(2700, 0);
+            return true;
+        }
+        uint32_t step = ms > 20 ? 20 : ms;
+        vTaskDelay(pdMS_TO_TICKS(step));
+        ms -= step;
+    }
+    if (s_alarm_abort) {
+        buzzer_set_sound(2700, 0);
+        return true;
+    }
+    return false;
+}
 
 void buzzer_bind_mute_check(bool (*fn)(void))
 {
@@ -96,7 +131,8 @@ void buzzer_beep_confirm(void)
 
 //buzzer alarm combination
 void buzzer_timeout() {
-    if (buzzer_muted()) {
+    if (buzzer_muted() || s_alarm_abort) {
+        buzzer_set_sound(2700, 0);
         return;
     }
     uint32_t alarm_freq = 2700;
@@ -104,12 +140,22 @@ void buzzer_timeout() {
 
     for (int round = 0; round < 5; round++) {
         for(int i = 0; i < 3; i++) {
-            buzzer_set_sound(alarm_freq, volume);   
-            vTaskDelay(pdMS_TO_TICKS(200));       
-            buzzer_set_sound(alarm_freq, 0);       
-            vTaskDelay(pdMS_TO_TICKS(200));         
+            if (s_alarm_abort) {
+                buzzer_set_sound(alarm_freq, 0);
+                return;
+            }
+            buzzer_set_sound(alarm_freq, volume);
+            if (buzzer_wait(200)) {
+                return;
+            }
+            buzzer_set_sound(alarm_freq, 0);
+            if (buzzer_wait(200)) {
+                return;
+            }
         }
-        vTaskDelay(pdMS_TO_TICKS(400)); 
+        if (buzzer_wait(400)) {
+            return;
+        }
     }
     buzzer_set_sound(alarm_freq, 0);
 }

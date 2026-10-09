@@ -11,16 +11,23 @@
 
 #define POMODORO_ALARM_LIGHT_MS  3000
 
-static bool s_timeout_alarm_light_running = false;
+static volatile bool s_timeout_alarm_light_running = false;
 static bool s_answer_loading_light_running = false;
 static TaskHandle_t s_answer_loading_light_task_handle = NULL;
+
+static bool timeout_alarm_should_stop(void)
+{
+    return !s_timeout_alarm_light_running || buzzer_alarm_is_aborted();
+}
 
 static void timeout_alarm_light_task(void *param)
 {
     (void)param;
-    while (s_timeout_alarm_light_running) {
-        set_flow_light(30, 52, 83);
+    while (s_timeout_alarm_light_running && !buzzer_alarm_is_aborted()) {
+        set_flow_light_unless(30, 52, 83, timeout_alarm_should_stop);
     }
+    s_timeout_alarm_light_running = false;
+    clear_led_bar();
     vTaskDelete(NULL);
 }
 
@@ -33,9 +40,10 @@ static void buzzer_timeout_task(void *param)
     xTaskCreatePinnedToCore(timeout_alarm_light_task, "timeout_alarm_light_task",
                             2048, NULL, 7, NULL, 1);
 
-    /* 蜂鸣与流水灯同时进行；静音时蜂鸣可立即返回，流水灯仍保持 POMODORO_ALARM_LIGHT_MS */
+    /* 蜂鸣与流水灯同时进行；静音时蜂鸣可立即返回，流水灯仍保持到 light_end。
+     * 晃动或 Complete/Continue 会置 abort，两边都提前停。 */
     buzzer_timeout();
-    while (xTaskGetTickCount() < light_end) {
+    while (xTaskGetTickCount() < light_end && !buzzer_alarm_is_aborted()) {
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 
@@ -71,6 +79,11 @@ void app_led_answer_loading_stop(void)
 
 void app_led_start_buzzer_timeout_task(void)
 {
+    if (buzzer_timeout_task_running) {
+        return;
+    }
+    /* 先清掉上一次晃动/按键留下的 abort，再让任务开始响。 */
+    buzzer_alarm_abort_clear();
     buzzer_timeout_task_running = true;
     xTaskCreatePinnedToCore(buzzer_timeout_task, "buzzer_timeout_task",
                             2048, NULL, 8, NULL, 0);

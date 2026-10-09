@@ -8,6 +8,9 @@
 void init_led_strip();
 void set_flow_light(uint32_t r, uint32_t g, uint32_t b);
 void set_flow_light_fast(uint32_t r, uint32_t g, uint32_t b);
+/** 与 set_flow_light 相同，但 stop() 返回 true 时立刻熄灭并返回。stop 可为 NULL。 */
+typedef bool (*ws2812_flow_stop_fn)(void);
+void set_flow_light_unless(uint32_t r, uint32_t g, uint32_t b, ws2812_flow_stop_fn stop);
 void start_flow_light_fast_async(uint32_t r, uint32_t g, uint32_t b);
 void start_boot_led_blink(void);
 void start_ble_flow_light(void);

@@ -16,12 +16,14 @@
  #include "gui_guider.h"
  #include "lvgl.h"
  #include "custom.h"
+ #include "ui_locale.h"
  #include "widgets_init.h"
  #include <stdlib.h>
  #ifdef ESP_PLATFORM
  #include "ws2812b.h"
  #include "lcd.h"
  #include "bat_percent.h"
+ #include "buzzer.h"
  #endif
  /* Medium_28 随单词页从 Guider 工程移除；时钟/Sleep 用两边都还在的 30 号字。 */
  #define CUSTOM_DISPLAY_FONT lv_font_Abel_regular_30
@@ -74,7 +76,7 @@
  bool countdown_process_label = 0;
  bool stopwatch_start_label = 0;
  bool stopwatch_process_label = 0;
- bool countdown_timeout_pending = 0;
+ volatile bool countdown_timeout_pending = 0;
  int  current_task_index = 0;
  //timing variablesreview_card
  volatile bool task_real_time_en = 0;
@@ -340,7 +342,8 @@
  {
      const uint32_t count = (uint32_t)(sizeof(answer_book_answers) / sizeof(answer_book_answers[0]));
      uint32_t index = answer_book_rand % count;
-     lv_label_set_text(guider_ui.screen_getanswer_btn_answer_label, answer_book_answers[index]);
+     lv_label_set_text(guider_ui.screen_getanswer_btn_answer_label,
+                      ui_answer(index, answer_book_answers[index]));
  }
  
  /* ========== 用户可改参数 ========== */
@@ -560,7 +563,8 @@
      idle_sleep_note_activity();
  }
 
- static bool s_idle_sleep_asleep;
+ static volatile bool s_idle_sleep_asleep;
+ static volatile bool s_motion_wake_req;
  static bool s_idle_sleep_inited;
  static uint32_t s_idle_sleep_last_ms;
 
@@ -575,9 +579,23 @@
      return false;
  }
 
- static bool idle_sleep_blocked(void)
+ bool focus_timer_is_running(void)
  {
      return s_pomodoro_black_active || idle_sleep_timer_running();
+ }
+
+ static bool idle_sleep_blocked(void)
+ {
+     return focus_timer_is_running();
+ }
+
+ __attribute__((weak)) bool voice_todo_wants_wificfg_return(void)
+ {
+     return false;
+ }
+
+ __attribute__((weak)) void voice_todo_return_from_wifi(void)
+ {
  }
 
  void idle_sleep_note_activity(void)
@@ -620,6 +638,7 @@
      if (s_idle_sleep_asleep || idle_sleep_blocked()) {
          return;
      }
+     s_motion_wake_req = false;
      s_idle_sleep_asleep = true;
 #ifdef ESP_PLATFORM
      lcd_off();
@@ -633,6 +652,7 @@
          return;
      }
      s_idle_sleep_asleep = false;
+     s_motion_wake_req = false;
      idle_sleep_note_activity();
 #ifdef ESP_PLATFORM
      stop_idle_charge_flow_light();
@@ -653,6 +673,27 @@
      return false;
  }
 
+ bool idle_sleep_is_asleep(void)
+ {
+     return s_idle_sleep_asleep;
+ }
+
+ void idle_sleep_request_wake(void)
+ {
+     if (!s_idle_sleep_asleep) {
+         return;
+     }
+     s_motion_wake_req = true;
+ }
+
+ void pomodoro_alarm_dismiss(void)
+ {
+     countdown_timeout_pending = false;
+ #ifdef ESP_PLATFORM
+     buzzer_alarm_abort();
+ #endif
+ }
+
  void idle_sleep_poll(void)
  {
      uint32_t now = lv_tick_get();
@@ -661,6 +702,11 @@
 
      if (!s_idle_sleep_inited) {
          idle_sleep_note_activity();
+         return;
+     }
+     if (s_idle_sleep_asleep && s_motion_wake_req) {
+         s_motion_wake_req = false;
+         idle_sleep_exit();
          return;
      }
      minutes = sleep_timeout_get_minutes();
@@ -821,7 +867,8 @@
      lv_obj_clear_flag(guider_ui.screen_wificfg_img_passicon, LV_OBJ_FLAG_HIDDEN);
      lv_obj_clear_flag(guider_ui.screen_wificfg_ta_password, LV_OBJ_FLAG_HIDDEN);
  
-     lv_label_set_text_fmt(guider_ui.screen_wificfg_label_status, "Connect to %s", txt);
+     lv_label_set_text_fmt(guider_ui.screen_wificfg_label_status,
+                          ui_tr("Connect to %s", "连接 %s"), txt);
  
      if (wifi_ssid != NULL) {
          free(wifi_ssid);
@@ -947,6 +994,34 @@
      wificfg_show_connect_ui(list_item, NULL, false);
  }
  
+ static void wificfg_status2_set(const char *en, const char *zh)
+ {
+     lv_obj_t *label = guider_ui.screen_wificfg_label_status2;
+     if (label == NULL || !lv_obj_is_valid(label)) {
+         return;
+     }
+     /* Alatsi 没有汉字。中文时改用带备用字的 12 号思源，英文仍用原来的字。 */
+     lv_obj_set_style_text_font(label,
+                                ui_lang_is_zh() ? ui_font_12()
+                                                : &lv_font_Alatsi_Regular_12,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_label_set_text(label, ui_tr(en, zh));
+ }
+
+ static void wificfg_disconnect_locale_cb(lv_event_t *e)
+ {
+     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+         return;
+     }
+     /* generated 回调先写成英文 Disconnected，这里再换成当前语言。 */
+     wificfg_status2_set("Disconnected", "未连接");
+     if (guider_ui.screen_wificfg_label_status != NULL &&
+         lv_obj_is_valid(guider_ui.screen_wificfg_label_status)) {
+         lv_label_set_text(guider_ui.screen_wificfg_label_status,
+                           ui_tr("Connection Status", "连接状态"));
+     }
+ }
+
  void wifi_connect_show(){
  
      lv_obj_add_flag(guider_ui.screen_wificfg_spinner_connect,LV_OBJ_FLAG_HIDDEN);
@@ -962,8 +1037,9 @@
      lv_obj_clear_flag(guider_ui.screen_wificfg_label_status2, LV_OBJ_FLAG_HIDDEN);
  
      // 3. Update Label Texts
-     lv_label_set_text(guider_ui.screen_wificfg_label_status, "Connection Status");
-     lv_label_set_text(guider_ui.screen_wificfg_label_status2, "Connected");
+    lv_label_set_text(guider_ui.screen_wificfg_label_status,
+                      ui_tr("Connection Status", "连接状态"));
+    wificfg_status2_set("Connected", "已连接");
  
      // 4. Update Label Color (Status2)
      // Assuming the light green color in the image is roughly #b7f0b8
@@ -988,8 +1064,9 @@
      lv_obj_clear_flag(guider_ui.screen_wificfg_img_wififalse, LV_OBJ_FLAG_HIDDEN);
  
      // 3. Update Label Texts
-     lv_label_set_text(guider_ui.screen_wificfg_label_status, "Connection Status");
-     lv_label_set_text(guider_ui.screen_wificfg_label_status2, "Disconnected");
+    lv_label_set_text(guider_ui.screen_wificfg_label_status,
+                      ui_tr("Connection Status", "连接状态"));
+    wificfg_status2_set("Disconnected", "未连接");
  
      // 4. Update Label Color (Status2)
      // Assuming the light green color in the image is roughly #b7f0b8
@@ -1491,6 +1568,7 @@ int donelist_load_from_csv(void)
      clear_edge_box(guider_ui.screen_todolist_btn_lastpage);
      clear_edge_box(guider_ui.screen_todolist_btn_nxtpage);
      clear_edge_box(guider_ui.screen_todolist_btn_back);
+     ui_font_bind(guider_ui.screen_todolist);
  
      if (s_todolist_effect_screen != guider_ui.screen_todolist) {
          s_todolist_effect_screen = guider_ui.screen_todolist;
@@ -2399,6 +2477,48 @@ int donelist_load_from_csv(void)
      screen_book_custom_init();
  }
 
+ static void screen_main_locale_cb(lv_event_t *e)
+ {
+     lv_obj_t *target;
+     const char *en = NULL;
+     const char *zh = NULL;
+
+     if (lv_event_get_code(e) != LV_EVENT_FOCUSED) {
+         return;
+     }
+     if (guider_ui.screen_main_label_chosen == NULL ||
+         !lv_obj_is_valid(guider_ui.screen_main_label_chosen)) {
+         return;
+     }
+     target = lv_event_get_target(e);
+     if (target == guider_ui.screen_main_btn_todolist) {
+         en = "Todo"; zh = "待办";
+     } else if (target == guider_ui.screen_main_btn_done) {
+         en = "Done"; zh = "完成";
+     } else if (target == guider_ui.screen_main_btn_timer) {
+         en = "Focus"; zh = "专注";
+     } else if (target == guider_ui.screen_main_btn_ai) {
+         en = "Keep"; zh = "养成";
+     } else if (target == guider_ui.screen_main_btn_gashapon) {
+         en = "Surprise"; zh = "惊喜";
+     } else if (target == guider_ui.screen_main_btn_word) {
+         en = "E-book"; zh = "阅读";
+     } else if (target == guider_ui.screen_main_btn_fun) {
+         en = "Ask Reppo"; zh = "问答";
+     } else if (target == guider_ui.screen_main_btn_photo) {
+         en = "Picture"; zh = "相册";
+     } else if (target == guider_ui.screen_main_btn_game) {
+         en = "Game"; zh = "游戏";
+     } else if (target == guider_ui.screen_main_btn_setting) {
+         en = "Setting"; zh = "设置";
+     } else if (target == guider_ui.screen_main_btn_realtime) {
+         en = "Real Time"; zh = "时间";
+     }
+     if (en != NULL) {
+         lv_label_set_text(guider_ui.screen_main_label_chosen, ui_tr(en, zh));
+     }
+ }
+
  void screen_main_buttion_add(){
      if(g == NULL) {
          g = lv_group_create();
@@ -2414,6 +2534,30 @@ int donelist_load_from_csv(void)
      while ((indev = lv_indev_get_next(indev))) {
          if (lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
              lv_indev_set_group(indev, g);
+         }
+     }
+     ui_font_bind(guider_ui.screen_main);
+     ui_font_set_chrome(guider_ui.screen_main_label_chosen);
+     {
+         lv_obj_t *chosen_btns[] = {
+             guider_ui.screen_main_btn_todolist,
+             guider_ui.screen_main_btn_done,
+             guider_ui.screen_main_btn_timer,
+             guider_ui.screen_main_btn_ai,
+             guider_ui.screen_main_btn_gashapon,
+             guider_ui.screen_main_btn_word,
+             guider_ui.screen_main_btn_fun,
+             guider_ui.screen_main_btn_photo,
+             guider_ui.screen_main_btn_game,
+             guider_ui.screen_main_btn_setting,
+             guider_ui.screen_main_btn_realtime,
+         };
+         size_t i;
+         for (i = 0; i < sizeof(chosen_btns) / sizeof(chosen_btns[0]); i++) {
+             if (chosen_btns[i] != NULL && lv_obj_is_valid(chosen_btns[i])) {
+                 lv_obj_add_event_cb(chosen_btns[i], screen_main_locale_cb,
+                                     LV_EVENT_FOCUSED, NULL);
+             }
          }
      }
      lv_group_add_obj(g, guider_ui.screen_main_btn_todolist);
@@ -2607,6 +2751,7 @@ int donelist_load_from_csv(void)
      screen_timing_prepare_enter_state();
      lv_obj_add_event_cb(guider_ui.screen_timing, screen_timing_enter_event_cb,
                          LV_EVENT_SCREEN_LOADED, NULL);
+     ui_font_bind(guider_ui.screen_timing);
  
  }
  
@@ -3042,6 +3187,12 @@ static void stopwatch_settle_event_cb(lv_event_t *e)
         return;
     }
 
+    if (target == guider_ui.screen_pomodoro_btn_complete ||
+        target == guider_ui.screen_pomodoro_btn_continue) {
+        /* 倒计时到点后蜂鸣和流水灯不会跟着 generated 回调停，这里统一停。 */
+        pomodoro_alarm_dismiss();
+    }
+
     if (target == guider_ui.screen_pomodoro_btn_complete) {
         if (s_stopwatch_settle_active) {
             s_stopwatch_settle_active = false;
@@ -3137,10 +3288,16 @@ void screen_pomodoro_buttion_add(){
      clear_edge_box(guider_ui.screen_pomodoro_btn_complete);
      clear_edge_box(guider_ui.screen_pomodoro_btn_continue);
  
-    pomodoro_pause_icon_bind_hooks();
-    pomodoro_effect_bind_hooks();
-    pomodoro_black_bind_hooks();
-    stopwatch_settle_bind_hooks();
+   pomodoro_pause_icon_bind_hooks();
+   pomodoro_effect_bind_hooks();
+   pomodoro_black_bind_hooks();
+   stopwatch_settle_bind_hooks();
+   if (guider_ui.screen_pomodoro_label_pomodoro != NULL &&
+       lv_obj_is_valid(guider_ui.screen_pomodoro_label_pomodoro)) {
+       lv_label_set_text(guider_ui.screen_pomodoro_label_pomodoro,
+                         ui_tr("Pomodoro Focus", "番茄专注"));
+   }
+   ui_font_bind(guider_ui.screen_pomodoro);
 }
 
  void screen_wordmenu_buttion_add(void)
@@ -3486,13 +3643,16 @@ void screen_pomodoro_buttion_add(){
  /* 在此追加新设置项即可，尺寸/字体/焦点样式与 WIFI 五键一致。 */
  static const setting_extra_desc_t s_setting_extra_descs[] = {
      { "Sleep" },
+     { "Language" },
  };
  
  static lv_obj_t *s_setting_list;
  static lv_obj_t *s_setting_extra_btns[SETTING_LIST_EXTRA_MAX];
  static uint8_t s_setting_extra_count;
  static lv_obj_t *s_setting_btn_sleep;
+ static lv_obj_t *s_setting_btn_lang;
  static lv_obj_t *s_sleep_value_label;
+ static lv_obj_t *s_lang_value_label;
 
  static const char *const s_sleep_level_text[SLEEP_LEVEL_COUNT] = {
      "Off",
@@ -3654,6 +3814,115 @@ void screen_pomodoro_buttion_add(){
      lv_obj_add_event_cb(btn, screen_setting_sleep_event_cb, LV_EVENT_CLICKED, NULL);
  }
 
+ static bool screen_setting_lang_ui_ready(void)
+ {
+     return s_lang_value_label != NULL &&
+            lv_obj_is_valid(s_lang_value_label) &&
+            guider_ui.screen_setting != NULL &&
+            lv_obj_get_parent(s_lang_value_label) == guider_ui.screen_setting;
+ }
+
+ static void screen_setting_lang_hide(void)
+ {
+     if (s_lang_value_label != NULL && lv_obj_is_valid(s_lang_value_label)) {
+         lv_obj_add_flag(s_lang_value_label, LV_OBJ_FLAG_HIDDEN);
+     }
+ }
+
+ static void screen_setting_apply_locale(void);
+
+ static void screen_setting_lang_show(void)
+ {
+     if (guider_ui.screen_setting == NULL ||
+         !lv_obj_is_valid(guider_ui.screen_setting)) {
+         return;
+     }
+     if (!screen_setting_lang_ui_ready()) {
+         s_lang_value_label = lv_label_create(guider_ui.screen_setting);
+         lv_obj_set_pos(s_lang_value_label, 135, 31);
+         lv_obj_set_size(s_lang_value_label, 170, 126);
+         lv_obj_set_style_text_font(s_lang_value_label, ui_font_chrome(),
+                                    LV_PART_MAIN | LV_STATE_DEFAULT);
+         lv_obj_set_style_text_color(s_lang_value_label, lv_color_hex(0x274a6e),
+                                     LV_PART_MAIN | LV_STATE_DEFAULT);
+         lv_obj_set_style_text_align(s_lang_value_label, LV_TEXT_ALIGN_CENTER,
+                                     LV_PART_MAIN | LV_STATE_DEFAULT);
+         lv_obj_set_style_pad_top(s_lang_value_label, 52,
+                                  LV_PART_MAIN | LV_STATE_DEFAULT);
+         lv_obj_set_style_bg_opa(s_lang_value_label, LV_OPA_TRANSP,
+                                 LV_PART_MAIN | LV_STATE_DEFAULT);
+         lv_obj_clear_flag(s_lang_value_label, LV_OBJ_FLAG_CLICKABLE);
+     }
+     lv_label_set_text(s_lang_value_label, ui_tr("English", "中文"));
+     lv_obj_clear_flag(s_lang_value_label, LV_OBJ_FLAG_HIDDEN);
+ }
+
+ static void screen_setting_lang_event_cb(lv_event_t *e)
+ {
+     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+         return;
+     }
+     ui_lang_toggle();
+     screen_setting_apply_locale();
+     screen_setting_lang_show();
+ }
+
+ static void screen_setting_lang_bind_btn(lv_obj_t *btn)
+ {
+     if (btn == NULL || !lv_obj_is_valid(btn)) {
+         return;
+     }
+     s_setting_btn_lang = btn;
+     lv_obj_add_event_cb(btn, screen_setting_lang_event_cb, LV_EVENT_CLICKED, NULL);
+ }
+
+ static void screen_setting_set_label(lv_obj_t *label, const char *text)
+ {
+     if (label != NULL && lv_obj_is_valid(label)) {
+         lv_label_set_text(label, text);
+     }
+ }
+
+ static void screen_setting_set_btn(lv_obj_t *btn, const char *text)
+ {
+     lv_obj_t *label;
+     if (btn == NULL || !lv_obj_is_valid(btn)) {
+         return;
+     }
+     label = lv_obj_get_child(btn, 0);
+     if (label != NULL && lv_obj_is_valid(label)) {
+         lv_label_set_text(label, text);
+     }
+ }
+
+ static void screen_setting_apply_locale(void)
+ {
+     screen_setting_set_label(guider_ui.screen_setting_btn_wifi_label,
+                              ui_tr("WIFI", "无线"));
+     screen_setting_set_label(guider_ui.screen_setting_btn_ble_label,
+                              ui_tr("BlueTooth", "蓝牙"));
+     screen_setting_set_label(guider_ui.screen_setting_btn_volume_label,
+                              ui_tr("Volume", "音量"));
+     screen_setting_set_label(guider_ui.screen_setting_btn_brightness_label,
+                              ui_tr("Brightness", "亮度"));
+     screen_setting_set_label(guider_ui.screen_setting_btn_general_label,
+                              ui_tr("General", "通用"));
+     screen_setting_set_btn(s_setting_btn_sleep, ui_tr("Sleep", "休眠"));
+     screen_setting_set_btn(s_setting_btn_lang, ui_tr("Language", "语言"));
+     screen_setting_set_label(guider_ui.screen_setting_label_about,
+                              ui_tr("About", "关于"));
+     screen_setting_set_label(guider_ui.screen_setting_label_txt1,
+                              ui_tr("Device", "设备"));
+     screen_setting_set_label(guider_ui.screen_setting_label_txt2,
+                              ui_tr("Model", "型号"));
+     screen_setting_set_label(guider_ui.screen_setting_label_txt4,
+                              ui_tr("Hardware", "硬件"));
+     if (screen_setting_lang_ui_ready() &&
+         !lv_obj_has_flag(s_lang_value_label, LV_OBJ_FLAG_HIDDEN)) {
+         lv_label_set_text(s_lang_value_label, ui_tr("English", "中文"));
+     }
+ }
+
  static void screen_setting_hide_detail_widgets(void)
  {
      lv_obj_t *widgets[] = {
@@ -3682,6 +3951,7 @@ void screen_pomodoro_buttion_add(){
          }
      }
      screen_setting_sleep_hide();
+     screen_setting_lang_hide();
  }
  
  static void screen_setting_reset_container_scroll(lv_obj_t *obj)
@@ -3778,16 +4048,23 @@ void screen_pomodoro_buttion_add(){
          if (btn == s_setting_btn_sleep) {
              screen_setting_hide_detail_widgets();
              screen_setting_sleep_show();
+         } else if (btn == s_setting_btn_lang) {
+             screen_setting_hide_detail_widgets();
+             screen_setting_lang_show();
          } else if (index >= SETTING_LIST_CORE_COUNT) {
              screen_setting_hide_detail_widgets();
          } else {
              screen_setting_sleep_hide();
+             screen_setting_lang_hide();
          }
          screen_setting_list_lift(btn, index);
      } else if (code == LV_EVENT_DEFOCUSED) {
          screen_setting_list_snap_y(btn, index);
          if (btn == s_setting_btn_sleep) {
              screen_setting_sleep_hide();
+         }
+         if (btn == s_setting_btn_lang) {
+             screen_setting_lang_hide();
          }
      }
  }
@@ -3806,7 +4083,9 @@ void screen_pomodoro_buttion_add(){
      memset(s_setting_extra_btns, 0, sizeof(s_setting_extra_btns));
      s_setting_extra_count = 0;
      s_setting_btn_sleep = NULL;
+     s_setting_btn_lang = NULL;
      s_sleep_value_label = NULL;
+     s_lang_value_label = NULL;
  }
  
  static void screen_setting_list_bind_btn(lv_obj_t *btn)
@@ -3945,6 +4224,7 @@ void screen_pomodoro_buttion_add(){
      s_setting_extra_count = 0;
      memset(s_setting_extra_btns, 0, sizeof(s_setting_extra_btns));
      s_setting_btn_sleep = NULL;
+     s_setting_btn_lang = NULL;
  
      for (i = 0; i < SETTING_LIST_CORE_COUNT; i++) {
          btn = screen_setting_list_core_btn(i);
@@ -3960,6 +4240,10 @@ void screen_pomodoro_buttion_add(){
          if (btn != NULL && s_setting_extra_descs[i].text != NULL &&
              strcmp(s_setting_extra_descs[i].text, "Sleep") == 0) {
              screen_setting_sleep_bind_btn(btn);
+         }
+         if (btn != NULL && s_setting_extra_descs[i].text != NULL &&
+             strcmp(s_setting_extra_descs[i].text, "Language") == 0) {
+             screen_setting_lang_bind_btn(btn);
          }
      }
      screen_setting_sleep_create_ui();
@@ -4004,23 +4288,19 @@ void screen_pomodoro_buttion_add(){
          screen_setting_reset_container_scroll(guider_ui.screen_setting);
      }
      screen_setting_list_setup();
-     if (guider_ui.screen_setting_label_about != NULL &&
-         lv_obj_is_valid(guider_ui.screen_setting_label_about)) {
-         lv_label_set_text(guider_ui.screen_setting_label_about, "About");
-     }
-     if (guider_ui.screen_setting_label_txt1 != NULL &&
-         lv_obj_is_valid(guider_ui.screen_setting_label_txt1)) {
-         lv_label_set_text(guider_ui.screen_setting_label_txt1, "Device");
-     }
-     if (guider_ui.screen_setting_label_txt2 != NULL &&
-         lv_obj_is_valid(guider_ui.screen_setting_label_txt2)) {
-         lv_label_set_text(guider_ui.screen_setting_label_txt2, "Model");
-     }
      if (guider_ui.screen_setting_label_txt4 != NULL &&
          lv_obj_is_valid(guider_ui.screen_setting_label_txt4)) {
-         lv_label_set_text(guider_ui.screen_setting_label_txt4, "Hardware");
          lv_obj_set_width(guider_ui.screen_setting_label_txt4, 72);
      }
+     screen_setting_apply_locale();
+     ui_font_bind(guider_ui.screen_setting);
+     ui_font_set_chrome(guider_ui.screen_setting_btn_wifi);
+     ui_font_set_chrome(guider_ui.screen_setting_btn_ble);
+     ui_font_set_chrome(guider_ui.screen_setting_btn_volume);
+     ui_font_set_chrome(guider_ui.screen_setting_btn_brightness);
+     ui_font_set_chrome(guider_ui.screen_setting_btn_general);
+     ui_font_set_chrome(s_setting_btn_sleep);
+     ui_font_set_chrome(s_setting_btn_lang);
      if (guider_ui.screen_setting_label_info2 != NULL &&
          lv_obj_is_valid(guider_ui.screen_setting_label_info2)) {
          lv_label_set_text(guider_ui.screen_setting_label_info2, "Reppo Zero");
@@ -4056,6 +4336,31 @@ void screen_pomodoro_buttion_add(){
      screen_setting_visual_effect_bind_hooks();
  }
  
+ static void voice_wificfg_back_cb(lv_event_t *e)
+ {
+     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+         return;
+     }
+     if (!voice_todo_wants_wificfg_return()) {
+         return;
+     }
+     /* 抢在 generated 的「回设置」之前处理，并停掉后面的回调。 */
+     lv_event_stop_processing(e);
+     voice_todo_return_from_wifi();
+ }
+
+ static void voice_wificfg_back_bind(void)
+ {
+     static lv_obj_t *bound;
+     lv_obj_t *btn = guider_ui.screen_wificfg_btn_back;
+     if (btn == NULL || !lv_obj_is_valid(btn) || bound == btn) {
+         return;
+     }
+     bound = btn;
+     lv_obj_add_event_cb(btn, voice_wificfg_back_cb,
+                         LV_EVENT_CLICKED | LV_EVENT_PREPROCESS, NULL);
+ }
+
  //buttion add function screen_wificfg
  void screen_wificfg_buttion_add(){
      if(g == NULL) {
@@ -4093,6 +4398,33 @@ void screen_pomodoro_buttion_add(){
      clear_edge_box(guider_ui.screen_wificfg_btn_cancel);
      clear_edge_box(guider_ui.screen_wificfg_btn_connect);
      clear_edge_box(guider_ui.screen_wificfg_btn_back);
+     voice_wificfg_back_bind();
+     if (guider_ui.screen_wificfg_btn_cancel_label != NULL &&
+         lv_obj_is_valid(guider_ui.screen_wificfg_btn_cancel_label)) {
+         lv_label_set_text(guider_ui.screen_wificfg_btn_cancel_label,
+                           ui_tr("Cancel", "取消"));
+     }
+     if (guider_ui.screen_wificfg_btn_connect_label != NULL &&
+         lv_obj_is_valid(guider_ui.screen_wificfg_btn_connect_label)) {
+         lv_label_set_text(guider_ui.screen_wificfg_btn_connect_label,
+                           ui_tr("Connect", "连接"));
+     }
+     ui_font_bind(guider_ui.screen_wificfg);
+     if (guider_ui.screen_wificfg_label_status != NULL &&
+         lv_obj_is_valid(guider_ui.screen_wificfg_label_status)) {
+         lv_label_set_text(guider_ui.screen_wificfg_label_status,
+                           ui_tr("Connection Status", "连接状态"));
+     }
+     if (wifi_success) {
+         wificfg_status2_set("Connected", "已连接");
+     } else {
+         wificfg_status2_set("Disconnected", "未连接");
+     }
+     if (guider_ui.screen_wificfg_btn_disconnect != NULL &&
+         lv_obj_is_valid(guider_ui.screen_wificfg_btn_disconnect)) {
+         lv_obj_add_event_cb(guider_ui.screen_wificfg_btn_disconnect,
+                             wificfg_disconnect_locale_cb, LV_EVENT_CLICKED, NULL);
+     }
  } 
  
  /* screen_todosel 底部 Cancel 那一行：左侧显示任务日期，右侧显示预设专注时长。
@@ -4117,10 +4449,10 @@ void screen_pomodoro_buttion_add(){
  static const char *todosel_label_text(uint8_t label)
  {
      switch (label) {
-     case TODO_LABEL_WORK:  return "Work";
-     case TODO_LABEL_STUDY: return "Study";
-     case TODO_LABEL_LIFE:  return "Life";
-     case TODO_LABEL_FUN:   return "Fun";
+    case TODO_LABEL_WORK:  return ui_tr("Work", "工作");
+    case TODO_LABEL_STUDY: return ui_tr("Study", "学习");
+    case TODO_LABEL_LIFE:  return ui_tr("Life", "生活");
+    case TODO_LABEL_FUN:   return ui_tr("Fun", "娱乐");
      default:               return "";
      }
  }
@@ -4279,6 +4611,7 @@ void screen_pomodoro_buttion_add(){
      clear_edge_box(guider_ui.screen_todosel_btn_focus);
      clear_edge_box(guider_ui.screen_todosel_btn_cancel);
      screen_todosel_info_update();
+     ui_font_bind(guider_ui.screen_todosel);
  }
  
  void screen_ai_buttion_add(void)
@@ -4626,6 +4959,7 @@ typedef enum {
      clear_edge_box(guider_ui.screen_donelist_btn_back);
      clear_edge_box(guider_ui.screen_donelist_btn_save);
      donelist_effect_bind_hooks();
+     ui_font_bind(guider_ui.screen_donelist);
  }
  //buttion add function screen_todooback
  void screen_todoback_buttion_add(){
@@ -4647,6 +4981,7 @@ typedef enum {
      lv_group_add_obj(g, guider_ui.screen_todoback_btn_cancel); 
      clear_edge_box(guider_ui.screen_todoback_btn_recover);
      clear_edge_box(guider_ui.screen_todoback_btn_cancel);
+     ui_font_bind(guider_ui.screen_todoback);
  }
  
  
@@ -4689,6 +5024,7 @@ typedef enum {
      lv_group_add_obj(g, guider_ui.screen_getanswer_btn_answer); 
      clear_focus_box(guider_ui.screen_getanswer_btn_answer);
      answer_loading_led_stop_req = 1;
+     ui_font_bind(guider_ui.screen_getanswer);
  }
  
  //buttion add function screen_picture

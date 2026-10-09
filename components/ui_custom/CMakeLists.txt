@@ -10,4 +10,5 @@ idf_component_register(
      REQUIRES lvgl
               lv_port
               BSP
+              nvs_flash
 )

@@ -113,7 +113,7 @@ extern bool  focus_session_active;
 extern bool  focus_complete_pending;
 extern int   focus_session_minutes;
 extern int16_t focus_preset_minutes;
-extern bool countdown_timeout_pending;
+extern volatile bool countdown_timeout_pending;
 extern volatile bool ai_day_start;
 extern volatile bool ai_week_start;
 extern int  all_focus_time;
@@ -134,6 +134,16 @@ uint16_t sleep_timeout_get_minutes(void);
 void idle_sleep_poll(void);
 bool idle_sleep_consume_key(uint32_t lv_key);
 void idle_sleep_note_activity(void);
+bool idle_sleep_is_asleep(void);
+/** 息屏期间由 IMU 任务调用。只在已经息屏时置位，poll 里走原来的唤醒。 */
+void idle_sleep_request_wake(void);
+/** 停掉番茄钟到时的蜂鸣和流水灯。倒计时未响时调用也安全。 */
+void pomodoro_alarm_dismiss(void);
+/** 倒计时、秒表正在走，或番茄钟黑屏。语音待办这时不进入。 */
+bool focus_timer_is_running(void);
+/** 从语音页进入 WiFi 页时为真。返回键回到语音页，而不是设置页。 */
+bool voice_todo_wants_wificfg_return(void);
+void voice_todo_return_from_wifi(void);
 extern bool ble_success;
 extern bool ble_enabled;
 extern volatile bool ble_toggle_on_req;

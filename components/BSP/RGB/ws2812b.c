@@ -130,15 +130,24 @@ static void boot_flow_light_once(uint32_t r, uint32_t g, uint32_t b)
     }
 }
 
-static void flow_light_run(uint32_t r, uint32_t g, uint32_t b, uint32_t step_ms)
+static void flow_light_run(uint32_t r, uint32_t g, uint32_t b, uint32_t step_ms,
+                           ws2812_flow_stop_fn stop)
 {
     for (int i = 0; i < LED_STRIP_NUM_LEDS; i++) {
+        if (stop != NULL && stop()) {
+            clear_led_bar();
+            return;
+        }
         if (led_strip_lock()) {
             led_strip_set_pixel(led_strip, i, r, g, b);
             led_strip_refresh(led_strip);
             led_strip_unlock();
         }
         vTaskDelay(pdMS_TO_TICKS(step_ms));
+        if (stop != NULL && stop()) {
+            clear_led_bar();
+            return;
+        }
         if (led_strip_lock()) {
             led_strip_clear(led_strip);
             led_strip_unlock();
@@ -148,12 +157,17 @@ static void flow_light_run(uint32_t r, uint32_t g, uint32_t b, uint32_t step_ms)
 
 void set_flow_light(uint32_t r, uint32_t g, uint32_t b)
 {
-    flow_light_run(r, g, b, FLOW_LIGHT_STEP_MS_DEFAULT);
+    flow_light_run(r, g, b, FLOW_LIGHT_STEP_MS_DEFAULT, NULL);
 }
 
 void set_flow_light_fast(uint32_t r, uint32_t g, uint32_t b)
 {
-    flow_light_run(r, g, b, FLOW_LIGHT_STEP_MS_FAST);
+    flow_light_run(r, g, b, FLOW_LIGHT_STEP_MS_FAST, NULL);
+}
+
+void set_flow_light_unless(uint32_t r, uint32_t g, uint32_t b, ws2812_flow_stop_fn stop)
+{
+    flow_light_run(r, g, b, FLOW_LIGHT_STEP_MS_DEFAULT, stop);
 }
 
 static TaskHandle_t s_hint_flow_task = NULL;
@@ -164,7 +178,7 @@ static uint32_t s_hint_flow_b;
 static void hint_flow_light_task(void *param)
 {
     (void)param;
-    flow_light_run(s_hint_flow_r, s_hint_flow_g, s_hint_flow_b, FLOW_LIGHT_STEP_MS_FAST);
+    flow_light_run(s_hint_flow_r, s_hint_flow_g, s_hint_flow_b, FLOW_LIGHT_STEP_MS_FAST, NULL);
     s_hint_flow_task = NULL;
     vTaskDelete(NULL);
 }

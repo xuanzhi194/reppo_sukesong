@@ -26,6 +26,6 @@ extern lv_timer_t *bat_timer;
 extern lv_timer_t *clock_timer;
 
 /** 番茄钟超时蜂鸣任务是否正在运行 */
-extern bool buzzer_timeout_task_running;
+extern volatile bool buzzer_timeout_task_running;
 
 #endif /* APP_GLOBALS_H */
