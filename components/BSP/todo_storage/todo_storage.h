@@ -22,7 +22,7 @@ typedef struct {
     char     name[TODO_NAME_LEN];
     uint16_t duration_min;
     uint8_t  done;
-    /* 日期 YYYY-MM-DD，仅由微信小程序下发；未下发时为空，设备端不自行生成 */
+    /* 日期 YYYY-MM-DD。微信小程序下发，语音待办则写入当天。没有则留空。 */
     char     planned_date[16];
     /* TODO_LABEL_*：扭蛋四类；0 表示 App 未选或旧 CSV 无此列 */
     uint8_t  label;

@@ -20,12 +20,14 @@
 #include "wifi.h"
 #include "zts6672_mic.h"
 #include "todo_storage.h"
+#include "rx8130.h"
 #include "esp_crt_bundle.h"
 #include "esp_heap_caps.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <time.h>
 
 extern const lv_font_t voice_todo_font;
 extern const lv_font_t voice_todo_title_font;
@@ -47,8 +49,6 @@ static const char *DASHSCOPE_KEY =
 #define VOICE_CLICK_MS      450
 #define VOICE_HTTP_MS       25000
 #define VOICE_RESP_MAX      8192
-#define VOICE_TODO_MINUTES  25
-
 typedef enum {
     VS_WIFI = 0,
     VS_READY,
@@ -66,7 +66,9 @@ static volatile bool s_job_running;
 static volatile bool s_job_recorded;
 static volatile bool s_job_done;
 static volatile bool s_job_ok;
+static volatile uint16_t s_job_minutes;
 static char s_job_text[TODO_NAME_LEN];
+static uint16_t s_minutes;
 
 #define VOICE_BARS 7
 
@@ -931,6 +933,37 @@ static void voice_arm_click(int act)
     }
 }
 
+static void voice_write_date(char *dst, size_t cap, unsigned year, unsigned month, unsigned day)
+{
+    if (cap < 11 || year < 2024 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
+        return;
+    }
+    snprintf(dst, cap, "%04u-%02u-%02u", year % 10000u, month % 100u, day % 100u);
+}
+
+static void voice_today(char *dst, size_t cap)
+{
+    rx8130_time_t now;
+    time_t sec;
+    struct tm tm;
+
+    dst[0] = '\0';
+    if (rx8130_get_time(I2C_NUM_0, &now) == ESP_OK) {
+        voice_write_date(dst, cap, now.year, now.month, now.date);
+        if (dst[0] != '\0') {
+            return;
+        }
+    }
+    sec = time(NULL);
+    localtime_r(&sec, &tm);
+    if (tm.tm_year + 1900 > 0) {
+        voice_write_date(dst, cap,
+                         (unsigned)(tm.tm_year + 1900),
+                         (unsigned)(tm.tm_mon + 1),
+                         (unsigned)tm.tm_mday);
+    }
+}
+
 static bool voice_save_todo(const char *name)
 {
     uint8_t idx;
@@ -949,7 +982,10 @@ static bool voice_save_todo(const char *name)
     if (ui_todo_list.items[idx].name[0] == '\0') {
         return false;
     }
-    ui_todo_list.items[idx].duration_min = VOICE_TODO_MINUTES;
+    /* 没说到时长就留空。说到了才写入。日期用当前 RTC 的今天。 */
+    ui_todo_list.items[idx].duration_min = s_minutes;
+    voice_today(ui_todo_list.items[idx].planned_date,
+                sizeof(ui_todo_list.items[idx].planned_date));
     ui_todo_list.items[idx].done = 0;
     ui_todo_list.items[idx].label = TODO_LABEL_NONE;
     ui_todo_list.count++;
@@ -1283,19 +1319,274 @@ static void voice_json_escape(const char *src, char *dst, size_t cap)
     dst[n] = '\0';
 }
 
-static bool voice_refine(const char *transcript, char *out, size_t cap)
+static uint32_t voice_utf8_next(const char **ps)
+{
+    const unsigned char *s = (const unsigned char *)*ps;
+    uint32_t cp;
+
+    if (*s == 0) {
+        return 0;
+    }
+    if (*s < 0x80) {
+        *ps += 1;
+        return *s;
+    }
+    if ((*s & 0xE0) == 0xC0 && s[1] != 0) {
+        cp = ((uint32_t)(s[0] & 0x1F) << 6) | (s[1] & 0x3F);
+        *ps += 2;
+        return cp;
+    }
+    if ((*s & 0xF0) == 0xE0 && s[1] != 0 && s[2] != 0) {
+        cp = ((uint32_t)(s[0] & 0x0F) << 12) |
+             ((uint32_t)(s[1] & 0x3F) << 6) | (s[2] & 0x3F);
+        *ps += 3;
+        return cp;
+    }
+    if ((*s & 0xF8) == 0xF0 && s[1] != 0 && s[2] != 0 && s[3] != 0) {
+        cp = ((uint32_t)(s[0] & 0x07) << 18) |
+             ((uint32_t)(s[1] & 0x3F) << 12) |
+             ((uint32_t)(s[2] & 0x3F) << 6) | (s[3] & 0x3F);
+        *ps += 4;
+        return cp;
+    }
+    *ps += 1;
+    return *s;
+}
+
+static int voice_cn_digit(uint32_t cp)
+{
+    switch (cp) {
+    case 0x96F6: return 0;
+    case 0x4E00: return 1;
+    case 0x4E8C: case 0x4E24: return 2;
+    case 0x4E09: return 3;
+    case 0x56DB: return 4;
+    case 0x4E94: return 5;
+    case 0x516D: return 6;
+    case 0x4E03: return 7;
+    case 0x516B: return 8;
+    case 0x4E5D: return 9;
+    default: return -1;
+    }
+}
+
+static bool voice_parse_cn(const char **ps, int *out)
+{
+    const char *s = *ps;
+    int val = 0;
+    int cur = -1;
+    bool any = false;
+
+    for (;;) {
+        const char *save = s;
+        uint32_t cp = voice_utf8_next(&s);
+        int d;
+
+        if (cp == 0) {
+            s = save;
+            break;
+        }
+        if (cp == 0x5341) {
+            val += (cur < 0 ? 1 : cur) * 10;
+            cur = -1;
+            any = true;
+            continue;
+        }
+        if (cp == 0x767E) {
+            val += (cur < 0 ? 1 : cur) * 100;
+            cur = -1;
+            any = true;
+            continue;
+        }
+        d = voice_cn_digit(cp);
+        if (d >= 0) {
+            cur = d;
+            any = true;
+            continue;
+        }
+        s = save;
+        break;
+    }
+    if (!any) {
+        return false;
+    }
+    *out = val + (cur < 0 ? 0 : cur);
+    *ps = s;
+    return true;
+}
+
+static bool voice_starts(const char *s, const char *lit)
+{
+    return strncmp(s, lit, strlen(lit)) == 0;
+}
+
+static void voice_skip_ascii_unit_space(const char **ps)
+{
+    const char *p = *ps;
+    while (*p == ' ') {
+        p++;
+    }
+    *ps = p;
+}
+
+/** 从原话里取第一个明确时长。没说到就返回 0。 */
+static uint16_t voice_parse_minutes(const char *text)
+{
+    const char *p = text;
+
+    if (text == NULL) {
+        return 0;
+    }
+    while (*p != '\0') {
+        const char *q = p;
+        int num = 0;
+        bool half = false;
+        bool saw = false;
+        int minutes = 0;
+
+        if (voice_starts(q, "半个小时")) {
+            return 30;
+        }
+        if (voice_starts(q, "半小时") || voice_starts(q, "半钟头")) {
+            return 30;
+        }
+        if (strncasecmp(q, "half an hour", 12) == 0 || strncasecmp(q, "half hour", 9) == 0) {
+            return 30;
+        }
+        if (strncasecmp(q, "an hour", 7) == 0) {
+            return 60;
+        }
+        if (*q >= '0' && *q <= '9') {
+            while (*q >= '0' && *q <= '9') {
+                num = num * 10 + (*q - '0');
+                q++;
+                saw = true;
+            }
+            if (*q == '.' && q[1] == '5') {
+                half = true;
+                q += 2;
+            }
+        } else if (voice_parse_cn(&q, &num)) {
+            saw = true;
+        }
+        if (saw && num >= 0 && num <= 24 * 60) {
+            voice_skip_ascii_unit_space(&q);
+            if (voice_starts(q, "个半")) {
+                half = true;
+                q += strlen("个半");
+            } else if (voice_starts(q, "个")) {
+                q += strlen("个");
+            }
+            if (voice_starts(q, "半")) {
+                half = true;
+                q += strlen("半");
+            }
+            voice_skip_ascii_unit_space(&q);
+            if (voice_starts(q, "小时") || voice_starts(q, "钟头")) {
+                q += voice_starts(q, "小时") ? strlen("小时") : strlen("钟头");
+                minutes = num * 60 + (half ? 30 : 0);
+            } else if (strncasecmp(q, "hours", 5) == 0) {
+                q += 5;
+                minutes = num * 60 + (half ? 30 : 0);
+            } else if (strncasecmp(q, "hour", 4) == 0) {
+                q += 4;
+                minutes = num * 60 + (half ? 30 : 0);
+            } else if ((*q == 'h' || *q == 'H') && !isalpha((unsigned char)q[1])) {
+                q += 1;
+                minutes = num * 60 + (half ? 30 : 0);
+            } else if (voice_starts(q, "分钟")) {
+                q += strlen("分钟");
+                minutes = num;
+            } else if (voice_starts(q, "分") && !voice_starts(q, "分享") && !voice_starts(q, "分别")) {
+                unsigned char next = (unsigned char)q[strlen("分")];
+                /* 「十分重要」这种不是时长。裸「分」只认结尾或标点。 */
+                if (next < 0x80) {
+                    q += strlen("分");
+                    minutes = num;
+                }
+            } else if (voice_starts(q, "刻钟")) {
+                q += strlen("刻钟");
+                minutes = num * 15;
+            } else if (strncasecmp(q, "minutes", 7) == 0) {
+                q += 7;
+                minutes = num;
+            } else if (strncasecmp(q, "minute", 6) == 0) {
+                q += 6;
+                minutes = num;
+            } else if (strncasecmp(q, "mins", 4) == 0) {
+                q += 4;
+                minutes = num;
+            } else if (strncasecmp(q, "min", 3) == 0 && !isalpha((unsigned char)q[3])) {
+                q += 3;
+                minutes = num;
+            }
+            if (minutes > 0 && minutes <= 24 * 60 && q > p) {
+                return (uint16_t)minutes;
+            }
+        }
+        if (((unsigned char)*p & 0x80) == 0) {
+            p++;
+        } else if (((unsigned char)*p & 0xE0) == 0xC0) {
+            p += 2;
+        } else if (((unsigned char)*p & 0xF0) == 0xE0) {
+            p += 3;
+        } else if (((unsigned char)*p & 0xF8) == 0xF0) {
+            p += 4;
+        } else {
+            p++;
+        }
+    }
+    return 0;
+}
+
+static bool voice_has_ci(const char *text, const char *lit)
+{
+    size_t n = strlen(lit);
+    const char *s = text;
+
+    if (n == 0) {
+        return false;
+    }
+    while (*s != '\0') {
+        if (strncasecmp(s, lit, n) == 0) {
+            return true;
+        }
+        s++;
+    }
+    return false;
+}
+
+static bool voice_duration_cue(const char *text)
+{
+    if (text == NULL) {
+        return false;
+    }
+    return strstr(text, "分钟") != NULL || strstr(text, "小时") != NULL ||
+           strstr(text, "钟头") != NULL || strstr(text, "刻钟") != NULL ||
+           voice_has_ci(text, "hour") || voice_has_ci(text, "min");
+}
+
+static bool voice_refine(const char *transcript, char *out, size_t cap, uint16_t *minutes)
 {
     char escaped[TODO_NAME_LEN * 2];
-    char body[700];
+    char body[1200];
     char *resp;
     char raw[TODO_NAME_LEN];
     int n;
     bool ok = false;
 
+    if (minutes != NULL) {
+        *minutes = 0;
+    }
     voice_json_escape(transcript, escaped, sizeof(escaped));
     n = snprintf(body, sizeof(body),
                  "{\"model\":\"%s\",\"messages\":["
-                 "{\"role\":\"system\",\"content\":\"把用户的话收成一条待办。只输出这一句，不超过20个字，不要引号。\"},"
+                 "{\"role\":\"system\",\"content\":\""
+                 "把用户的话收成一条待办。只输出一行：标题|分钟。"
+                 "标题不超过20个字，不要引号，标题里不要再写时长。"
+                 "原话明确说了要花多久才把分钟写成整数：半小时=30，一小时=60，一个半小时=90，一刻钟=15。"
+                 "没提到时长就写0。例如：读书半小时->读书|30。去超市->去超市|0。"
+                 "\"},"
                  "{\"role\":\"user\",\"content\":\"%s\"}]}",
                  REFINE_MODEL, escaped);
     if (n <= 0 || (size_t)n >= sizeof(body)) {
@@ -1311,6 +1602,17 @@ static bool voice_refine(const char *transcript, char *out, size_t cap)
         return false;
     }
     if (voice_json_pick(resp, "content", raw, sizeof(raw))) {
+        char *bar = strrchr(raw, '|');
+        if (bar == NULL) {
+            bar = strstr(raw, "｜");
+        }
+        if (bar != NULL && minutes != NULL) {
+            int v = atoi(bar + (*bar == '|' ? 1 : 3));
+            *bar = '\0';
+            if (v > 0 && v <= 24 * 60) {
+                *minutes = (uint16_t)v;
+            }
+        }
         voice_trim_copy(out, cap, raw, 20);
         ok = out[0] != '\0';
     } else {
@@ -1462,10 +1764,13 @@ static void voice_job(void *param)
     size_t n = 0;
     char transcript[TODO_NAME_LEN];
     char title[TODO_NAME_LEN];
+    uint16_t model_minutes = 0;
+    uint16_t heard_minutes;
 
     (void)param;
     transcript[0] = '\0';
     title[0] = '\0';
+    s_job_minutes = 0;
     wav = heap_caps_malloc(44 + VOICE_MAX_SAMPLES * sizeof(int16_t),
                            MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (wav == NULL) {
@@ -1483,12 +1788,19 @@ static void voice_job(void *param)
         goto finish;
     }
     ESP_LOGI(TAG, "asr: %s", transcript);
-    if (!voice_refine(transcript, title, sizeof(title))) {
+    if (!voice_refine(transcript, title, sizeof(title), &model_minutes)) {
         voice_trim_copy(title, sizeof(title), transcript, 20);
+        model_minutes = 0;
     }
     if (title[0] == '\0') {
         goto finish;
     }
+    heard_minutes = voice_parse_minutes(transcript);
+    if (heard_minutes == 0 && model_minutes > 0 && voice_duration_cue(transcript)) {
+        heard_minutes = model_minutes;
+    }
+    s_job_minutes = heard_minutes;
+    ESP_LOGI(TAG, "todo minutes=%u", (unsigned)s_job_minutes);
     strncpy(s_job_text, title, sizeof(s_job_text) - 1);
     s_job_text[sizeof(s_job_text) - 1] = '\0';
     s_job_ok = true;
@@ -1496,6 +1808,7 @@ finish:
     free(wav);
     if (!s_job_ok) {
         s_job_text[0] = '\0';
+        s_job_minutes = 0;
     }
     s_job_running = false;
     s_job_done = true;
@@ -1512,6 +1825,8 @@ static void voice_start_listen(void)
     s_job_ok = false;
     s_job_recorded = false;
     s_job_text[0] = '\0';
+    s_job_minutes = 0;
+    s_minutes = 0;
     s_job_running = true;
     voice_apply(VS_LISTEN);
     if (xTaskCreatePinnedToCore(voice_job, "voice_job", 20480, NULL, 5, NULL, 0) != pdPASS) {
@@ -1540,6 +1855,7 @@ void voice_todo_poll(void)
         if (s_job_ok && s_job_text[0] != '\0') {
             strncpy(s_shown, s_job_text, sizeof(s_shown) - 1);
             s_shown[sizeof(s_shown) - 1] = '\0';
+            s_minutes = s_job_minutes;
             voice_apply(VS_RESULT);
         } else {
             strncpy(s_shown, ui_tr("Didn't catch that\nCome a bit closer",
