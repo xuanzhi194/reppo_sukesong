@@ -1,6 +1,18 @@
 # Reppo OS (ESP32-S3 + LVGL)
 
+Reppo R2 是一块 ESP32-S3 桌面终端：320×170 横屏，EC06 旋钮。固件在 `main`，界面在 `components/ui_custom`。远程仓库是 `reppo_r2`。
+
+当前主链路：
+
+- 主页进入待办、专注、阅读、游戏和设置。设置里可以切换中英文，选择记在 NVS。待办内容和 WiFi 名称始终可以显示中文。
+- 时间以 RX8130 为准。WiFi 连上后用 SNTP 对北京时间（`CST-8`）并写回 RTC；手机 BLE 连接后仍会下发本地时间。
+- 电量仍是 GPIO8 上的电阻分压加 ADC，充电状态看 TP4056 的 CHRG / STDBY。专用电量计还没进硬件。
+- IMU（LSM6DSR）和 RTC 共用 I2C0。拿起唤醒、番茄钟晃动停闹仍然保留。语音改为合加速度大于 3g 的一下敲击；游戏页打开时不响应这次敲击。
+- 游戏页先用左右倾斜选择 Dino Run 或 Tilt Orb，再进入对应玩法。两个最高分都在 NVS 命名空间 `DinoGame`。
+
 ## GUI Guider 移植后必做修改
+
+不要改 `components/ui_custom/generated/`。这个目录留给 GUI Guider 整份覆盖。界面上的自定义逻辑放在 `components/ui_custom/custom/`，和界面无关的固件放在 `main/`。这样重新导出后，只要把下面这一处手工修正补回去，两边就能对接。
 
 每次从 GUI Guider 重新导出并覆盖 `components/ui_custom/custom/`、`components/ui_custom/generated/` 后，编译前请做以下手工修正（Guider 会再次生成，需每次重做）：
 
@@ -24,7 +36,8 @@ Guider 仍会生成第 4 个参数 `false`。本仓库 LVGL 在 `lv_animimg.h` �
 
 设备以手机的**本地墙钟**为准，RX8130 直接保存年月日时分秒，不转换 UTC，
 也不推测时区。每次 App 建立 BLE 连接后主动同步一次，包括断开后重连。
-WiFi 设置页继续保留、可访问；目前 WiFi 不会通过 NTP 改写 RTC。
+WiFi 设置页继续保留。WiFi 已连接时，固件还会用 SNTP 对北京时间并写入同一颗 RTC；
+两条路径都以最后一次成功写入为准。
 
 ### App 连接顺序
 
@@ -106,29 +119,29 @@ GATT 仍是服务 `0x00FF`、特征 `0xFF01`。校时成功后再同步待办。
 
 SPIFFS `todo.csv` 列为 `name,duration_min,done,date,label`。旧的四列文件仍能读，缺的标签视为未分类。`screen_todosel` 在任务名上方显示 Work / Study / Life / Fun；未分类不显示。
 
-## screen_game：Dino Run
+语音待办由一下大于 3g 的敲击打开。识别后的日期默认是 RTC 上的今天；话里说到时长才写入分钟，没说到就留空。番茄钟闹钟、专注计时或游戏页打开时，这次敲击不会进入语音。
 
-主页 Game 进入准备画面，点击旋钮开始，运行时点击跳跃。不能在空中再次起跳。
-仙人掌随机出现，速度逐渐增加到上限；撞击后点击 RETRY 重试。
-HI 是保存在 Flash NVS 中的最高分，开机自动加载。游戏结束、暂停或退出时保存新纪录；
-分数未刷新纪录时不写入，失败后保留待保存值并每 5 秒重试。写入放在主任务的 LVGL
-互斥锁外，跑动过程中不写 Flash，避免影响跳跃和频繁擦写。游玩中直接断电不会保存
-本局尚未结算的新纪录，可先转动旋钮暂停再关机。
+## screen_game：选关、Dino Run 和 Tilt Orb
 
-转动旋钮暂停；暂停后继续旋转，在 RESUME 和 HOME 之间选择，点击确认。
-准备和结束画面也能旋转选择 HOME 退出。当前输入层把实体按压转换成一次 ENTER
-脉冲，因此退出不依赖长按，也不修改其他页面的旋钮规则。
+进入游戏页先到选关。左右倾斜在 Dino Run 和 Tilt Orb 之间切换，旋钮在 PLAY 和 HOME 之间选择，按下确认。停留在这一页时，大于 3g 的语音敲击不起作用。
 
-灯效为低亮度青绿流水、起跳时向两侧展开的绿光、每 100 分的金色闪光和碰撞红光。
-游戏灯会让位最近正在写入的现有灯效；退出只清理由游戏持有的灯帧。
-准备、暂停、结束的灯效短暂显示后停止，保留原有自动息屏行为；运行中保持亮屏。
+Dino Run：点击跳跃，不能在空中再次起跳。仙人掌随机出现，速度逐渐增加到上限；撞击后点击 RETRY。转动旋钮暂停；暂停后继续旋转，在 RESUME 和 HOME 之间选择。
+
+Tilt Orb：倾斜机身推动光球穿过从右侧驶来的光门，门缝里的点可以吃。转动或按下旋钮暂停，暂停后同样在 RESUME 和 HOME 之间选择。
+
+两个游戏的 HI 都在 NVS 命名空间 `DinoGame`：恐龙用 `best`，光球用 `tilt`。结束、暂停或退出时保存新纪录；分数没有超过纪录时不写入，失败后保留待保存值并每 5 秒重试。写入放在主任务的 LVGL 互斥锁外，游玩过程中不写 Flash。直接断电不会保存本局尚未结算的新纪录，可先暂停再关机。
+
+当前输入层把实体按压转换成一次 ENTER 脉冲，因此退出不依赖长按，也不修改其他页面的旋钮规则。
+
+灯效为低亮度青绿流水、恐龙起跳时向两侧展开的绿光、光球高度对应的灯位、里程碑闪光和碰撞红光。游戏灯会让位最近正在写入的现有灯效；退出只清理由游戏持有的灯帧。准备、暂停、结束和选关的灯效短暂显示后停止，保留原有自动息屏行为；运行中保持亮屏。
 
 ### 模块与 GUI Guider 覆盖
 
-- `main/dino_game.c/h`：不依赖 LVGL 或 ESP-IDF 的物理状态机、碰撞、计分。
-- `main/dino_render.c/h`：代码绘制恐龙、仙人掌、场景和菜单，不依赖导出的图片或字体名。
-- `main/game_machine.c/h`：页面生命周期、独立焦点组、输入和灯效状态。
-- `main/game_score_storage.c/h`：最高分读写，独立 NVS 命名空间 `DinoGame`、`uint32_t` 键 `best`。
+- `main/dino_game.c/h`、`main/tilt_game.c/h`：不依赖 LVGL 或 ESP-IDF 的物理状态机、碰撞、计分。
+- `main/dino_render.c/h`、`main/tilt_render.c/h`：代码绘制场景和菜单，不依赖导出的图片或字体名。选关画面也在 `tilt_render.c`。
+- `main/game_machine.c/h`：选关、两个游戏的生命周期、独立焦点组、IMU 倾斜、输入和灯效状态。
+- `main/imu_motion.c/h`：26 Hz 采样。游戏读取最近一次加速度；语音在合加速度大于 3g 时进入，游戏页打开时跳过。
+- `main/game_score_storage.c/h`：最高分读写，NVS 命名空间 `DinoGame`，键 `best` 和 `tilt`。
   启动时只读加载；UI 回调只更新内存，存储轮询负责提交及失败重试。
 - `custom.c/h`：保留 `screen_game_custom_init` / `screen_game_buttion_add` 入口。
   `custom.c` 中是 Guider 预览用的弱符号，固件由 `main/game_machine.c` 的强符号实现玩法。
@@ -151,12 +164,75 @@ RGB 的新接口使用现有灯带互斥量，获取不到锁就跳帧，不在 
 
 ```sh
 python3 -B -m unittest discover -s scripts/tests -p 'test_dino_game.py' -v
+python3 -B -m unittest discover -s scripts/tests -p 'test_tilt_game.py' -v
 python3 -B -m unittest discover -s scripts/tests -p 'test_game_led.py' -v
 python3 -B -m unittest discover -s scripts/tests -p 'test_game_machine.py' -v
 idf.py build
 ```
 
-前两项覆盖真实物理核心和灯带驱动；第三项编译工程自带 LVGL，以模拟按键和软件显示
-检查页面反复进入/退出及 Guider 的先清空、后延迟切屏行为，并启用内存/未定义行为检查。
-可设置 `REPPO_GAME_SNAPSHOTS` 为输出目录，保存准备、跳跃、暂停、结束画面的 PPM 截图。
-实机仍需检查旋钮手感、帧率和灯效亮度；这些主机测试不会连接或烧录设备。
+前三项覆盖两套物理核心和灯带驱动；`test_game_machine.py` 编译工程自带 LVGL，以模拟按键、倾斜采样和软件显示检查选关、反复进入/退出，以及 Guider 的先清空、后延迟切屏，并启用内存/未定义行为检查。可设置 `REPPO_GAME_SNAPSHOTS` 为输出目录，保存选关、光球、跳跃、暂停和结束画面的 PPM 截图。实机仍需检查旋钮手感、倾斜方向、帧率和灯效亮度；这些主机测试不会连接或烧录设备。
+
+
+## 灵感闪记：共享语音入口与本地灵感本
+
+一次大于 3g 的敲击打开共享入口，旋钮选择「记待办」「记灵感」「看灵感」，按下确认。
+本次开机内记住上次录音模式。设置页的滚动列表也会追加「灵感闪记」，可直接离线回看，
+不依赖敲击或 IMU。专注运行、番茄钟闹铃、游戏及语音页面打开期间仍保留原有敲击屏蔽。
+
+灵感模式按「开始说」后，听到提示音再讲话。最长录音 15 秒，讲话后的连续约 1.2 秒
+安静会提前结束；待办模式仍为 4 秒、约 0.6 秒静音结束。页面显示实测麦克风音量、
+录音进度及秒数。识别和 AI 整理需要 WiFi，历史回看不需要联网。麦克风只在录音时启用，
+识别完成后即释放 WAV，不让音频缓冲占着后续整理阶段的内存。
+
+AI 整理灵感时保留原意、语气与细节，输出短标题和正文，不自动转换为待办。原始转写与
+整理正文都保留，正文最多约 240 个字符。若整理请求失败，仍可预览和保存识别到的原话。
+预览页提供「全文」「保存」「重说」「返回」，只有后台确认写入成功后才显示「已存入灵感本」。
+写入失败或空间不足时保留当前草稿；返回入口可选「继续」，也可以先回看并删除旧记录后再保存。
+草稿仅在 RAM 中，尚未确认保存时断电不会保留。
+
+回看列表按最新顺序每页显示 3 条；旋钮选择，按下查看。详情页旋钮滚动正文，单击切换
+原始转写/整理正文，双击返回。列表「删除」针对最近选中的记录，确认页显示标题；
+选择「保留」不会删除。删除后会复用空槽，不自动覆盖旧灵感。
+
+### 存储、容量与更新
+
+- 文件：共享 SPIFFS 的 `/spiffs/inspirations.dat`；不占 Todo 列表或 NVS done 标记。
+- 上限 500 条，每条固定 1632 字节，全部正文占 816000 字节（约 0.78 MiB，不含文件系统开销）。
+- 每条包含 20 字节时间、64 字节标题、768 字节原话、768 字节正文，以及版本标记/序号/CRC。
+  文本按完整 UTF-8 字符截断，时间未校准时留空，不制造假日期。
+- 只保留偏移索引、当前页和详情缓存；大缓冲、队列载荷及索引放在 PSRAM。
+  独立存储任务负责读写，不在 LVGL 锁内访问文件。
+- 保存前检查共享分区余量，至少保留约四分之一给文件系统回收及其他数据；因此已有
+  电子书/待办占用过大时，可能未到 500 条就提示空间不足。
+- CRC 校验、先写正文后提交头部；启动忽略不完整/损坏记录，保留其他可读记录。
+  文件系统本身的损坏仍需要实际硬件恢复与验证。
+
+普通 `idf.py flash` 现在默认不刷 `storage`，避免固件更新覆盖灵感、待办和导入的电子书。
+网页 app-only 烧录方式仍适用。只有首次出厂准备需要初始化样例数据时，显式使用：
+
+```sh
+idf.py -DREPPO_FLASH_FACTORY_STORAGE=ON reconfigure
+idf.py build flash
+# 出厂初始化完成后切回普通更新配置，避免以后误刷用户数据：
+idf.py -DREPPO_FLASH_FACTORY_STORAGE=OFF reconfigure
+```
+
+### 模块与验证
+
+`main/inspiration_storage.c` 管理固定记录、校验、排序及删除；
+`main/inspiration_service.c` 管理后台请求/回复；`main/inspiration_ui.c` 以 LVGL 代码创建入口、
+列表、详情、预览和确认页面，不修改 Guider 生成目录。
+`main/voice_todo.c` 复用现有录音、识别和动画，分别处理待办与灵感提示词。
+
+```sh
+python3 -B -m unittest discover -s scripts/tests -p 'test_*.py' -v
+# 可选：保存真实 LVGL 渲染的中英文页面、录音及整理状态 PPM 截图
+REPPO_INSPIRATION_SNAPSHOTS=/absolute/output/dir \
+  python3 -B -m unittest discover -s scripts/tests -p 'test_inspiration_ui.py' -v
+idf.py build
+```
+
+主机测试覆盖重启恢复、容量、UTF-8 边界、半条写入、CRC 损坏、删除复用，以及真实 LVGL
+输入、翻页、滚动、原话切换、保存失败、延迟回复和反复进出。实机需验证麦克风收音、
+15 秒录音与 TLS 的连续内存余量、云端响应和旋钮手感；串口会打印录音前内部堆/PSRAM
+剩余量及最大连续空闲块。

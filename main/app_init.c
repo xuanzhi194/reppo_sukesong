@@ -33,6 +33,7 @@
 #include "game_score_storage.h"
 #include "badge_storage.h"
 #include "picture_bridge.h"
+#include "inspiration_service.h"
 #include "driver/i2c.h"
 #include "esp_log.h"
 #include "lvgl.h"
@@ -88,6 +89,7 @@ void app_init_storage_and_data(void)
     keep_machine_init();
 
     init_spiffs();
+    inspiration_service_init();
     book_machine_init();
     badge_storage_init();
     picture_bridge_init();

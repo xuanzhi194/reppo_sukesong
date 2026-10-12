@@ -1,11 +1,15 @@
 /**
  * @file voice_todo.c
- * @brief 两下晃动打开语音页：单击确认键说话，双击回主页。
+ * @brief 敲击进入共享语音入口：待办、灵感与本地回看。
  *
  * 麦克风只在这一次录音里打开。API Key 按当前调试需要直接放在固件里。
  */
 #include "voice_todo.h"
 #include "ui_locale.h"
+#include "inspiration_ui.h"
+#include "inspiration_storage.h"
+#include "cJSON.h"
+#include "esp_attr.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +47,8 @@ static const char *DASHSCOPE_KEY =
 #define REFINE_MODEL "qwen-flash"
 
 #define VOICE_RATE          16000
-#define VOICE_MAX_MS        4000
+#define VOICE_MAX_MS        15000
+#define VOICE_TODO_MS       4000
 #define VOICE_MAX_SAMPLES   (VOICE_RATE * VOICE_MAX_MS / 1000)
 #define VOICE_CHUNK         (VOICE_RATE / 10)
 #define VOICE_CLICK_MS      450
@@ -60,6 +65,10 @@ typedef enum {
 } voice_state_t;
 
 static volatile bool s_enter_req;
+static bool s_capture_req, s_inspiration;
+static bool s_job_inspiration;
+static volatile uint32_t s_audio_ms, s_audio_level;
+static inspiration_record_t s_job_idea EXT_RAM_BSS_ATTR;
 static volatile bool s_wificfg_return;
 static volatile bool s_open;
 static volatile bool s_job_running;
@@ -69,6 +78,7 @@ static volatile bool s_job_ok;
 static volatile uint16_t s_job_minutes;
 static char s_job_text[TODO_NAME_LEN];
 static uint16_t s_minutes;
+static uint32_t s_feedback_at, s_feedback_seconds;
 
 #define VOICE_BARS 7
 
@@ -84,6 +94,7 @@ static lv_obj_t *s_ring[2];
 static lv_obj_t *s_spin;
 static lv_obj_t *s_body;
 static lv_obj_t *s_wave;
+static lv_obj_t *s_record_bar, *s_record_time;
 static lv_obj_t *s_bar[VOICE_BARS];
 static lv_obj_t *s_ticket;
 static lv_obj_t *s_ticket_text;
@@ -116,9 +127,16 @@ void voice_todo_request_enter(void)
     s_enter_req = true;
 }
 
+void voice_todo_start_mode(bool inspiration)
+{
+    if (s_job_running) return;
+    s_inspiration = inspiration;
+    s_capture_req = true;
+}
+
 bool voice_todo_is_open(void)
 {
-    return s_open || s_wificfg_return;
+    return s_open || s_wificfg_return || inspiration_ui_is_open();
 }
 
 bool voice_todo_wants_wificfg_return(void)
@@ -323,6 +341,7 @@ static void voice_fx_set(voice_state_t state)
     voice_fx_stop();
     voice_show_obj(s_spin, state == VS_THINK);
     voice_show_obj(s_wave, state == VS_LISTEN || state == VS_THINK);
+    if (s_wave) { lv_obj_set_y(s_wave, state == VS_THINK ? 87 : 64); lv_obj_set_height(s_wave, state == VS_THINK ? 18 : 32); }
     switch (state) {
     case VS_READY:
         fx_run(s_orb, fx_glow, 0, 6, 900, 0, lv_anim_path_ease_in_out, 900,
@@ -330,7 +349,7 @@ static void voice_fx_set(voice_state_t state)
         break;
     case VS_LISTEN:
         voice_fx_rings(1200, LV_ANIM_REPEAT_INFINITE);
-        voice_fx_bars(true);
+        /* The main poll paints bars from measured microphone energy. */
         break;
     case VS_THINK:
         voice_fx_bars(false);
@@ -485,14 +504,16 @@ static void voice_apply(voice_state_t state)
     voice_show_obj(s_orb, center);
     voice_show_obj(s_body, center);
     voice_show_obj(s_hint, true);
+    voice_show_obj(s_record_bar, state == VS_LISTEN);
+    voice_show_obj(s_record_time, state == VS_LISTEN);
     voice_chip_update();
     lv_obj_set_y(s_body, 46);
 
     switch (state) {
     case VS_WIFI:
         lv_label_set_text(s_title, ui_tr("WiFi first", "先连 WiFi"));
-        lv_label_set_text(s_body, ui_tr("Connect, then I can\nturn speech into a todo",
-                                        "联网后才能把\n说的话变成待办"));
+        lv_label_set_text(s_body, ui_tr(s_inspiration ? "Connect to record\nRead your ideas offline" : "Connect, then I can\nturn speech into a todo",
+                                        s_inspiration ? "联网后才能识别\n回看灵感不需要联网" : "联网后才能把\n说的话变成待办"));
         voice_orb_icon(LV_SYMBOL_WIFI, false);
         lv_label_set_text(s_btn_main_label, ui_tr("Connect", "去连接"));
         voice_show_obj(s_btn_main, true);
@@ -500,9 +521,9 @@ static void voice_apply(voice_state_t state)
         voice_group_set(s_btn_main, NULL);
         break;
     case VS_READY:
-        lv_label_set_text(s_title, ui_tr("Voice todo", "语音待办"));
-        lv_label_set_text(s_body, ui_tr("Say one thing to do\nI'll write it down",
-                                        "说一句想做的事\n我帮你记下来"));
+        lv_label_set_text(s_title, s_inspiration ? ui_tr("Inspiration", "灵感闪记") : ui_tr("Voice todo", "语音待办"));
+        lv_label_set_text(s_body, ui_tr(s_inspiration ? "Say your thought\nI'll keep it for you" : "Say one thing to do\nI'll write it down",
+                                        s_inspiration ? "说出突然冒出的想法\n我帮你整理并留住" : "说一句想做的事\n我帮你记下来"));
         voice_orb_icon(LV_SYMBOL_AUDIO, true);
         lv_label_set_text(s_btn_main_label, ui_tr("Speak", "开始说"));
         voice_show_obj(s_btn_main, true);
@@ -511,7 +532,7 @@ static void voice_apply(voice_state_t state)
         break;
     case VS_LISTEN:
         lv_label_set_text(s_title, ui_tr("Listening", "正在听"));
-        lv_label_set_text(s_body, ui_tr("Speak after the beep", "嘀一声后说话"));
+        lv_label_set_text(s_body, ui_tr("Speak after the beep", "听到提示音后说话"));
         lv_obj_set_y(s_body, 40);
         voice_orb_icon(LV_SYMBOL_AUDIO, true);
         voice_hint_at(ui_tr("Pause when you finish", "说完停一下就好"), true);
@@ -519,7 +540,7 @@ static void voice_apply(voice_state_t state)
         break;
     case VS_THINK:
         lv_label_set_text(s_title, ui_tr("Working", "整理中"));
-        lv_label_set_text(s_body, ui_tr("Making it one line", "正在收成一句"));
+        lv_label_set_text(s_body, s_inspiration ? ui_tr("Keeping your meaning", "保留原意\n让想法更清楚") : ui_tr("Making it one line", "正在收成一句"));
         lv_obj_set_y(s_body, 40);
         voice_orb_icon(LV_SYMBOL_AUDIO, false);
         voice_hint_at(ui_tr("One moment", "稍等一下"), true);
@@ -634,6 +655,7 @@ static void voice_on_delete(lv_event_t *e)
     s_spin = NULL;
     s_body = NULL;
     s_wave = NULL;
+    s_record_bar = s_record_time = NULL;
     for (i = 0; i < VOICE_BARS; i++) {
         s_bar[i] = NULL;
     }
@@ -686,8 +708,7 @@ static void voice_build(void)
     lv_obj_set_scrollbar_mode(s_scr, LV_SCROLLBAR_MODE_OFF);
     lv_obj_clear_flag(s_scr, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_opa(s_scr, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_bg_img_src(s_scr, &_AAA_reppo_setting_bg_320x170, LV_PART_MAIN);
-    lv_obj_set_style_bg_img_opa(s_scr, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(s_scr, lv_color_hex(VOICE_TINT), LV_PART_MAIN);
     lv_obj_add_event_cb(s_scr, voice_on_delete, LV_EVENT_DELETE, NULL);
 
     s_card = voice_plain(s_scr);
@@ -702,7 +723,7 @@ static void voice_build(void)
     lv_obj_set_style_shadow_opa(s_card, 45, LV_PART_MAIN);
 
     s_title = lv_label_create(s_card);
-    voice_label_style(s_title, &voice_todo_title_font, VOICE_NAVY, LV_TEXT_ALIGN_LEFT);
+    voice_label_style(s_title, s_inspiration ? ui_font_16() : &voice_todo_title_font, VOICE_NAVY, LV_TEXT_ALIGN_LEFT);
     lv_obj_set_pos(s_title, 18, 10);
 
     s_chip = voice_plain(s_card);
@@ -755,7 +776,7 @@ static void voice_build(void)
     s_body = lv_label_create(s_card);
     lv_obj_set_width(s_body, 186);
     lv_label_set_long_mode(s_body, LV_LABEL_LONG_WRAP);
-    voice_label_style(s_body, &voice_todo_font, VOICE_INK, LV_TEXT_ALIGN_LEFT);
+    voice_label_style(s_body, ui_font_14(), VOICE_INK, LV_TEXT_ALIGN_LEFT);
     lv_obj_set_style_text_line_space(s_body, 3, LV_PART_MAIN);
     lv_obj_set_pos(s_body, 96, 46);
 
@@ -773,6 +794,17 @@ static void voice_build(void)
         lv_obj_set_style_bg_opa(s_bar[i], (lv_opa_t)(150 + i * 15), LV_PART_MAIN);
     }
     lv_obj_add_flag(s_wave, LV_OBJ_FLAG_HIDDEN);
+    s_record_bar = lv_bar_create(s_card);
+    lv_obj_set_pos(s_record_bar, 96, 96);
+    lv_obj_set_size(s_record_bar, 174, 3);
+    lv_bar_set_range(s_record_bar, 0, VOICE_MAX_MS);
+    lv_obj_set_style_bg_color(s_record_bar, lv_color_hex(0xDCE7ED), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(s_record_bar, lv_color_hex(s_inspiration ? 0xC49A57 : 0x5E9C92), LV_PART_INDICATOR);
+    s_record_time = lv_label_create(s_card);
+    lv_obj_set_pos(s_record_time, 96, 101);
+    lv_obj_set_style_text_font(s_record_time, ui_font_12(), LV_PART_MAIN);
+    lv_obj_set_style_text_color(s_record_time, lv_color_hex(VOICE_MUTED), LV_PART_MAIN);
+
 
     s_ticket = voice_plain(s_card);
     lv_obj_set_size(s_ticket, 260, 54);
@@ -791,7 +823,7 @@ static void voice_build(void)
     s_ticket_text = lv_label_create(s_ticket);
     lv_obj_set_width(s_ticket_text, 226);
     lv_label_set_long_mode(s_ticket_text, LV_LABEL_LONG_WRAP);
-    voice_label_style(s_ticket_text, &voice_todo_font, VOICE_NAVY, LV_TEXT_ALIGN_LEFT);
+    voice_label_style(s_ticket_text, ui_font_14(), VOICE_NAVY, LV_TEXT_ALIGN_LEFT);
     lv_obj_align(s_ticket_text, LV_ALIGN_LEFT_MID, 24, 0);
     lv_obj_add_flag(s_ticket, LV_OBJ_FLAG_HIDDEN);
 
@@ -933,6 +965,28 @@ static void voice_arm_click(int act)
     }
 }
 
+static void voice_recording_feedback(void)
+{
+    if (lv_tick_elaps(s_feedback_at) < 50) return;
+    s_feedback_at = lv_tick_get();
+    uint32_t level = s_audio_level;
+    static const uint8_t weights[VOICE_BARS] = {4, 6, 9, 10, 8, 5, 3};
+    for (int i = 0; i < VOICE_BARS; ++i) {
+        unsigned h = 5 + level * weights[i] / 400;
+        if (h > 30) h = 30;
+        lv_obj_set_height(s_bar[i], h);
+    }
+    lv_bar_set_value(s_record_bar, s_audio_ms, LV_ANIM_OFF);
+    uint32_t seconds = s_audio_ms / 1000;
+    if (seconds != s_feedback_seconds) {
+        s_feedback_seconds = seconds;
+        char progress[24];
+        snprintf(progress, sizeof(progress), "%02u / %02u s", (unsigned)seconds,
+                 (unsigned)((s_inspiration ? VOICE_MAX_MS : VOICE_TODO_MS) / 1000));
+        lv_label_set_text(s_record_time, progress);
+    }
+}
+
 static void voice_write_date(char *dst, size_t cap, unsigned year, unsigned month, unsigned day)
 {
     if (cap < 11 || year < 2024 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
@@ -1060,102 +1114,29 @@ static void voice_btn_event(lv_event_t *e)
     }
 }
 
-static int voice_hex(char c)
+static const cJSON *voice_find_string(const cJSON *node, const char *key)
 {
-    if (c >= '0' && c <= '9') return c - '0';
-    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-    return -1;
-}
-
-static void voice_utf8_put(char *out, size_t cap, size_t *n, uint32_t cp)
-{
-    if (cp < 0x80) {
-        if (*n + 1 >= cap) return;
-        out[(*n)++] = (char)cp;
-    } else if (cp < 0x800) {
-        if (*n + 2 >= cap) return;
-        out[(*n)++] = (char)(0xC0 | (cp >> 6));
-        out[(*n)++] = (char)(0x80 | (cp & 0x3F));
-    } else if (cp < 0x10000) {
-        if (*n + 3 >= cap) return;
-        out[(*n)++] = (char)(0xE0 | (cp >> 12));
-        out[(*n)++] = (char)(0x80 | ((cp >> 6) & 0x3F));
-        out[(*n)++] = (char)(0x80 | (cp & 0x3F));
+    if (!node) return NULL;
+    if (cJSON_IsObject(node)) {
+        const cJSON *value = cJSON_GetObjectItemCaseSensitive(node, key);
+        if (cJSON_IsString(value)) return value;
     }
-}
-
-static bool voice_json_unescape(const char *src, char *out, size_t cap)
-{
-    size_t n = 0;
-    while (*src != '\0' && *src != '"') {
-        if (*src != '\\') {
-            if (n + 1 >= cap) {
-                break;
-            }
-            out[n++] = *src++;
-            continue;
-        }
-        src++;
-        if (*src == '\0') {
-            break;
-        }
-        if (*src == 'u' && voice_hex(src[1]) >= 0) {
-            int h0 = voice_hex(src[1]);
-            int h1 = voice_hex(src[2]);
-            int h2 = voice_hex(src[3]);
-            int h3 = voice_hex(src[4]);
-            if (h0 < 0 || h1 < 0 || h2 < 0 || h3 < 0) {
-                break;
-            }
-            voice_utf8_put(out, cap, &n, (uint32_t)((h0 << 12) | (h1 << 8) | (h2 << 4) | h3));
-            src += 5;
-            continue;
-        }
-        char c = *src++;
-        if (c == 'n') c = '\n';
-        else if (c == 't') c = '\t';
-        if (n + 1 >= cap) {
-            break;
-        }
-        out[n++] = c;
+    const cJSON *child;
+    cJSON_ArrayForEach(child, node) {
+        const cJSON *value = voice_find_string(child, key);
+        if (value) return value;
     }
-    if (n >= cap) {
-        n = cap - 1;
-    }
-    out[n] = '\0';
-    return *src == '"';
+    return NULL;
 }
 
 static bool voice_json_pick(const char *json, const char *key, char *out, size_t cap)
 {
-    char pat[24];
-    const char *p = json;
-    size_t klen;
-
-    snprintf(pat, sizeof(pat), "\"%s\"", key);
-    klen = strlen(pat);
-    while ((p = strstr(p, pat)) != NULL) {
-        const char *v = p + klen;
-        while (*v == ' ' || *v == '\t' || *v == '\n' || *v == '\r') {
-            v++;
-        }
-        if (*v != ':') {
-            p += klen;
-            continue;
-        }
-        v++;
-        while (*v == ' ' || *v == '\t' || *v == '\n' || *v == '\r') {
-            v++;
-        }
-        if (*v == '"') {
-            if (voice_json_unescape(v + 1, out, cap) && out[0] != '\0') {
-                return true;
-            }
-        }
-        p += klen;
-    }
-    return false;
+    cJSON *root = cJSON_Parse(json);
+    const cJSON *value = voice_find_string(root, key);
+    bool ok = value && value->valuestring && value->valuestring[0];
+    if (ok) inspiration_text_copy(out, cap, value->valuestring);
+    cJSON_Delete(root);
+    return ok;
 }
 
 static void voice_trim_copy(char *dst, size_t cap, const char *src, int max_chars)
@@ -1622,6 +1603,48 @@ static bool voice_refine(const char *transcript, char *out, size_t cap, uint16_t
     return ok;
 }
 
+static bool voice_refine_idea(const char *transcript, inspiration_record_t *record)
+{
+    cJSON *root = cJSON_CreateObject();
+    cJSON *messages = cJSON_AddArrayToObject(root, "messages");
+    cJSON *system = cJSON_CreateObject();
+    cJSON *user = cJSON_CreateObject();
+    if (!root || !messages || !system || !user) {
+        cJSON_Delete(system); cJSON_Delete(user); cJSON_Delete(root); return false;
+    }
+    cJSON_AddItemToArray(messages, system);
+    cJSON_AddItemToArray(messages, user);
+    cJSON_AddStringToObject(root, "model", REFINE_MODEL);
+    cJSON_AddNumberToObject(root, "max_tokens", 600);
+    cJSON_AddStringToObject(system, "role", "system");
+    cJSON_AddStringToObject(system, "content",
+        "你在整理用户突然想到的灵感。保留原意、语气和具体细节，只修正口语、断句和明显识别错误。"
+        "不要扩写，不要编造事实，不要变成待办，不要补建议。保持原话语言。"
+        "只输出JSON对象，字段title和text。title不超过18个字，text不超过240个字。不要代码块。");
+    cJSON_AddStringToObject(user, "role", "user");
+    cJSON_AddStringToObject(user, "content", transcript);
+    char *body = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    char *resp = heap_caps_malloc(VOICE_RESP_MAX, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    char *content = heap_caps_malloc(VOICE_RESP_MAX, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    bool ok = false;
+    if (!body || !resp || !content) goto done;
+    if (!voice_http_post(REFINE_URL, body, strlen(body), resp, VOICE_RESP_MAX) ||
+        !voice_json_pick(resp, "content", content, VOICE_RESP_MAX)) goto done;
+    cJSON *result = cJSON_Parse(content);
+    const cJSON *title = cJSON_GetObjectItemCaseSensitive(result, "title");
+    const cJSON *text = cJSON_GetObjectItemCaseSensitive(result, "text");
+    if (cJSON_IsString(title) && cJSON_IsString(text) && title->valuestring[0] && text->valuestring[0]) {
+        inspiration_text_copy(record->title, sizeof(record->title), title->valuestring);
+        inspiration_text_copy(record->text, sizeof(record->text), text->valuestring);
+        ok = true;
+    }
+    cJSON_Delete(result);
+done:
+    free(body); free(resp); free(content);
+    return ok;
+}
+
 static bool voice_recognize(const uint8_t *wav, size_t wav_len, char *out, size_t cap)
 {
     static const char prefix[] =
@@ -1633,7 +1656,7 @@ static bool voice_recognize(const uint8_t *wav, size_t wav_len, char *out, size_
     size_t json_len = strlen(prefix) + b64_len + strlen(suffix);
     char *json = heap_caps_malloc(json_len + 1, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     char *resp = heap_caps_malloc(VOICE_RESP_MAX, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    char raw[TODO_NAME_LEN];
+    char raw[INSPIRATION_TEXT_BYTES];
     bool ok = false;
 
     if (json == NULL || resp == NULL) {
@@ -1650,7 +1673,7 @@ static bool voice_recognize(const uint8_t *wav, size_t wav_len, char *out, size_
         ESP_LOGW(TAG, "asr parse %.180s", resp);
         goto done;
     }
-    voice_trim_copy(out, cap, raw, 40);
+    voice_trim_copy(out, cap, raw, s_job_inspiration ? 240 : 40);
     ok = out[0] != '\0';
 done:
     free(json);
@@ -1671,7 +1694,7 @@ static int voice_mean_abs(const int16_t *s, size_t n)
     return (int)(acc / (int64_t)n);
 }
 
-static size_t voice_record(int16_t *samples)
+static size_t voice_record(int16_t *samples, size_t max_samples)
 {
     size_t filled = 0;
     int noise = 80;
@@ -1703,7 +1726,7 @@ static size_t voice_record(int16_t *samples)
         }
     }
 
-    while (filled + VOICE_CHUNK <= VOICE_MAX_SAMPLES && chunks < 40) {
+    while (filled + VOICE_CHUNK <= max_samples) {
         size_t got = 0;
         size_t i;
         int level;
@@ -1711,7 +1734,7 @@ static size_t voice_record(int16_t *samples)
         if (zts6672_read(raw, VOICE_CHUNK, &got, 400) != ESP_OK || got == 0) {
             break;
         }
-        for (i = 0; i < got && filled < VOICE_MAX_SAMPLES; i++) {
+        for (i = 0; i < got && filled < max_samples; i++) {
             /* zts6672_read 已经把 24 位收成低 16 位量程，这里不能再 >> 8。 */
             int32_t v = raw[i];
             if (v > 32767) v = 32767;
@@ -1719,6 +1742,8 @@ static size_t voice_record(int16_t *samples)
             samples[filled++] = (int16_t)v;
         }
         level = voice_mean_abs(samples + filled - got, got);
+        s_audio_ms = (uint32_t)(filled * 1000 / VOICE_RATE);
+        s_audio_level = (uint32_t)level;
         if (level > peak) {
             peak = level;
         }
@@ -1741,7 +1766,7 @@ static size_t voice_record(int16_t *samples)
         hot_chunks++;
         if (level < noise + (gate - noise) / 2) {
             quiet_chunks++;
-            if (quiet_chunks >= 6 && hot_chunks >= 2) {
+            if (quiet_chunks >= (s_job_inspiration ? 12 : 6) && hot_chunks >= 2) {
                 break;
             }
         } else {
@@ -1762,7 +1787,7 @@ static void voice_job(void *param)
     uint8_t *wav = NULL;
     int16_t *samples;
     size_t n = 0;
-    char transcript[TODO_NAME_LEN];
+    char transcript[INSPIRATION_TEXT_BYTES];
     char title[TODO_NAME_LEN];
     uint16_t model_minutes = 0;
     uint16_t heard_minutes;
@@ -1771,20 +1796,39 @@ static void voice_job(void *param)
     transcript[0] = '\0';
     title[0] = '\0';
     s_job_minutes = 0;
-    wav = heap_caps_malloc(44 + VOICE_MAX_SAMPLES * sizeof(int16_t),
+    size_t max_samples = VOICE_RATE * (s_job_inspiration ? VOICE_MAX_MS : VOICE_TODO_MS) / 1000;
+    ESP_LOGI(TAG, "record %s: internal free=%u largest=%u, PSRAM free=%u largest=%u",
+             s_job_inspiration ? "idea" : "todo",
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM));
+    wav = heap_caps_malloc(44 + max_samples * sizeof(int16_t),
                            MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (wav == NULL) {
         ESP_LOGE(TAG, "pcm alloc failed");
         goto finish;
     }
     samples = (int16_t *)(wav + 44);
-    n = voice_record(samples);
+    n = voice_record(samples, max_samples);
     if (n == 0) {
         goto finish;
     }
     s_job_recorded = true;
     voice_wav_header(wav, (uint32_t)(n * sizeof(int16_t)));
     if (!voice_recognize(wav, 44 + n * sizeof(int16_t), transcript, sizeof(transcript))) {
+        goto finish;
+    }
+    free(wav);
+    wav = NULL; /* ASR no longer needs PCM; release it before the polishing request. */
+    if (s_job_inspiration) {
+        inspiration_text_copy(s_job_idea.original, sizeof(s_job_idea.original), transcript);
+        if (!voice_refine_idea(transcript, &s_job_idea)) {
+            /* Recognition is already valuable: retain it when polishing fails. */
+            inspiration_text_copy(s_job_idea.text, sizeof(s_job_idea.text), transcript);
+            voice_trim_copy(s_job_idea.title, sizeof(s_job_idea.title), transcript, 18);
+        }
+        s_job_ok = true;
         goto finish;
     }
     ESP_LOGI(TAG, "asr: %s", transcript);
@@ -1827,6 +1871,12 @@ static void voice_start_listen(void)
     s_job_text[0] = '\0';
     s_job_minutes = 0;
     s_minutes = 0;
+    s_job_inspiration = s_inspiration;
+    s_audio_ms = s_audio_level = 0;
+    s_feedback_at = lv_tick_get() - 50;
+    s_feedback_seconds = UINT32_MAX;
+    memset(&s_job_idea, 0, sizeof(s_job_idea));
+    lv_bar_set_range(s_record_bar, 0, s_inspiration ? VOICE_MAX_MS : VOICE_TODO_MS);
     s_job_running = true;
     voice_apply(VS_LISTEN);
     if (xTaskCreatePinnedToCore(voice_job, "voice_job", 20480, NULL, 5, NULL, 0) != pdPASS) {
@@ -1838,11 +1888,16 @@ static void voice_start_listen(void)
 
 void voice_todo_poll(void)
 {
+    if (s_job_running) idle_sleep_note_activity();
     if (s_enter_req) {
         s_enter_req = false;
-        if (!s_open && !s_wificfg_return && !focus_timer_is_running()) {
-            voice_show();
+        if (!s_open && !s_wificfg_return && !inspiration_ui_is_open() && !focus_timer_is_running()) {
+            inspiration_ui_open_hub();
         }
+    }
+    if (s_capture_req && lv_disp_get_default()->scr_to_load == NULL) {
+        s_capture_req = false;
+        voice_show();
     }
     if (!s_open || s_scr == NULL || !lv_obj_is_valid(s_scr)) {
         if (s_job_done) {
@@ -1852,7 +1907,17 @@ void voice_todo_poll(void)
     }
     if (s_job_done) {
         s_job_done = false;
-        if (s_job_ok && s_job_text[0] != '\0') {
+        if (s_job_ok && s_job_inspiration) {
+            rx8130_time_t now;
+            if (rx8130_get_time(I2C_NUM_0, &now) == ESP_OK && now.year >= 2024 && now.year <= 2099 &&
+                now.month >= 1 && now.month <= 12 && now.date >= 1 && now.date <= 31 &&
+                now.hour <= 23 && now.minute <= 59) {
+                snprintf(s_job_idea.time, sizeof(s_job_idea.time), "%04u-%02u-%02u %02u:%02u",
+                         (unsigned)now.year % 10000u, (unsigned)now.month % 100u, (unsigned)now.date % 100u,
+                         (unsigned)now.hour % 100u, (unsigned)now.minute % 100u);
+            }
+            inspiration_ui_preview(&s_job_idea);
+        } else if (s_job_ok && s_job_text[0] != '\0') {
             strncpy(s_shown, s_job_text, sizeof(s_shown) - 1);
             s_shown[sizeof(s_shown) - 1] = '\0';
             s_minutes = s_job_minutes;
@@ -1864,6 +1929,8 @@ void voice_todo_poll(void)
             s_shown[sizeof(s_shown) - 1] = '\0';
             voice_apply(VS_FAIL);
         }
+    } else if (s_state == VS_LISTEN && !s_job_recorded) {
+        voice_recording_feedback();
     } else if (s_state == VS_LISTEN && s_job_recorded) {
         voice_apply(VS_THINK);
     } else if ((s_state == VS_WIFI || s_state == VS_READY) && !s_job_running) {

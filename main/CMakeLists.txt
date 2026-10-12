@@ -20,11 +20,12 @@ set(priv_requires
                     esp_http_client
                     esp-tls
                     lwip
+                    json
         
 )
  
 idf_component_register(
-                        SRCS "app_time_sync.c" "keep_machine.c" "main.c"
+                        SRCS "inspiration_ui.c" "inspiration_storage.c" "inspiration_service.c" "app_time_sync.c" "keep_machine.c" "main.c"
                                "demo_boot_gate.c"
                                "app_globals.c"
                                "app_init.c"
@@ -33,6 +34,9 @@ idf_component_register(
                                "app_led.c"
                                "imu_motion.c"
                                "voice_todo.c"
+                               "inspiration_storage.c"
+                               "inspiration_service.c"
+                               "inspiration_ui.c"
                                "voice_todo_font.c" "voice_todo_title_font.c"
                                "app_nvs_worker.c"
                                "app_wifi_worker.c"
@@ -55,7 +59,14 @@ idf_component_register(
                         EMBED_FILES  ${embed_files}
 )
 
-spiffs_create_partition_image(storage ../data FLASH_IN_PROJECT)
+# Ordinary firmware updates must preserve user notes, todos and imported books.
+# Explicitly opt in only for initial factory provisioning.
+option(REPPO_FLASH_FACTORY_STORAGE "Include initial storage image when flashing" OFF)
+if(REPPO_FLASH_FACTORY_STORAGE)
+    spiffs_create_partition_image(storage ../data FLASH_IN_PROJECT)
+else()
+    spiffs_create_partition_image(storage ../data)
+endif()
 add_compile_options(-finput-charset=UTF-8 -fexec-charset=UTF-8)
 
 component_compile_options(

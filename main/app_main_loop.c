@@ -15,6 +15,7 @@
 #include "book_machine.h"
 #include "game_machine.h"
 #include "voice_todo.h"
+#include "inspiration_ui.h"
 #include "esp_random.h"
 #include "todo_storage.h"
 #include "freertos/FreeRTOS.h"
@@ -162,6 +163,7 @@ void app_main_loop_lvgl_tick(void)
         book_machine_poll();
         game_machine_poll();
         voice_todo_poll();
+        inspiration_ui_poll();
         xSemaphoreGive(lvgl_mutex);
     }
 }
