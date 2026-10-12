@@ -20,6 +20,7 @@ class GameMachineTests(unittest.TestCase):
         fixture = Path(__file__).resolve().parent / "game_machine"
         sources = sorted((root / "components/lvgl/src").rglob("*.c"))
         sources += [root / "main/dino_game.c", root / "main/dino_render.c",
+                    root / "main/tilt_game.c", root / "main/tilt_render.c",
                     root / "main/game_score_storage.c", fixture / "host_test.c"]
         with tempfile.TemporaryDirectory(prefix="reppo-game-lvgl-") as temp:
             directory = Path(temp)

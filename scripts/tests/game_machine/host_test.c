@@ -7,6 +7,7 @@
 #include <string.h>
 #define ESP_PLATFORM 1
 #include "game_machine.c"
+#include "imu_motion.h"
 #include "nvs.h"
 
 lv_ui guider_ui;
@@ -26,15 +27,37 @@ static lv_color_t draw_buffer[320 * 34];
 static const char *snapshot_dir;
 static bool ui_processing;
 static uint32_t flash_record = 7;
+static uint32_t tilt_record;
 static uint32_t staged_record;
+static uint32_t staged_tilt;
+static bool stage_dino;
+static bool stage_tilt;
 static unsigned flash_commits;
+static imu_sample_t s_fake_imu;
 
 /* Every NVS access must be outside the simulated LVGL critical section and
  * outside running gameplay, including recovery reads. */
 static void assert_storage_context(void)
 {
     assert(!ui_processing);
-    assert(!s_game.active || s_game.model.phase != DINO_PHASE_RUNNING);
+    assert(!s_game.active || !game_is_running());
+}
+
+void imu_motion_latest(imu_sample_t *out)
+{
+    if (out != NULL) *out = s_fake_imu;
+}
+
+const char *esp_err_to_name(esp_err_t error)
+{
+    (void)error;
+    return "ok";
+}
+
+void test_esp_log(const char *tag, const char *format, ...)
+{
+    (void)tag;
+    (void)format;
 }
 
 esp_err_t nvs_open(const char *name, nvs_open_mode_t mode, nvs_handle_t *handle)
@@ -50,6 +73,10 @@ esp_err_t nvs_get_u32(nvs_handle_t handle, const char *name, uint32_t *value)
 {
     (void)handle;
     assert_storage_context();
+    if (strcmp(name, "tilt") == 0) {
+        *value = tilt_record;
+        return ESP_OK;
+    }
     assert(strcmp(name, "best") == 0);
     *value = flash_record;
     return ESP_OK;
@@ -59,8 +86,15 @@ esp_err_t nvs_set_u32(nvs_handle_t handle, const char *name, uint32_t value)
 {
     (void)handle;
     assert_storage_context();
+    if (strcmp(name, "tilt") == 0) {
+        assert(value > tilt_record);
+        staged_tilt = value;
+        stage_tilt = true;
+        return ESP_OK;
+    }
     assert(strcmp(name, "best") == 0 && value > flash_record);
     staged_record = value;
+    stage_dino = true;
     return ESP_OK;
 }
 
@@ -68,7 +102,14 @@ esp_err_t nvs_commit(nvs_handle_t handle)
 {
     (void)handle;
     assert_storage_context();
-    flash_record = staged_record;
+    if (stage_dino) {
+        flash_record = staged_record;
+        stage_dino = false;
+    }
+    if (stage_tilt) {
+        tilt_record = staged_tilt;
+        stage_tilt = false;
+    }
     ++flash_commits;
     return ESP_OK;
 }
@@ -210,7 +251,8 @@ static void enter_game(void)
     advance(430);
     assert(s_game.active && s_game.stage && s_game.group && s_game.timer);
     assert(keyboard->group == s_game.group);
-    assert(s_game.model.phase == DINO_PHASE_READY);
+    assert(s_game.room == GAME_ROOM_SELECT && s_game.catalog == 0);
+    assert(game_machine_is_open());
 }
 
 static void assert_left(unsigned timers, unsigned groups)
@@ -218,6 +260,7 @@ static void assert_left(unsigned timers, unsigned groups)
     advance(400);
     assert(guider_ui.screen_game == NULL && s_game.screen == NULL);
     assert(s_game.stage == NULL && s_game.timer == NULL && s_game.group == NULL);
+    assert(!game_machine_is_open());
     assert(keyboard->group == g && lv_scr_act() == guider_ui.screen_main);
     assert(timer_count() == timers && group_count() == groups);
 }
@@ -260,9 +303,39 @@ int main(int argc, char **argv)
     assert(guider_ui.screen_game == NULL && s_game.screen == NULL);
     assert(timer_count() == baseline_timers);
 
+    s_fake_imu.valid = true;
+    s_fake_imu.accel_g[2] = 1.0f;
     enter_game();
     assert(s_game.model.best == flash_record && flash_commits == 0);
-    snapshot("ready");
+    snapshot("select");
+    s_fake_imu.accel_g[0] = 0.46f;
+    advance(400);
+    assert(s_game.catalog == 1);
+    snapshot("select_tilt");
+    s_fake_imu.accel_g[0] = 0.0f;
+    advance(80);
+    send_key(LV_KEY_ENTER);
+    assert(s_game.room == GAME_ROOM_TILT && s_game.tilt.phase == TILT_PHASE_RUNNING);
+    advance(180);
+    snapshot("tilt_running");
+    s_game.tilt.gates[0].active = true;
+    s_game.tilt.gates[0].cleared = false;
+    s_game.tilt.gates[0].x = s_game.tilt.orb_x - 4.0f;
+    s_game.tilt.gates[0].width = 20;
+    s_game.tilt.gates[0].gap_y = 128.0f;
+    s_game.tilt.gates[0].gap_h = 18.0f;
+    for (int i = 0; i < 20 && s_game.tilt.phase == TILT_PHASE_RUNNING; ++i) advance(20);
+    assert(s_game.tilt.phase == TILT_PHASE_GAME_OVER);
+    advance(200);
+    snapshot("tilt_gameover");
+    send_key(LV_KEY_NEXT);
+    send_key(LV_KEY_ENTER);
+    assert_left(baseline_timers, baseline_groups);
+    puts("PASS tilt select, IMU switch, orb play and home");
+
+    unsigned score_commits = flash_commits;
+    enter_game();
+    assert(s_game.room == GAME_ROOM_SELECT && s_game.catalog == 0);
     unsigned active_timers = timer_count();
     unsigned active_groups = group_count();
     for (int i = 0; i < 30; ++i) screen_game_custom_init();
@@ -278,11 +351,11 @@ int main(int argc, char **argv)
     assert(s_game.model.jump_y > 0 || s_game.model.velocity > 0);
     advance(130);
     snapshot("running");
-    assert(flash_commits == 0); /* A running new record has not touched Flash. */
+    assert(flash_commits == score_commits); /* A running new record has not touched Flash. */
     assert(activity_count > before_activity && led_frames > 0);
     send_key(LV_KEY_NEXT);
     assert(s_game.model.phase == DINO_PHASE_PAUSED && s_game.selection == 0);
-    assert(s_game.model.best == flash_record && flash_commits == 1);
+    assert(s_game.model.best == flash_record && flash_commits == score_commits + 1);
     float paused_distance = s_game.model.distance_px;
     before_activity = activity_count;
     advance(1600);
@@ -293,7 +366,7 @@ int main(int argc, char **argv)
     /* Allow natural collision, without bypassing the real physics timer. */
     for (int i = 0; i < 100 && s_game.model.phase == DINO_PHASE_RUNNING; ++i) advance(100);
     assert(s_game.model.phase == DINO_PHASE_GAME_OVER);
-    assert(s_game.model.best == flash_record && flash_commits == 2);
+    assert(s_game.model.best == flash_record && flash_commits == score_commits + 2);
     advance(350);
     snapshot("gameover");
     uint32_t best = s_game.model.best;
@@ -307,7 +380,7 @@ int main(int argc, char **argv)
     assert(led_releases > 0);
     puts("PASS click/jump/pause/resume/retry/home through real LVGL input");
     game_score_storage_init(); /* Discard RAM storage state, retain emulated Flash. */
-    assert(game_score_storage_best() == best && flash_commits == 2);
+    assert(game_score_storage_best() == best && flash_commits == score_commits + 2);
     puts("PASS boot record in HI, pause/game-over commits outside LVGL, reboot restore");
 
     for (int i = 0; i < 60; ++i) {

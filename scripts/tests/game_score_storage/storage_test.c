@@ -54,6 +54,9 @@ esp_err_t nvs_open(const char *name, nvs_open_mode_t mode, nvs_handle_t *handle)
 esp_err_t nvs_get_u32(nvs_handle_t handle, const char *key, uint32_t *value)
 {
     assert(flash.open && handle == 1);
+    if (strcmp(key, "tilt") == 0) {
+        return ESP_ERR_NVS_NOT_FOUND;
+    }
     assert(strcmp(key, "best") == 0);
     ++flash.reads;
     if (flash.fail_read) {

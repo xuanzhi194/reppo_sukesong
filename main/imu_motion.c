@@ -10,12 +10,14 @@
 #include "lsm6dsr.h"
 #include "custom.h"
 #include "voice_todo.h"
+#include "game_machine.h"
 #include "buzzer.h"
 #include "app_globals.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <math.h>
+#include <string.h>
 
 static const char *TAG = "IMU";
 
@@ -26,10 +28,7 @@ static const char *TAG = "IMU";
 #define SHAKE_GYRO_DPS          140.0f
 #define SHAKE_GYRO_STRONG_DPS   220.0f
 #define SHAKE_ARM_MS            400
-#define VOICE_KNOCK_DPS         85.0f
-#define VOICE_KNOCK_GAP_MIN_MS  90
-#define VOICE_KNOCK_GAP_MAX_MS  800
-#define VOICE_KNOCK_ACCEL       0.38f
+#define VOICE_KNOCK_G              3.0f    /* 合加速度大于 3g 的一下才进语音 */
 
 static bool s_was_asleep;
 static bool s_rest_valid;
@@ -38,13 +37,11 @@ static uint8_t s_pickup_hits;
 static uint8_t s_shake_hits;
 static bool s_alarm_was_running;
 static TickType_t s_alarm_arm_tick;
-static bool s_knock_hot;
-static bool s_knock_have;
 static bool s_knock_tick_on;
-static float s_knock_peak;
-static TickType_t s_knock_tick;
 static TickType_t s_knock_cool;
 static TickType_t s_knock_tick_at;
+static imu_sample_t s_latest;
+static volatile uint32_t s_latest_seq;
 
 static float gyro_mag(const lsm6dsr_data_t *d)
 {
@@ -148,69 +145,32 @@ static void voice_knock_tick_on(void)
     s_knock_tick_at = xTaskGetTickCount();
 }
 
-/** 两下晃动进语音页。第一下短促一响，第二下进入。峰值回落即可再计，不必完全静止。 */
+/** 合加速度大于 3g 的一下敲击才进语音。轻晃和普通转动都不算。 */
 static void consider_voice_knock(const lsm6dsr_data_t *d, float gmag)
 {
     float ax = d->accel_g[0];
     float ay = d->accel_g[1];
     float az = d->accel_g[2];
     float amag = sqrtf(ax * ax + ay * ay + az * az);
-    float adev = amag > 1.0f ? amag - 1.0f : 1.0f - amag;
-    bool impulse = gmag >= VOICE_KNOCK_DPS || adev >= VOICE_KNOCK_ACCEL;
     TickType_t now = xTaskGetTickCount();
 
+    (void)gmag;
     if (s_knock_tick_on &&
         (now - s_knock_tick_at) >= pdMS_TO_TICKS(40)) {
         voice_knock_tick_off();
     }
-    if (buzzer_timeout_task_running || focus_timer_is_running() ||
-        voice_todo_is_open() || now < s_knock_cool) {
-        s_knock_hot = false;
-        s_knock_have = false;
+    if (amag <= VOICE_KNOCK_G || buzzer_timeout_task_running ||
+        focus_timer_is_running() || voice_todo_is_open() ||
+        game_machine_is_open() || now < s_knock_cool) {
         return;
     }
-    if (!s_knock_hot) {
-        if (!impulse) {
-            if (s_knock_have &&
-                (now - s_knock_tick) > pdMS_TO_TICKS(VOICE_KNOCK_GAP_MAX_MS)) {
-                s_knock_have = false;
-            }
-            return;
-        }
-        s_knock_hot = true;
-        s_knock_peak = gmag;
-        if (s_knock_have) {
-            uint32_t gap = (uint32_t)(now - s_knock_tick) * (uint32_t)portTICK_PERIOD_MS;
-            if (gap >= VOICE_KNOCK_GAP_MIN_MS && gap <= VOICE_KNOCK_GAP_MAX_MS) {
-                ESP_LOGI(TAG, "double knock %.0f dps gap %u, open voice", gmag, (unsigned)gap);
-                voice_knock_tick_off();
-                if (idle_sleep_is_asleep()) {
-                    idle_sleep_request_wake();
-                }
-                voice_todo_request_enter();
-                s_knock_have = false;
-                s_knock_cool = now + pdMS_TO_TICKS(900);
-                return;
-            }
-        }
-        ESP_LOGI(TAG, "knock 1 %.0f dps", gmag);
-        s_knock_tick = now;
-        s_knock_have = true;
-        voice_knock_tick_on();
-        return;
+    ESP_LOGI(TAG, "knock %.2f g, open voice", amag);
+    voice_knock_tick_on();
+    if (idle_sleep_is_asleep()) {
+        idle_sleep_request_wake();
     }
-    if (gmag > s_knock_peak) {
-        s_knock_peak = gmag;
-    }
-    {
-        float release = s_knock_peak * 0.62f;
-        if (release < 55.0f) {
-            release = 55.0f;
-        }
-        if (gmag < release && adev < 0.22f) {
-            s_knock_hot = false;
-        }
-    }
+    voice_todo_request_enter();
+    s_knock_cool = now + pdMS_TO_TICKS(900);
 }
 
 static void imu_motion_task(void *param)
@@ -225,10 +185,30 @@ static void imu_motion_task(void *param)
             continue;
         }
         gmag = gyro_mag(&sample);
+        s_latest_seq++;
+        memcpy(s_latest.accel_g, sample.accel_g, sizeof(s_latest.accel_g));
+        memcpy(s_latest.gyro_dps, sample.gyro_dps, sizeof(s_latest.gyro_dps));
+        s_latest.valid = true;
+        s_latest_seq++;
         consider_pickup(&sample, gmag);
         consider_shake(gmag);
         consider_voice_knock(&sample, gmag);
     }
+}
+
+void imu_motion_latest(imu_sample_t *out)
+{
+    uint32_t first;
+    uint32_t second;
+
+    if (out == NULL) {
+        return;
+    }
+    do {
+        first = s_latest_seq;
+        *out = s_latest;
+        second = s_latest_seq;
+    } while (first != second || (first & 1U));
 }
 
 void imu_motion_start(void)

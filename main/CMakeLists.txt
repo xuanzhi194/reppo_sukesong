@@ -48,6 +48,8 @@ idf_component_register(
                                "game_score_storage.c"
                                "dino_game.c"
                                "dino_render.c"
+                               "tilt_game.c"
+                               "tilt_render.c"
                         INCLUDE_DIRS ${include_dirs} 
                         PRIV_REQUIRES ${priv_requires}
                         EMBED_FILES  ${embed_files}
