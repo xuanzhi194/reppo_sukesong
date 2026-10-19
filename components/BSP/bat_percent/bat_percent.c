@@ -1,20 +1,11 @@
 /**
  * @file bat_percent.c
- * @brief 电池监测状态机：电压估算 + 充电状态判断 + 显示平滑
+ * @brief CW2015 电量计 + TP4056 充电状态。
  *
- * 设计要点：
- *  - VBAT_ADC 只做"估算输入"，UI 显示用 display_percent，两者解耦；
- *  - 显示曲线按带载端电压标定，并做 IR 压降补偿，避免长期偏低；
- *  - 放电时上升比下降更快，使显示进度更均匀、跟手；
- *  - BAT_CHARGE / BAT_FULL 经软件去抖后驱动状态机；
- *  - 充电时显示值冻结在插线前的水平，只允许 +1%/45s 缓慢上涨，避免
- *    充电器抬高电池端电压导致百分比瞬间跳变；
- *  - BAT_FULL 连续稳定 15s 才认满电，之后锁定 100%；
- *  - 拔线后进入 60s 恢复期，期间不相信 ADC，恢复期结束再向曲线估算值收敛。
+ * 电压和百分比来自 CW2015CHBD（出厂锂聚合物模型）。GPIO8 是 ALRT#，
+ * 只作低电告警输入，不再做 ADC。充电图标仍看 TP4056 的 CHRG / STDBY。
  */
 #include "bat_percent.h"
-#include "esp_adc/adc_cali.h"
-#include "esp_adc/adc_cali_scheme.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -22,33 +13,38 @@
 
 static const char *TAG = "BAT_MONITOR";
 
-/* ---------------- 调度参数 ---------------- */
-#define BAT_POLL_PERIOD_MS        200    /* 状态机轮询周期 */
-#define BAT_ADC_PERIOD_TICKS      10     /* 每 10 次轮询采一次 ADC（2s） */
-#define BAT_GPIO_VOTE_SAMPLES     7      /* 每次轮询对 GPIO 做多数表决 */
-#define BAT_CHARGE_DEBOUNCE_CNT   15     /* CHRG 去抖：连续 15 次（3s） */
-#define BAT_PLUGGED_ENTER_CNT     3      /* 插线认定：CHRG|STDBY 任低 连续 3 次（0.6s） */
-#define BAT_PLUGGED_EXIT_CNT      50     /* 拔线认定：两脚都高 连续 50 次（10s，状态机用） */
-#define BAT_PLUGGED_UI_ENTER_CNT  3      /* UI 插线：0.6s */
-#define BAT_PLUGGED_UI_EXIT_CNT   5      /* UI 拔线：1.0s（颜色/图标快释放） */
-#define BAT_FULL_STABLE_MS        15000  /* FULL 稳定 15s 才认满电 */
-#define BAT_RECOVERY_MS           45000  /* 拔线后电压恢复期 45s */
-#define BAT_CHARGE_RAMP_MS        45000  /* 充电时显示值上涨速率：+1%/45s */
-#define BAT_DISCHG_STEP_UP_MS     2500   /* 显示值向估算值上升：1%/2.5s */
-#define BAT_DISCHG_STEP_DOWN_MS   6000   /* 显示值向估算值下降：1%/6s */
-#define BAT_DISCHG_HYST_PCT       1      /* 充放电收敛迟滞 */
-#define BAT_DISCHG_CATCHUP_GAP    4      /* 估算值领先超过该值时允许一次 +2% */
-#define BAT_RECOVERY_STEP_MS      8000   /* 恢复期向估算值缓升：1%/8s */
-#define BAT_LOAD_COMP_MV          80     /* 负载压降补偿（WiFi/屏亮时 IR 估算） */
-#define BAT_COMP_MAX_MV           4150
+#define CW_REG_VERSION          0x00
+#define CW_REG_VCELL            0x02
+#define CW_REG_SOC              0x04
+#define CW_REG_RRT_ALERT        0x06
+#define CW_REG_CONFIG           0x08
+#define CW_REG_MODE             0x0A
 
-/* ---------------- ADC 采样参数 ---------------- */
-#define BAT_DUMMY_SAMPLES         2      /* 丢弃前 2 次采样 */
-#define BAT_SAMPLE_COUNT          32     /* 有效采样次数 */
-#define BAT_TRIM_COUNT            8      /* 排序后两端各去掉 8 个极值 */
+#define CW_MODE_SLEEP           0xC0
+#define CW_CONFIG_UFG           0x02
+#define CW_ATHD_PERCENT         10
+#define CW_I2C_TIMEOUT_MS       50
 
-static adc_oneshot_unit_handle_t s_adc_handle;
-static adc_cali_handle_t s_cali_handle = NULL;
+#define BAT_POLL_PERIOD_MS        200
+#define BAT_GAUGE_PERIOD_TICKS    10     /* 2s 读一次电量计 */
+#define BAT_GPIO_VOTE_SAMPLES     7
+#define BAT_CHARGE_DEBOUNCE_CNT   15
+#define BAT_PLUGGED_ENTER_CNT     3
+#define BAT_PLUGGED_EXIT_CNT      50
+#define BAT_PLUGGED_UI_ENTER_CNT  3
+#define BAT_PLUGGED_UI_EXIT_CNT   5
+#define BAT_FULL_STABLE_MS        15000
+#define BAT_TRACK_MS              2000
+#define BAT_LOG_PERIOD_TICKS      25     /* 5s 打一行，便于串口确认 */
+
+/* 芯片 SOC 还没算出来时，用端电压粗略兜底。CW2015 量的是电芯电压。 */
+static const struct { int mv; int pct; } s_soc_table[] = {
+    {4150, 100}, {4070, 95}, {4010, 90}, {3960, 85}, {3920, 80},
+    {3885, 75},  {3855, 70}, {3830, 65}, {3805, 60}, {3780, 55},
+    {3770, 50},  {3745, 45}, {3720, 40}, {3690, 35}, {3655, 30},
+    {3615, 25},  {3570, 20}, {3520, 15}, {3450, 10}, {3350, 5},  {3200, 0},
+};
+#define SOC_TABLE_LEN (sizeof(s_soc_table) / sizeof(s_soc_table[0]))
 
 static portMUX_TYPE s_info_mux = portMUX_INITIALIZER_UNLOCKED;
 static battery_info_t s_info = {
@@ -61,17 +57,7 @@ static battery_info_t s_info = {
     .plugged_ui = false,
     .state = BATTERY_STATE_DISCHARGING,
 };
-static bool s_has_sample = false;
-
-/* ---------------- 403450 负载端电压 → 显示曲线 ---------------- */
-/* 按设备带载时的端电压标定（非静置 OCV），中段约 25~30mV/5% 使进度更均匀 */
-static const struct { int mv; int pct; } s_soc_table[] = {
-    {4150, 100}, {4070, 95}, {4010, 90}, {3960, 85}, {3920, 80},
-    {3885, 75},  {3855, 70}, {3830, 65}, {3805, 60}, {3780, 55},
-    {3770, 50},  {3745, 45}, {3720, 40}, {3690, 35}, {3655, 30},
-    {3615, 25},  {3570, 20}, {3520, 15}, {3450, 10}, {3350, 5},  {3200, 0},
-};
-#define SOC_TABLE_LEN (sizeof(s_soc_table) / sizeof(s_soc_table[0]))
+static bool s_gauge_ready = false;
 
 static int clamp_percent(int pct)
 {
@@ -84,16 +70,8 @@ static int clamp_percent(int pct)
     return pct;
 }
 
-static int voltage_to_display_percent(int measured_mv)
+static int voltage_to_percent(int mv)
 {
-    int mv = measured_mv;
-    if (mv > 0) {
-        mv += BAT_LOAD_COMP_MV;
-        if (mv > BAT_COMP_MAX_MV) {
-            mv = BAT_COMP_MAX_MV;
-        }
-    }
-
     if (mv >= s_soc_table[0].mv) {
         return 100;
     }
@@ -110,56 +88,89 @@ static int voltage_to_display_percent(int measured_mv)
     return 0;
 }
 
-/* ---------------- ADC：丢弃 dummy + 去极值平均 ---------------- */
-static esp_err_t battery_read_voltage_mv(int *out_mv)
+static esp_err_t cw_read(uint8_t reg, uint8_t *buf, size_t len)
 {
-    int raw;
-    for (int i = 0; i < BAT_DUMMY_SAMPLES; i++) {
-        (void)adc_oneshot_read(s_adc_handle, BAT_ADC_CHAN, &raw);
-    }
+    return i2c_master_write_read_device(CW2015_I2C_PORT, CW2015_I2C_ADDR,
+                                        &reg, 1, buf, len,
+                                        pdMS_TO_TICKS(CW_I2C_TIMEOUT_MS));
+}
 
-    int samples[BAT_SAMPLE_COUNT];
-    int got = 0;
-    for (int i = 0; i < BAT_SAMPLE_COUNT; i++) {
-        if (adc_oneshot_read(s_adc_handle, BAT_ADC_CHAN, &raw) == ESP_OK) {
-            samples[got++] = raw;
+static esp_err_t cw_write(uint8_t reg, uint8_t val)
+{
+    uint8_t buf[2] = { reg, val };
+    return i2c_master_write_to_device(CW2015_I2C_PORT, CW2015_I2C_ADDR,
+                                      buf, sizeof(buf),
+                                      pdMS_TO_TICKS(CW_I2C_TIMEOUT_MS));
+}
+
+/** 退出出厂休眠，并把低电告警阈值设到 10%。CHBD 自带锂聚合物模型。 */
+static esp_err_t cw_wake(void)
+{
+    uint8_t mode = 0;
+    uint8_t version = 0;
+    uint8_t config = 0;
+    esp_err_t err = cw_read(CW_REG_MODE, &mode, 1);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if ((mode & CW_MODE_SLEEP) == CW_MODE_SLEEP) {
+        err = cw_write(CW_REG_MODE, (uint8_t)(mode & (uint8_t)~CW_MODE_SLEEP));
+        if (err != ESP_OK) {
+            return err;
+        }
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+    err = cw_read(CW_REG_VERSION, &version, 1);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (version != CW2015_VERSION_EXPECT) {
+        ESP_LOGW(TAG, "CW2015 version 0x%02X, expect 0x%02X",
+                 version, CW2015_VERSION_EXPECT);
+        return ESP_ERR_INVALID_RESPONSE;
+    }
+    err = cw_read(CW_REG_CONFIG, &config, 1);
+    if (err != ESP_OK) {
+        return err;
+    }
+    {
+        uint8_t next = (uint8_t)((CW_ATHD_PERCENT << 3) | (config & CW_CONFIG_UFG));
+        if (next != config) {
+            err = cw_write(CW_REG_CONFIG, next);
+            if (err != ESP_OK) {
+                return err;
+            }
         }
     }
-    if (got < BAT_SAMPLE_COUNT / 2) {
-        return ESP_FAIL;
-    }
-
-    /* 插入排序后去掉两端极值再平均 */
-    for (int i = 1; i < got; i++) {
-        int key = samples[i], j = i - 1;
-        while (j >= 0 && samples[j] > key) {
-            samples[j + 1] = samples[j];
-            j--;
-        }
-        samples[j + 1] = key;
-    }
-    int trim = (got > 2 * BAT_TRIM_COUNT + 4) ? BAT_TRIM_COUNT : got / 4;
-    int64_t sum = 0;
-    int cnt = 0;
-    for (int i = trim; i < got - trim; i++) {
-        sum += samples[i];
-        cnt++;
-    }
-    int adc_avg = (int)(sum / cnt);
-
-    int pad_mv;
-    if (s_cali_handle != NULL &&
-        adc_cali_raw_to_voltage(s_cali_handle, adc_avg, &pad_mv) == ESP_OK) {
-        /* 校准成功 */
-    } else {
-        pad_mv = adc_avg * 3100 / 4095;  /* 12bit, 12dB ≈3.1V 满量程 */
-    }
-
-    *out_mv = pad_mv * BAT_DIVIDER_RATIO_X1000 / 1000;
+    ESP_LOGI(TAG, "CW2015 ready, version 0x%02X", version);
     return ESP_OK;
 }
 
-/* ---------------- 充电状态 GPIO（多数表决抗 GPIO19/20 抖动） ---------------- */
+static esp_err_t cw_read_sample(int *mv, int *soc, bool *soc_valid)
+{
+    uint8_t raw[2];
+    uint16_t word;
+    esp_err_t err = cw_read(CW_REG_VCELL, raw, 2);
+    if (err != ESP_OK) {
+        return err;
+    }
+    word = (uint16_t)((raw[0] << 8) | raw[1]);
+    *mv = (int)((uint32_t)word * 305u / 1000u);
+
+    err = cw_read(CW_REG_SOC, raw, 2);
+    if (err != ESP_OK) {
+        return err;
+    }
+    *soc_valid = raw[0] <= 100;
+    *soc = *soc_valid ? raw[0] : -1;
+
+    err = cw_read(CW_REG_RRT_ALERT, raw, 1);
+    if (err == ESP_OK && (raw[0] & 0x80)) {
+        (void)cw_write(CW_REG_RRT_ALERT, (uint8_t)(raw[0] & 0x7F));
+    }
+    return ESP_OK;
+}
+
 static bool gpio_active_majority(gpio_num_t pin, int active_level)
 {
     int active = 0;
@@ -181,7 +192,6 @@ static bool full_pin_active(void)
     return gpio_active_majority(BAT_FULL_GPIO, BAT_FULL_ACTIVE_LEVEL);
 }
 
-/* TP4056 插线：CHRG 或 STDBY 任一为低（充电中或已满） */
 static bool tp4056_usb_present_raw(void)
 {
     return charge_pin_active() || full_pin_active();
@@ -189,25 +199,34 @@ static bool tp4056_usb_present_raw(void)
 
 static void battery_gpio_init(void)
 {
-    gpio_config_t io = {
+    gpio_config_t charge = {
         .pin_bit_mask = (1ULL << BAT_CHARGE_GPIO) | (1ULL << BAT_FULL_GPIO),
         .mode         = GPIO_MODE_INPUT,
-        .pull_up_en   = GPIO_PULLUP_ENABLE,   /* 充电芯片多为开漏输出 */
+        .pull_up_en   = GPIO_PULLUP_ENABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type    = GPIO_INTR_DISABLE,
     };
-    esp_err_t err = gpio_config(&io);
+    gpio_config_t alert = {
+        .pin_bit_mask = (1ULL << BAT_ALERT_GPIO),
+        .mode         = GPIO_MODE_INPUT,
+        .pull_up_en   = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type    = GPIO_INTR_DISABLE,
+    };
+    esp_err_t err = gpio_config(&charge);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "charge-status gpio_config failed: %s", esp_err_to_name(err));
     }
+    err = gpio_config(&alert);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "alert gpio_config failed: %s", esp_err_to_name(err));
+    }
 }
 
-/* ---------------- 状态机任务 ---------------- */
 static void battery_monitor_task(void *arg)
 {
     (void)arg;
 
-    /* 去抖计数 */
     int charge_cnt = 0, no_charge_cnt = 0;
     int full_cnt = 0, no_full_cnt = 0;
     int plugged_enter_cnt = 0, plugged_exit_cnt = 0;
@@ -220,20 +239,22 @@ static void battery_monitor_task(void *arg)
     bool full_latched = false;
 
     battery_state_t state = BATTERY_STATE_DISCHARGING;
-    TickType_t recovery_end = 0;
-    TickType_t last_ramp = 0;
-    TickType_t last_dischg_step = 0;
-
+    TickType_t last_track = 0;
     int smoothed_mv = 0;
-    int display = -1;   /* 首次 ADC 后再初始化 */
+    int last_soc = -1;
+    int display = -1;
     uint32_t tick = 0;
-
     const int full_stable_ticks = BAT_FULL_STABLE_MS / BAT_POLL_PERIOD_MS;
 
     while (1) {
         TickType_t now = xTaskGetTickCount();
 
-        /* --- 1. 插线锁存（快入慢出，专供 UI 绿色/闪电图标） --- */
+        if (!s_gauge_ready && (tick % BAT_GAUGE_PERIOD_TICKS) == 0) {
+            if (cw_wake() == ESP_OK) {
+                s_gauge_ready = true;
+            }
+        }
+
         if (tp4056_usb_present_raw()) {
             plugged_enter_cnt++;
             plugged_exit_cnt = 0;
@@ -260,7 +281,6 @@ static void battery_monitor_task(void *arg)
             plugged_ui_latched = false;
         }
 
-        /* --- 2. CHRG / STDBY 各自去抖（驱动百分比状态机） --- */
         if (charge_pin_active()) {
             charge_cnt++;
             no_charge_cnt = 0;
@@ -285,102 +305,71 @@ static void battery_monitor_task(void *arg)
             full_raw_stable = true;
             full_since = now;
         } else if (no_full_cnt >= full_stable_ticks) {
-            /* 满电撤销需要更长时间，避免 100% 频繁回落 */
             full_raw_stable = false;
             full_latched = false;
         }
-        bool full_confirmed = full_raw_stable &&
-            (now - full_since >= pdMS_TO_TICKS(BAT_FULL_STABLE_MS));
-        if (full_confirmed) {
+        if (full_raw_stable && (now - full_since >= pdMS_TO_TICKS(BAT_FULL_STABLE_MS))) {
             full_latched = true;
         }
 
-        /* --- 3. ADC 周期采样 + 电压平滑 --- */
-        if (tick % BAT_ADC_PERIOD_TICKS == 0) {
-            int mv;
-            if (battery_read_voltage_mv(&mv) == ESP_OK) {
+        int estimated = -1;
+        if (s_gauge_ready && (tick % BAT_GAUGE_PERIOD_TICKS) == 0) {
+            int mv = 0;
+            int soc = -1;
+            bool soc_valid = false;
+            if (cw_read_sample(&mv, &soc, &soc_valid) == ESP_OK && mv > 0) {
                 smoothed_mv = (smoothed_mv == 0) ? mv : (smoothed_mv * 3 + mv) / 4;
+                if (soc_valid) {
+                    last_soc = soc;
+                }
                 if (display < 0) {
-                    display = voltage_to_display_percent(smoothed_mv);
-                    last_ramp = now;
-                    last_dischg_step = now;
+                    display = soc_valid ? soc : voltage_to_percent(smoothed_mv);
+                    last_track = now;
+                    ESP_LOGI(TAG, "first sample %dmV soc=%d", mv, soc);
                 }
             }
         }
+        if (last_soc >= 0) {
+            estimated = last_soc;
+        } else if (smoothed_mv > 0) {
+            estimated = voltage_to_percent(smoothed_mv);
+        }
 
-        /* --- 4. 状态迁移（拔线用 plugged_latched 慢释放，避免 CHRG 毛刺误触发恢复期） --- */
         battery_state_t prev = state;
         if (full_latched) {
             state = BATTERY_STATE_FULL;
         } else if (charge_stable || (plugged_latched && !full_latched)) {
-            /* plugged 但 CHRG 短暂抖动时仍保持 CHARGING */
             state = BATTERY_STATE_CHARGING;
-        } else if (!plugged_latched &&
-                   (prev == BATTERY_STATE_CHARGING || prev == BATTERY_STATE_FULL)) {
-            state = BATTERY_STATE_RECOVERY;
-            recovery_end = now + pdMS_TO_TICKS(BAT_RECOVERY_MS);
-        } else if (prev == BATTERY_STATE_RECOVERY && now >= recovery_end) {
+        } else if (prev == BATTERY_STATE_CHARGING || prev == BATTERY_STATE_FULL ||
+                   prev == BATTERY_STATE_RECOVERY) {
             state = BATTERY_STATE_DISCHARGING;
         }
         if (state != prev) {
             ESP_LOGI(TAG, "state %d -> %d (plug=%d chg=%d full=%d v=%dmV)",
                      prev, state, plugged_latched, charge_stable, full_latched, smoothed_mv);
-            if (state == BATTERY_STATE_CHARGING) {
-                last_ramp = now;   /* 重置上涨计时，插线瞬间不 +1 */
-            }
         }
 
-        /* --- 5. 显示平滑 --- */
-        int estimated = (smoothed_mv > 0) ? voltage_to_display_percent(smoothed_mv) : -1;
-        if (display >= 0) {
-            switch (state) {
-            case BATTERY_STATE_CHARGING:
-                /* 只允许慢慢上涨，封顶 99%（满电由 FULL 信号决定） */
-                if (now - last_ramp >= pdMS_TO_TICKS(BAT_CHARGE_RAMP_MS)) {
-                    last_ramp = now;
-                    if (display < 99) {
-                        display++;
-                    }
-                }
-                break;
-            case BATTERY_STATE_FULL:
+        if (display >= 0 && estimated >= 0) {
+            if (state == BATTERY_STATE_FULL) {
                 display = 100;
-                break;
-            case BATTERY_STATE_RECOVERY:
-                /* 恢复期保持显示值，但若估算更高则缓慢回升 */
-                if (estimated >= 0 && estimated > display &&
-                    now - last_dischg_step >= pdMS_TO_TICKS(BAT_RECOVERY_STEP_MS)) {
+            } else if (now - last_track >= pdMS_TO_TICKS(BAT_TRACK_MS)) {
+                if (estimated > display) {
                     display++;
-                    last_dischg_step = now;
+                } else if (estimated < display) {
+                    display--;
                 }
-                break;
-            case BATTERY_STATE_DISCHARGING:
-            default:
-                if (estimated >= 0) {
-                    int diff = estimated - display;
-                    if (diff > BAT_DISCHG_HYST_PCT &&
-                        now - last_dischg_step >= pdMS_TO_TICKS(BAT_DISCHG_STEP_UP_MS)) {
-                        display += (diff > BAT_DISCHG_CATCHUP_GAP) ? 2 : 1;
-                        display = clamp_percent(display);
-                        last_dischg_step = now;
-                    } else if (diff < -BAT_DISCHG_HYST_PCT &&
-                               now - last_dischg_step >= pdMS_TO_TICKS(BAT_DISCHG_STEP_DOWN_MS)) {
-                        display--;
-                        last_dischg_step = now;
-                    }
-                }
-                break;
+                last_track = now;
             }
             display = clamp_percent(display);
         }
 
-        /* --- 6. 发布快照 --- */
         taskENTER_CRITICAL(&s_info_mux);
         s_info.voltage_mv = smoothed_mv;
-        s_info.estimated_percent = (estimated >= 0) ? estimated : s_info.estimated_percent;
+        if (estimated >= 0) {
+            s_info.estimated_percent = estimated;
+        }
         if (display >= 0) {
             s_info.display_percent = display;
-            s_has_sample = true;
         }
         s_info.charging = charge_stable && !full_latched;
         s_info.full = full_latched;
@@ -389,63 +378,30 @@ static void battery_monitor_task(void *arg)
         s_info.state = state;
         taskEXIT_CRITICAL(&s_info_mux);
 
+        if (smoothed_mv > 0 && (tick % BAT_LOG_PERIOD_TICKS) == 0) {
+            ESP_LOGI(TAG, "v=%dmV soc=%d show=%d alert=%d chg=%d full=%d plug=%d",
+                     smoothed_mv, last_soc, display,
+                     gpio_get_level(BAT_ALERT_GPIO),
+                     charge_stable, full_latched, plugged_latched);
+        }
+
         tick++;
         vTaskDelay(pdMS_TO_TICKS(BAT_POLL_PERIOD_MS));
     }
 }
 
-/* ---------------- 公共 API ---------------- */
 void battery_adc_init(void)
 {
-    adc_oneshot_unit_init_cfg_t init_cfg = {
-        .unit_id = ADC_UNIT_1,
-    };
-    esp_err_t err = adc_oneshot_new_unit(&init_cfg, &s_adc_handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "adc_oneshot_new_unit failed: %s", esp_err_to_name(err));
-        return;
-    }
-
-    adc_oneshot_chan_cfg_t chan_cfg = {
-        .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = BAT_ADC_ATTEN,
-    };
-    err = adc_oneshot_config_channel(s_adc_handle, BAT_ADC_CHAN, &chan_cfg);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "adc channel config failed: %s", esp_err_to_name(err));
-    }
-
-    adc_cali_curve_fitting_config_t cali_cfg = {
-        .unit_id = ADC_UNIT_1,
-        .chan = BAT_ADC_CHAN,
-        .atten = BAT_ADC_ATTEN,
-        .bitwidth = ADC_BITWIDTH_DEFAULT,
-    };
-    if (adc_cali_create_scheme_curve_fitting(&cali_cfg, &s_cali_handle) != ESP_OK) {
-        ESP_LOGW(TAG, "ADC calibration unavailable, using approximate conversion");
-        s_cali_handle = NULL;
-    }
-
     battery_gpio_init();
-
     xTaskCreatePinnedToCore(battery_monitor_task, "bat_monitor",
-                            3072, NULL, 5, NULL, 0);
+                            4096, NULL, 5, NULL, 0);
 }
 
 int get_battery_percentage(void)
 {
     taskENTER_CRITICAL(&s_info_mux);
-    bool valid = s_has_sample;
     int pct = s_info.display_percent;
     taskEXIT_CRITICAL(&s_info_mux);
-    if (valid) {
-        return pct;
-    }
-    /* 任务尚未完成首次采样时的兜底：同步估算一次 */
-    int mv;
-    if (battery_read_voltage_mv(&mv) == ESP_OK) {
-        return voltage_to_display_percent(mv);
-    }
     return pct;
 }
 

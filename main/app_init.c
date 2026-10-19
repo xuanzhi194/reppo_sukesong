@@ -42,7 +42,6 @@ void app_init_hardware(void)
 {
     init_encoder_direction();
     buzzer_init();
-    battery_adc_init();
     rx8130_init(I2C_NUM_0, 15, 16);
     if (rx8130_probe(I2C_NUM_0) != ESP_OK) {
         ESP_LOGW("RTC", "RX8130 probe failed (check I2C wiring)");
@@ -70,6 +69,8 @@ void app_init_hardware(void)
             ESP_LOGW("IMU", "LSM6DSR interrupt pins not configured");
         }
     }
+    /* I2C 驱动由 rx8130_init 安装。CW2015 和 RTC、IMU 共用这条总线。 */
+    battery_adc_init();
 }
 
 void app_init_storage_and_data(void)

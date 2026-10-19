@@ -538,7 +538,7 @@ static bool test_encoder(void)
 }
 
 /* ============================================================================
- *  [06] 电池 ADC & TP4056 充电状态检测
+ *  [06] CW2015 电量计 & TP4056 充电状态检测
  * ============================================================================ */
 
 static bool test_battery(void)
@@ -755,9 +755,9 @@ void app_main(void)
     /* 早期硬件初始化 */
     init_led_strip();
     buzzer_init();
-    battery_adc_init();
     init_encoder_direction();
     rx8130_init(RX8130_I2C_PORT, RX8130_I2C_SDA_PIN, RX8130_I2C_SCL_PIN);
+    battery_adc_init();
 
     /* 初始化 LCD，绘制测试进度界面（全部 WAIT） */
     ui_init_screen();

@@ -4,18 +4,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "esp_err.h"
-#include "esp_adc/adc_oneshot.h"
 #include "driver/gpio.h"
+#include "driver/i2c.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* ---------------- 硬件配置 ---------------- */
-#define BAT_ADC_CHAN            ADC_CHANNEL_7   /* GPIO8 = ADC1_CH7 */
-#define BAT_ADC_ATTEN           ADC_ATTEN_DB_12 /* 0~3.1V */
-/* 100k+100k 分压，理论 x2。实测电阻有误差时微调此值（x1000 定点） */
-#define BAT_DIVIDER_RATIO_X1000 2000
+/*
+ * CW2015CHBD，挂在 RX8130 / LSM6DSR 同一条 I2C0（SDA GPIO15，SCL GPIO16）。
+ * ALRT# 开漏、低有效，接到 GPIO8。电芯电压和百分比由芯片给出。
+ */
+#define CW2015_I2C_PORT          I2C_NUM_0
+#define CW2015_I2C_ADDR          0x62
+#define CW2015_VERSION_EXPECT    0x73
+#define BAT_ALERT_GPIO           GPIO_NUM_8
 
 /*
  * 充电状态输入：TP4056 的 CHRG / STDBY，开漏输出、低电平有效。
@@ -31,26 +34,27 @@ extern "C" {
 
 /* ---------------- 状态机 ---------------- */
 typedef enum {
-    BATTERY_STATE_DISCHARGING = 0,  /* 未充电，正常用电压曲线估算 */
-    BATTERY_STATE_CHARGING,         /* 充电中，显示值只允许缓慢上涨 */
-    BATTERY_STATE_FULL,             /* 已充满，锁定 100% */
-    BATTERY_STATE_RECOVERY,         /* 刚拔线，电压恢复期，显示值保持 */
+    BATTERY_STATE_DISCHARGING = 0,
+    BATTERY_STATE_CHARGING,
+    BATTERY_STATE_FULL,
+    BATTERY_STATE_RECOVERY,
 } battery_state_t;
 
 typedef struct {
-    int  voltage_mv;          /* 电池端电压（分压还原后） */
-    int  estimated_percent;   /* OCV 曲线瞬时估算值 */
-    int  display_percent;     /* 平滑后的显示值，UI 只用这个 */
+    int  voltage_mv;          /* CW2015 测到的电芯电压 */
+    int  estimated_percent;   /* 芯片 SOC；尚未就绪时用电压曲线兜底 */
+    int  display_percent;     /* 略作平滑后的显示值，UI 只用这个 */
     bool charging;            /* CHRG 去抖后：正在充电 */
     bool full;                /* STDBY 去抖且稳定后：已充满 */
     bool plugged;             /* Type-C 已插入（慢释放锁存，供百分比状态机） */
-    bool plugged_ui;            /* Type-C 已插入（快释放锁存，供 UI 颜色/图标） */
+    bool plugged_ui;          /* Type-C 已插入（快释放锁存，供 UI 颜色/图标） */
     battery_state_t state;
 } battery_info_t;
 
 /**
- * @brief 初始化 ADC + 充电状态 GPIO，并启动后台监测任务。
- *        保持旧函数名以兼容现有调用点（app_init.c）。
+ * @brief 配置告警脚和充电状态脚，并启动后台监测任务。
+ *        I2C 驱动需已由 rx8130_init() 装好；任务会等到总线可用再读 CW2015。
+ *        保持旧函数名以兼容现有调用点。
  */
 void battery_adc_init(void);
 
