@@ -71,10 +71,13 @@ lv_obj_t * lv_animimg_create(lv_obj_t * parent);
  */
 void lv_animimg_set_src(lv_obj_t * img, const void * dsc[], uint8_t num);
 
-/* GUI Guider emits a 4th reverse flag; this LVGL 8 API only takes 3 args. */
+/* GUI Guider 的 GIF 仍传第 4 个参数 false。LVGL 8 这个函数只有 3 个参数。
+ * 兼容宏暂时关掉，方便拍到 “too many arguments” 的编译报错。拍完再打开。 */
+#if 0
 #ifndef LV_ANIMIMG_NO_GUIDER_COMPAT
 #define lv_animimg_set_src(img, dsc, num, ...) \
     lv_animimg_set_src((img), (dsc), (uint8_t)(num))
+#endif
 #endif
 
 /**

@@ -1,0 +1,31 @@
+{
+  "checked_at": "2026-10-30T14:41:30.142721+00:00",
+  "product_id": "279636052",
+  "package_observed": "realtime long ASR: 24 audio hours trial pack, CNY 10, transaction completed",
+  "credential_file": ".secrets/aispeech.env",
+  "credentials_in_git": false,
+  "sample": {
+    "source": "macOS Tingting synthetic speech",
+    "seconds": 4.41,
+    "sample_rate": 16000,
+    "sample_bits": 16,
+    "channels": 1
+  },
+  "realtime": {
+    "handshake_status": 401,
+    "detailErrId": "201922",
+    "error": "client's param verified failed.",
+    "transcript_received": false,
+    "audio_frames_sent": false
+  },
+  "sentence": {
+    "http_status": 403,
+    "errId": "120100",
+    "error": "ocs check error",
+    "invalid_key_control_same_result": true
+  },
+  "server_deployed": false,
+  "firmware_switched": false,
+  "offline_tests_passed": 13,
+  "whitelist_note": "User confirmed 0.0.0.0/0 saved. Browser reloaded to blank screen while accessibility returned stale rows; tool cannot independently validate current saved ACL. Repeated handshake still returned 401."
+}

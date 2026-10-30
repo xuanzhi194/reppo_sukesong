@@ -17,7 +17,7 @@ ${SUDO} dnf install -y python3 python3-pip curl
 
 echo "==> 部署到 ${APP_DIR}"
 mkdir -p "${APP_DIR}"
-cp "${SCRIPT_DIR}/app.py" "${SCRIPT_DIR}/requirements.txt" "${APP_DIR}/"
+cp "${SCRIPT_DIR}/app.py" "${SCRIPT_DIR}/aispeech_asr.py" "${SCRIPT_DIR}/requirements.txt" "${APP_DIR}/"
 if [[ ! -f "${APP_DIR}/.env" ]]; then
   cp "${SCRIPT_DIR}/.env.example" "${APP_DIR}/.env"
   echo ""

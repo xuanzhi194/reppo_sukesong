@@ -1,5 +1,7 @@
 # Reppo AI Proxy（ECS 部署）
 
+已加入思必驰一句话 ASR，接口为 `POST /v1/asr/transcribe`。配置 `AISPEECH_PRODUCT_ID`、`AISPEECH_API_KEY` 后可独立测试，不需要 DeepSeek Key。固件切换、备用策略和完整测试步骤见 [思必驰 ASR 接入说明](../../docs/aispeech_asr.md)。部署时请同时上传 `app.py` 和新增的 `aispeech_asr.py`；已有服务的 `.env` 需要手工补充思必驰配置。
+
 ESP32 通过 HTTP 访问本服务，由 ECS 代为调用 DeepSeek。**DeepSeek API Key 只写在服务器 `.env` 里。**
 
 适用：**Alibaba Cloud Linux 3.2104 LTS**（`dnf`）。代码需拷贝/克隆到 ECS 上运行，不会从本仓库自动启动。

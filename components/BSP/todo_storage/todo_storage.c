@@ -616,6 +616,17 @@ esp_err_t todo_storage_export_ble_json(char *out, size_t out_size)
     return ret;
 }
 
+esp_err_t todo_storage_export_done_json(char *out, size_t out_size)
+{
+    if (!out || out_size < 3) return ESP_ERR_INVALID_ARG;
+    if (!todo_storage_lock(pdMS_TO_TICKS(500))) return ESP_ERR_TIMEOUT;
+    cJSON *arr = todo_storage_build_task_done_json_array();
+    esp_err_t ret = arr ? todo_storage_print_json_to_buf(arr, out, out_size) : ESP_ERR_NO_MEM;
+    cJSON_Delete(arr);
+    todo_storage_unlock();
+    return ret;
+}
+
 esp_err_t todo_storage_export_ble_read_bundle(char *out, size_t out_size)
 {
     cJSON *root;

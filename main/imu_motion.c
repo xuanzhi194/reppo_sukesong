@@ -41,7 +41,7 @@ static bool s_knock_tick_on;
 static TickType_t s_knock_cool;
 static TickType_t s_knock_tick_at;
 static imu_sample_t s_latest;
-static volatile uint32_t s_latest_seq;
+static portMUX_TYPE s_latest_lock = portMUX_INITIALIZER_UNLOCKED;
 
 static float gyro_mag(const lsm6dsr_data_t *d)
 {
@@ -185,11 +185,14 @@ static void imu_motion_task(void *param)
             continue;
         }
         gmag = gyro_mag(&sample);
-        s_latest_seq++;
+        uint32_t sample_at = (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
+        portENTER_CRITICAL(&s_latest_lock);
         memcpy(s_latest.accel_g, sample.accel_g, sizeof(s_latest.accel_g));
         memcpy(s_latest.gyro_dps, sample.gyro_dps, sizeof(s_latest.gyro_dps));
         s_latest.valid = true;
-        s_latest_seq++;
+        s_latest.sequence++;
+        s_latest.timestamp_ms = sample_at;
+        portEXIT_CRITICAL(&s_latest_lock);
         consider_pickup(&sample, gmag);
         consider_shake(gmag);
         consider_voice_knock(&sample, gmag);
@@ -198,17 +201,14 @@ static void imu_motion_task(void *param)
 
 void imu_motion_latest(imu_sample_t *out)
 {
-    uint32_t first;
-    uint32_t second;
-
     if (out == NULL) {
         return;
     }
-    do {
-        first = s_latest_seq;
-        *out = s_latest;
-        second = s_latest_seq;
-    } while (first != second || (first & 1U));
+    portENTER_CRITICAL(&s_latest_lock);
+    *out = s_latest;
+    portEXIT_CRITICAL(&s_latest_lock);
+    uint32_t now = (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
+    if (now - out->timestamp_ms > 250) out->valid = false;
 }
 
 void imu_motion_start(void)

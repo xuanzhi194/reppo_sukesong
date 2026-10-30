@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Reppo AI proxy: ESP32 -> ECS -> DeepSeek. DeepSeek API key stays on server only."""
+"""Reppo proxy for DeepSeek summaries and AISpeech sentence recognition."""
 
 import os
 import httpx
 from flask import Flask, request, jsonify
+from aispeech_asr import ASRError, MAX_AUDIO_BYTES, transcribe
 
 
 def _clean_env(val):
@@ -39,6 +40,9 @@ DEEPSEEK_API_KEY = _clean_env(os.environ.get("DEEPSEEK_API_KEY", ""))
 DEVICE_TOKEN = _clean_env(os.environ.get("DEVICE_TOKEN", "reppo-dev-token-change-me"))
 DEEPSEEK_MODEL = _clean_env(os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash")) or "deepseek-v4-flash"
 MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "800"))
+AISPEECH_PRODUCT_ID = _clean_env(os.environ.get("AISPEECH_PRODUCT_ID", ""))
+AISPEECH_API_KEY = _clean_env(os.environ.get("AISPEECH_API_KEY", ""))
+AISPEECH_LANG = _clean_env(os.environ.get("AISPEECH_LANG", "ce")) or "ce"
 
 
 def _auth_ok() -> bool:
@@ -55,7 +59,28 @@ def health():
         "ok": True,
         "device_token_len": len(DEVICE_TOKEN),
         "deepseek_key_set": bool(DEEPSEEK_API_KEY),
+        "aispeech_configured": bool(AISPEECH_PRODUCT_ID and AISPEECH_API_KEY),
     })
+
+
+@app.post("/v1/asr/transcribe")
+def asr_transcribe():
+    if not _auth_ok():
+        return jsonify({"error": "unauthorized"}), 401
+    if request.mimetype not in ("audio/wav", "audio/x-wav", "application/octet-stream"):
+        return jsonify({"error": "send_raw_wav_with_content_type_audio_wav"}), 415
+    if request.content_length is not None and request.content_length > MAX_AUDIO_BYTES:
+        return jsonify({"error": "audio_too_large"}), 413
+    audio = request.stream.read(MAX_AUDIO_BYTES + 1)
+    if len(audio) > MAX_AUDIO_BYTES:
+        return jsonify({"error": "audio_too_large"}), 413
+    try:
+        return jsonify(transcribe(audio, AISPEECH_PRODUCT_ID, AISPEECH_API_KEY, AISPEECH_LANG))
+    except ASRError as error:
+        payload = {"error": error.code, "provider": "aispeech"}
+        if error.upstream_status is not None:
+            payload["upstream_status"] = error.upstream_status
+        return jsonify(payload), error.status
 
 
 @app.post("/v1/ai/summary")

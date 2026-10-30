@@ -6,7 +6,7 @@
   "clangd.arguments": [
     "--background-index",
     "--query-driver=**/xtensa-esp-elf-gcc",
-    "--compile-commands-dir=${workspaceFolder}/build"
+    "--compile-commands-dir=${workspaceFolder}/build-asr"
   ],
   "clangd.onConfigChanged": "restart",
   "idf.espIdfPathWin": "E:/esp32idf/Espressif/frameworks/esp-idf-v5.3.1/",
@@ -20,6 +20,7 @@
     "IDF_TARGET": "esp32s3"
   },
   "idf.flashType": "UART",
+  "idf.buildPath": "${workspaceFolder}/build-asr",
   "files.associations": {
     "*.c": "c",
     "*.h": "c",
@@ -36,5 +37,5 @@
   },
   "idf.espIdfPath": "/Users/sean/.espressif/v5.3.5/esp-idf",
   "idf.currentSetup": "/Users/sean/.espressif/v5.3.5/esp-idf",
-  "idf.port": "/dev/tty.usbserial-1130"
+  "idf.port": "/dev/tty.usbserial-10"
 }

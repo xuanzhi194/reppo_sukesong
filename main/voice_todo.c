@@ -2,9 +2,10 @@
  * @file voice_todo.c
  * @brief 敲击进入共享语音入口：待办、灵感与本地回看。
  *
- * 麦克风只在这一次录音里打开。API Key 按当前调试需要直接放在固件里。
+ * 麦克风只在这一次录音里打开。思必驰凭证由后端保存，通义沿用原配置。
  */
 #include "voice_todo.h"
+#include "voice_asr.h"
 #include "ui_locale.h"
 #include "inspiration_ui.h"
 #include "inspiration_storage.h"
@@ -1274,13 +1275,50 @@ static bool voice_http_post(const char *url, const char *body, size_t body_len,
         total += (size_t)n;
     }
     resp[total] = '\0';
+    bool complete = esp_http_client_is_complete_data_received(client);
     esp_http_client_close(client);
     esp_http_client_cleanup(client);
     if (status != 200) {
-        ESP_LOGW(TAG, "HTTP %d %s %.180s", status, url, resp);
+        ESP_LOGW(TAG, "HTTP %d", status);
         return false;
     }
-    return true;
+    return complete;
+}
+
+bool voice_ai_complete(const char *system, const char *data, char *out, size_t capacity)
+{
+    bool ok = false;
+    cJSON *root = cJSON_CreateObject();
+    cJSON *messages = root ? cJSON_AddArrayToObject(root, "messages") : NULL;
+    char *body = NULL, *response = NULL;
+    if (!out || !capacity || !system || !data || !messages) goto done;
+    out[0] = '\0';
+    if (!cJSON_AddStringToObject(root, "model", REFINE_MODEL) ||
+        !cJSON_AddNumberToObject(root, "max_tokens", 400)) goto done;
+    const char *roles[] = {"system", "user"};
+    const char *texts[] = {system, data};
+    for (unsigned i = 0; i < 2; ++i) {
+        cJSON *message = cJSON_CreateObject();
+        if (!message) goto done;
+        cJSON_AddItemToArray(messages, message);
+        if (!cJSON_AddStringToObject(message, "role", roles[i]) ||
+            !cJSON_AddStringToObject(message, "content", texts[i])) goto done;
+    }
+    body = cJSON_PrintUnformatted(root);
+    response = heap_caps_malloc(VOICE_RESP_MAX, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!body || !response || !voice_http_post(REFINE_URL, body, strlen(body), response, VOICE_RESP_MAX)) goto done;
+    cJSON *reply = cJSON_Parse(response);
+    const cJSON *choice = cJSON_GetArrayItem(cJSON_GetObjectItemCaseSensitive(reply, "choices"), 0);
+    const cJSON *content = cJSON_GetObjectItemCaseSensitive(
+        cJSON_GetObjectItemCaseSensitive(choice, "message"), "content");
+    if (cJSON_IsString(content) && content->valuestring[0] && strlen(content->valuestring) < capacity) {
+        memcpy(out, content->valuestring, strlen(content->valuestring) + 1);
+        ok = true;
+    }
+    cJSON_Delete(reply);
+done:
+    cJSON_Delete(root); cJSON_free(body); free(response);
+    return ok;
 }
 
 static void voice_json_escape(const char *src, char *dst, size_t cap)
@@ -1645,7 +1683,7 @@ done:
     return ok;
 }
 
-static bool voice_recognize(const uint8_t *wav, size_t wav_len, char *out, size_t cap)
+static bool voice_recognize_qwen(const uint8_t *wav, size_t wav_len, char *out, size_t cap)
 {
     static const char prefix[] =
         "{\"model\":\"qwen3-asr-flash\",\"input\":{\"messages\":[{\"role\":\"user\",\"content\":"
@@ -1816,9 +1854,14 @@ static void voice_job(void *param)
     }
     s_job_recorded = true;
     voice_wav_header(wav, (uint32_t)(n * sizeof(int16_t)));
-    if (!voice_recognize(wav, 44 + n * sizeof(int16_t), transcript, sizeof(transcript))) {
+    if (!voice_asr_recognize(wav, 44 + n * sizeof(int16_t), transcript, sizeof(transcript),
+                             voice_recognize_qwen)) {
         goto finish;
     }
+    /* Apply the same mode-specific limits to either provider. */
+    char limited[INSPIRATION_TEXT_BYTES];
+    voice_trim_copy(limited, sizeof(limited), transcript, s_job_inspiration ? 240 : 40);
+    memcpy(transcript, limited, strlen(limited) + 1);
     free(wav);
     wav = NULL; /* ASR no longer needs PCM; release it before the polishing request. */
     if (s_job_inspiration) {

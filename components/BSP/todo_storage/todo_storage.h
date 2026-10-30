@@ -81,6 +81,8 @@ esp_err_t todo_storage_export_ble_json(char *out, size_t out_size);
  * @param out JSON 形如 {"todo":[...],"taskDone":[...]}
  */
 esp_err_t todo_storage_export_ble_read_bundle(char *out, size_t out_size);
+/** Read archived Done records under the storage mutex; never reload/replace Todo. */
+esp_err_t todo_storage_export_done_json(char *out, size_t out_size);
 
 /** @brief 返回已完成任务数 */
 uint8_t todo_storage_get_done_count(void);

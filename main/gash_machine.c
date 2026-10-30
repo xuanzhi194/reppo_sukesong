@@ -435,7 +435,9 @@ static void gash_pick_task(void)
 {
     s_gash.cat_idx = (int8_t)gash_rand(GASH_TASK_CAT_COUNT - 1);
     s_gash.ball_idx = s_gash.cat_idx;
-    s_gash.task_text = gash_tasks[s_gash.cat_idx][gash_rand(GASH_TASK_PER_CAT - 1)];
+    s_gash.task_text = ui_lang_is_zh()
+        ? gash_tasks_zh[s_gash.cat_idx][gash_rand(GASH_TASK_ZH_PER_CAT - 1)]
+        : gash_tasks[s_gash.cat_idx][gash_rand(GASH_TASK_PER_CAT - 1)];
 }
 
 static void gash_fade_in(lv_obj_t *obj, uint32_t time_ms, uint32_t delay_ms)
@@ -516,6 +518,9 @@ static void gash_show_result_ui(void)
 
     gash_ensure_result_labels();
     if (gash_obj_ok(s_gash.label_task) && s_gash.task_text != NULL) {
+        lv_obj_set_style_text_font(s_gash.label_task,
+                                  ui_lang_is_zh() ? ui_font_16() : &lv_font_montserratMedium_16,
+                                  LV_PART_MAIN);
         lv_label_set_text(s_gash.label_task, s_gash.task_text);
     }
     if (gash_obj_ok(s_gash.label_cat) &&

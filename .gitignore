@@ -1,4 +1,11 @@
 build/
+build-asr/
+.secrets/
+main/voice_asr_local.h
+server/ai_proxy/.env
+server/ai_proxy/.venv/
+server/ai_proxy/__pycache__/
+server/ai_proxy/tests/__pycache__/
 .vscode/
 # sdkconfig
 # sdkconfig.old

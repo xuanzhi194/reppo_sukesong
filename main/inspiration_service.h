@@ -1,7 +1,7 @@
 #pragma once
 #include "inspiration_storage.h"
 #define INSPIRATION_PAGE_ROWS 3u
-typedef enum { IDEA_QUERY, IDEA_PAGE, IDEA_READ, IDEA_SAVE, IDEA_DELETE } inspiration_operation_t;
+typedef enum { IDEA_QUERY, IDEA_PAGE, IDEA_READ, IDEA_SAVE, IDEA_DELETE, IDEA_SUMMARY } inspiration_operation_t;
 typedef struct {
     uint32_t token;
     inspiration_operation_t operation;
@@ -18,6 +18,9 @@ typedef struct {
 void inspiration_service_init(void);
 bool inspiration_service_request(const inspiration_request_t *request);
 bool inspiration_service_receive(inspiration_reply_t *reply);
+/* Separate reply channel: Keep must never consume the notebook's replies. */
+bool inspiration_service_summary_request(uint32_t token);
+bool inspiration_service_summary_receive(inspiration_reply_t *reply);
 #ifndef ESP_PLATFORM
 void inspiration_service_init_at(const char *path);
 #endif
