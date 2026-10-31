@@ -6,6 +6,7 @@
  */
 #include "voice_todo.h"
 #include "boss_ui.h"
+#include "hey_reppo.h"
 #include "boss_service.h"
 #include "voice_asr.h"
 #include "ui_locale.h"
@@ -34,6 +35,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/idf_additions.h"
 #include <time.h>
 
 extern const lv_font_t voice_todo_font;
@@ -132,10 +134,13 @@ void voice_todo_request_enter(void)
 
 void voice_todo_start_mode(bool inspiration)
 {
-    if (s_job_running || boss_ui_is_open() || boss_service_busy()) return;
+    if (s_job_running || boss_ui_is_open() || (boss_service_busy() && !hey_reppo_owns_audio())) return;
+    if (hey_reppo_owns_audio()) hey_reppo_yield();
     s_inspiration = inspiration;
     s_capture_req = true;
 }
+
+bool voice_todo_entry_pending(void) { return s_enter_req || s_capture_req; }
 
 bool voice_todo_audio_busy(void) { return s_job_running || s_capture_req; }
 
@@ -1252,9 +1257,12 @@ static bool voice_http_post(const char *url, const char *body, size_t body_len,
     if (client == NULL) {
         return false;
     }
-    esp_http_client_set_header(client, "Authorization", auth);
-    esp_http_client_set_header(client, "Content-Type", "application/json");
-    esp_http_client_set_header(client, "X-DashScope-SSE", "disable");
+    if (esp_http_client_set_header(client, "Authorization", auth) != ESP_OK ||
+        esp_http_client_set_header(client, "Content-Type", "application/json") != ESP_OK ||
+        esp_http_client_set_header(client, "X-DashScope-SSE", "disable") != ESP_OK) {
+        esp_http_client_cleanup(client);
+        return false;
+    }
     if (esp_http_client_open(client, (int)body_len) != ESP_OK) {
         esp_http_client_cleanup(client);
         return false;
@@ -1839,7 +1847,7 @@ static void voice_job(void *param)
     title[0] = '\0';
     s_job_minutes = 0;
     size_t max_samples = VOICE_RATE * (s_job_inspiration ? VOICE_MAX_MS : VOICE_TODO_MS) / 1000;
-    ESP_LOGI(TAG, "record %s: internal free=%u largest=%u, PSRAM free=%u largest=%u",
+    ESP_LOGI(TAG, "record %s: stack=PSRAM internal free=%u largest=%u, PSRAM free=%u largest=%u",
              s_job_inspiration ? "idea" : "todo",
              (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
              (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
@@ -1901,9 +1909,13 @@ finish:
         s_job_text[0] = '\0';
         s_job_minutes = 0;
     }
+    ESP_LOGI(TAG, "voice_job_finished ok=%d stack_free=%u internal_free=%u internal_largest=%u",
+             s_job_ok, (unsigned)uxTaskGetStackHighWaterMark(NULL),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
     s_job_running = false;
     s_job_done = true;
-    vTaskDelete(NULL);
+    vTaskDeleteWithCaps(NULL);
 }
 
 static void voice_start_listen(void)
@@ -1926,7 +1938,9 @@ static void voice_start_listen(void)
     lv_bar_set_range(s_record_bar, 0, s_inspiration ? VOICE_MAX_MS : VOICE_TODO_MS);
     s_job_running = true;
     voice_apply(VS_LISTEN);
-    if (xTaskCreatePinnedToCore(voice_job, "voice_job", 20480, NULL, 5, NULL, 0) != pdPASS) {
+    /* This worker records and calls HTTPS only; saving to Flash stays on the UI/storage path. */
+    if (xTaskCreatePinnedToCoreWithCaps(voice_job, "voice_job", 20480, NULL, 5, NULL, 0,
+                                      MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT) != pdPASS) {
         s_job_running = false;
         strncpy(s_shown, ui_tr("Didn't catch that", "没听清"), sizeof(s_shown) - 1);
         voice_apply(VS_FAIL);
@@ -1937,6 +1951,8 @@ void voice_todo_poll(void)
 {
     if (s_job_running) idle_sleep_note_activity();
     if (s_enter_req) {
+        if (hey_reppo_owns_audio()) { hey_reppo_yield(); return; }
+        if (boss_service_busy() && !boss_ui_is_open()) return;
         s_enter_req = false;
         if (!s_open && !s_wificfg_return && !inspiration_ui_is_open() && !boss_ui_is_open() && !boss_service_busy() && !focus_timer_is_running()) {
             inspiration_ui_open_hub();

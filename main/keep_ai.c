@@ -109,15 +109,19 @@ done:
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/idf_additions.h"
+#include <stdatomic.h>
 #include "freertos/queue.h"
 
 typedef struct {
     todo_list_t todos;
+    char *archive; /* Filled by the internal-stack storage worker before dispatch. */
     int focus, date;
     bool chinese, cached;
     uint32_t hash, age_ms, token;
 } job_t;
 typedef struct { bool ok, reused; uint32_t hash; keep_ai_result_t result; } reply_t;
+static _Atomic(job_t *) s_pending_job;
 static QueueHandle_t s_replies;
 static StaticQueue_t s_reply_control;
 static uint8_t s_reply_bytes[sizeof(reply_t)];
@@ -144,11 +148,10 @@ static void worker(void *arg)
     job_t *job = arg;
     reply_t reply = {0};
     inspiration_reply_t *ideas = heap_caps_calloc(1, sizeof(*ideas), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    char *archive = heap_caps_malloc(65536, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    char *archive = job->archive;
     char *response = heap_caps_malloc(2048, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     char *data = NULL;
-    if (!ideas || !archive || !response || !read_ideas(ideas, job->token) ||
-        todo_storage_export_done_json(archive, 65536) != ESP_OK) goto done;
+    if (!ideas || !archive || !response || !read_ideas(ideas, job->token)) goto done;
     data = build_data(&job->todos, job->focus, job->date, job->chinese, archive, ideas);
     if (!data) goto done;
     uint32_t hash = 2166136261u;
@@ -161,10 +164,29 @@ static void worker(void *arg)
                    keep_ai_parse(response, &reply.result);
     }
 done:
-    ESP_LOGI("keep_ai", "summary %s", reply.ok ? (reply.reused ? "cached" : "ready") : "unavailable");
+    ESP_LOGI("keep_ai", "summary %s stack=PSRAM stack_free=%u internal_free=%u internal_largest=%u",
+             reply.ok ? (reply.reused ? "cached" : "ready") : "unavailable",
+             (unsigned)uxTaskGetStackHighWaterMark(NULL),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
     cJSON_free(data); free(ideas); free(archive); free(response); free(job);
     xQueueOverwrite(s_replies, &reply);
-    vTaskDelete(NULL);
+    vTaskDeleteWithCaps(NULL);
+}
+
+void keep_ai_storage_poll(void)
+{
+    /* Filesystem/Flash APIs must run on the existing internal-stack worker.
+     * Only the JSON/network phase uses PSRAM stack; never call VFS from it. */
+    job_t *job = atomic_exchange(&s_pending_job, NULL);
+    if (!job) return;
+    job->archive = heap_caps_malloc(65536, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (job->archive && todo_storage_export_done_json(job->archive, 65536) == ESP_OK &&
+        xTaskCreatePinnedToCoreWithCaps(worker, "keep_ai", 16384, job, 3, NULL, 0,
+                                       MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT) == pdPASS) return;
+    free(job->archive); free(job);
+    reply_t reply = {0};
+    xQueueOverwrite(s_replies, &reply);
 }
 
 static void request_summary(int today_ymd, bool chinese, bool force)
@@ -185,9 +207,7 @@ static void request_summary(int today_ymd, bool chinese, bool force)
     if (s_chinese != chinese) s_valid = false;
     s_chinese = chinese; s_attempted = true; s_attempt = now;
     s_busy = true; s_manual = force; s_status = AI_LOADING;
-    if (xTaskCreate(worker, "keep_ai", 16384, job, 3, NULL) != pdPASS) {
-        s_busy = false; s_status = AI_FAILED; free(job);
-    }
+    atomic_store(&s_pending_job, job);
 }
 
 void keep_ai_request(int today_ymd, bool chinese) { request_summary(today_ymd, chinese, false); }

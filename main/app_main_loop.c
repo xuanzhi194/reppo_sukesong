@@ -16,6 +16,7 @@
 #include "game_machine.h"
 #include "voice_todo.h"
 #include "boss_ui.h"
+#include "hey_reppo.h"
 #include "inspiration_ui.h"
 #include "esp_random.h"
 #include "todo_storage.h"
@@ -163,6 +164,7 @@ void app_main_loop_lvgl_tick(void)
         keep_machine_poll();
         book_machine_poll();
         game_machine_poll();
+        hey_reppo_poll();
         voice_todo_poll();
         inspiration_ui_poll();
         boss_ui_poll();

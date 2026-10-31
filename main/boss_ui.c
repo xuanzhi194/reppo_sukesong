@@ -36,6 +36,7 @@ static char s_source_text[BOSS_SOURCE_CAP], s_reply_text[BOSS_REPLY_CAP], s_effe
 static boss_snapshot_t s_snapshot;
 
 bool boss_ui_is_open(void) { return s_open || s_requested; }
+void boss_ui_request_enter(void) { s_requested = true; }
 static lv_obj_t *box(lv_obj_t *parent, int x, int y, int w, int h, uint32_t color, int radius)
 {
     lv_obj_t *o = lv_obj_create(parent); lv_obj_remove_style_all(o);
@@ -267,7 +268,7 @@ void boss_ui_poll(void)
 {
     bool transition = lv_disp_get_default()->scr_to_load != NULL;
     if (!transition) entry_poll();
-    if (!transition && s_requested && !voice_todo_is_open() && !voice_todo_audio_busy() && !focus_timer_is_running()) {
+    if (!transition && s_requested && !boss_service_busy() && !voice_todo_is_open() && !voice_todo_audio_busy() && !focus_timer_is_running()) {
         s_requested = false; build(); transition = true;
     }
     if (!s_open || !s_screen) return;

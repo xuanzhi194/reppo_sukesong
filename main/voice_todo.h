@@ -15,6 +15,7 @@ void voice_todo_start_mode(bool inspiration);
 /** 语音页开着，或正从语音页去连 WiFi。 */
 bool voice_todo_is_open(void);
 bool voice_todo_audio_busy(void);
+bool voice_todo_entry_pending(void);
 /** 在已持有 lvgl_mutex 时调用。 */
 void voice_todo_poll(void);
 

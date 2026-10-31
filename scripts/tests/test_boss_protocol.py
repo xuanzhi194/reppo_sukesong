@@ -30,6 +30,7 @@ typedef int portMUX_TYPE;
 #define portENTER_CRITICAL(x) ((void)(x))
 #define portEXIT_CRITICAL(x) ((void)(x))
 #define ESP_LOGW(...) ((void)0)
+#define ESP_LOGI(...) ((void)0)
 typedef void *QueueHandle_t;
 typedef void *StreamBufferHandle_t;
 typedef int StaticStreamBuffer_t;
@@ -40,6 +41,9 @@ enum {WEBSOCKET_EVENT_CONNECTED,WEBSOCKET_EVENT_DISCONNECTED,WEBSOCKET_EVENT_ERR
 typedef struct {int op_code,payload_offset,data_len,payload_len;bool fin;const char *data_ptr;struct { int esp_tls_last_esp_err, esp_ws_handshake_status_code, esp_transport_sock_errno, esp_tls_cert_verify_flags; } error_handle;} esp_websocket_event_data_t;
 static int64_t now;
 static int64_t esp_timer_get_time(void) {return now;}
+static unsigned assistant_partials,assistant_finals;
+static char assistant_text[BOSS_SOURCE_CAP];
+static void assistant_receive(const char *text,bool final) {assert(text[0]);boss_text_copy(assistant_text,sizeof(assistant_text),text);if(final)assistant_finals++;else assistant_partials++;}
 static unsigned jobs;
 static unsigned queued_generation,queued_utterance;
 static void xQueueOverwrite(void *q,const void *job);
@@ -111,6 +115,23 @@ int main(void) {
  status(BOSS_LISTENING,"网络波动");assert(s_view.state==BOSS_ERROR&&strstr(s_view.status,"DNS失败"));
  ctx.failed=false;error.error_handle.esp_tls_last_esp_err=0;error.error_handle.esp_ws_handshake_status_code=403;
  websocket_event(&ctx,NULL,WEBSOCKET_EVENT_ERROR,&error);assert(strstr(s_view.status,"鉴权失败"));
+ // Shared assistant mode delivers every event, bypassing Boss jokes/hold/AI.
+ ctx.failed=false;ctx.callback=assistant_receive;s_view.turn=BOSS_TURN_SHOW;
+ unsigned old_jobs=jobs;unsigned old_revision=s_view.revision;
+ complete(&ctx,"{\"type\":\"conversation.item.input_audio_transcription.text\",\"text\":\"Hey Reppo\"}");
+ complete(&ctx,"{\"type\":\"conversation.item.input_audio_transcription.completed\",\"transcript\":\"打开领导黑话翻译\"}");
+ assert(assistant_partials==1&&assistant_finals==1&&jobs==old_jobs&&s_view.revision==old_revision);
+
+ // Join large UTF-8 partial/stash fields without a 1.5KiB temporary stack array.
+ char long_text[2048];long_text[0]=0;
+ for(unsigned i=0;i<500;i++)strcat(long_text,"啊");
+ cJSON *large=cJSON_CreateObject();cJSON_AddStringToObject(large,"text",long_text);
+ cJSON_AddStringToObject(large,"stash","尾巴");transcript(&ctx,large,false);
+ assert(strlen(assistant_text)==765&&strlen(assistant_text)%3==0);
+ cJSON_ReplaceItemInObject(large,"text",cJSON_CreateString("Hey Reppo，"));
+ cJSON_ReplaceItemInObject(large,"stash",cJSON_CreateString("打开领导黑话翻译"));
+ transcript(&ctx,large,false);assert(!strcmp(assistant_text,"Hey Reppo，打开领导黑话翻译"));cJSON_Delete(large);
+ boss_service_stop();complete(&ctx,"{\"type\":\"conversation.item.input_audio_transcription.completed\",\"transcript\":\"迟到命令\"}");assert(assistant_finals==1);
  free(ctx.rx);puts("PASS chunked/fragmented events, text+stash, local match, AI handoff, protected turns, read holds, AI timeout/failure, stale session/utterance and bounded overflow");
 }
 '''

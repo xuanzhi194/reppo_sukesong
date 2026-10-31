@@ -8,6 +8,8 @@
 #include "custom.h"
 #include "nvs_flash.h"
 #include "keep_machine.h"
+#include "keep_ai.h"
+#include "hey_reppo.h"
 #include "todo_storage.h"
 #include "ws2812b.h"
 #include "freertos/FreeRTOS.h"
@@ -118,6 +120,8 @@ void app_nvs_worker_task(void *param)
     nvs_open("Timing", NVS_READWRITE, &timing_handle);
 
     while (1) {
+        hey_reppo_storage_poll();
+        keep_ai_storage_poll();
         nvs_worker_handle_todo_save();
         nvs_worker_handle_main_reload();
         nvs_worker_handle_todo_archive();

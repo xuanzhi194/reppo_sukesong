@@ -1,0 +1,110 @@
+test_device_write_error_is_failure (test_ble_send_phone_time.PhoneTimeConnectionTests.test_device_write_error_is_failure) ... ok
+test_discovery_and_connection_use_same_event_loop (test_ble_send_phone_time.PhoneTimeConnectionTests.test_discovery_and_connection_use_same_event_loop) ... ok
+test_duplicate_status_is_safe_and_unrelated_notify_is_ignored (test_ble_send_phone_time.PhoneTimeConnectionTests.test_duplicate_status_is_safe_and_unrelated_notify_is_ignored) ... ok
+test_missing_ack_is_failure_and_does_not_claim_rtc_sync (test_ble_send_phone_time.PhoneTimeConnectionTests.test_missing_ack_is_failure_and_does_not_claim_rtc_sync) ... ok
+test_subscription_error_prevents_sampling_or_writing (test_ble_send_phone_time.PhoneTimeConnectionTests.test_subscription_error_prevents_sampling_or_writing) ... ok
+test_time_is_sampled_after_subscribe_immediately_before_write (test_ble_send_phone_time.PhoneTimeConnectionTests.test_time_is_sampled_after_subscribe_immediately_before_write) ... ok
+test_unknown_device_status_is_failure (test_ble_send_phone_time.PhoneTimeConnectionTests.test_unknown_device_status_is_failure) ... ok
+test_unrelated_and_truncated_notifications_are_not_success (test_ble_send_phone_time.PhoneTimeConnectionTests.test_unrelated_and_truncated_notifications_are_not_success) ... ok
+test_sunday_and_monday_use_phone_local_fields (test_ble_send_phone_time.PhoneTimePacketTests.test_sunday_and_monday_use_phone_local_fields) ... ok
+test_prime_upload_and_teardown (test_boss_capture.BossCaptureTests.test_prime_upload_and_teardown) ... PASS mic init failure, priming without upload, ready gating, PCM clipping, read failure, disconnect, cancellation, three 3s stalls with ordered recovery and bounded sustained outage
+ok
+test_external_ring_allocation_and_failure_cleanup (test_boss_memory.BossMemoryTests.test_external_ring_allocation_and_failure_cleanup) ... PASS 512-byte internal budget, six-second external ring, 100 retries and allocation/init failure cleanup
+ok
+test_external_stack_and_all_exit_paths (test_boss_network.BossNetworkTests.test_external_stack_and_all_exit_paths) ... PASS 12000 stream lifecycles + each allocation failure: PSRAM stack, internal mic/WS stack, early stop, startup/allocation/mic/WS/config/audio faults, full cleanup
+ok
+test_stream_frames_and_session_isolation (test_boss_protocol.BossProtocolTests.test_stream_frames_and_session_isolation) ... PASS chunked/fragmented events, text+stash, local match, AI handoff, protected turns, read holds, AI timeout/failure, stale session/utterance and bounded overflow
+ok
+test_demo_phrases_and_utf8 (test_boss_rules.BossRulesTests.test_demo_phrases_and_utf8) ... ok
+test_screen_lifecycle (test_boss_ui.BossUITests.test_screen_lifecycle) ... ok
+test_runner_physics_and_playability (test_dino_game.DinoGameTests.test_runner_physics_and_playability) ... ok
+test_game_priority_release_and_existing_effects (test_game_led.GameLedTests.test_game_priority_release_and_existing_effects) ... ok
+test_real_lvgl_lifecycle_and_input (test_game_machine.GameMachineTests.test_real_lvgl_lifecycle_and_input) ... ok
+test_commit_failure_retries (test_game_score_storage.GameScoreStorageTests.test_commit_failure_retries) ... ok
+test_full_u32_score_roundtrips (test_game_score_storage.GameScoreStorageTests.test_full_u32_score_roundtrips) ... ok
+test_initial_open_failure_preserves_record (test_game_score_storage.GameScoreStorageTests.test_initial_open_failure_preserves_record) ... ok
+test_initial_read_failure_preserves_record (test_game_score_storage.GameScoreStorageTests.test_initial_read_failure_preserves_record) ... ok
+test_lower_and_equal_do_not_write (test_game_score_storage.GameScoreStorageTests.test_lower_and_equal_do_not_write) ... ok
+test_missing_key_is_zero (test_game_score_storage.GameScoreStorageTests.test_missing_key_is_zero) ... ok
+test_missing_namespace_is_zero (test_game_score_storage.GameScoreStorageTests.test_missing_namespace_is_zero) ... ok
+test_offer_only_updates_ram (test_game_score_storage.GameScoreStorageTests.test_offer_only_updates_ram) ... ok
+test_open_failure_retries (test_game_score_storage.GameScoreStorageTests.test_open_failure_retries) ... ok
+test_reboot_restore (test_game_score_storage.GameScoreStorageTests.test_reboot_restore) ... ok
+test_repeated_load_failure_never_writes (test_game_score_storage.GameScoreStorageTests.test_repeated_load_failure_never_writes) ... ok
+test_set_failure_retries (test_game_score_storage.GameScoreStorageTests.test_set_failure_retries) ... ok
+test_tick_wrap_keeps_backoff (test_game_score_storage.GameScoreStorageTests.test_tick_wrap_keeps_backoff) ... ok
+test_type_mismatch_preserves_record (test_game_score_storage.GameScoreStorageTests.test_type_mismatch_preserves_record) ... ok
+test_wake_and_commands (test_hey_reppo_intent.HeyIntentTests.test_wake_and_commands) ... PASS 50000 deterministic ASR-text fuzz cases, truncated UTF-8 and output guards
+PASS wake prefix, Chinese/Arabic minutes, partial correction, single command, cancellation, timeout/wrap, rejection and bounds
+ok
+test_screen_lifecycle (test_hey_reppo_ui.HeyUITests.test_screen_lifecycle) ... ok
+test_persistence_capacity_recovery_and_utf8 (test_inspiration_storage.InspirationStorageTests.test_persistence_capacity_recovery_and_utf8) ... ok
+test_spiffs_close_commit_path (test_inspiration_storage.InspirationStorageTests.test_spiffs_close_commit_path) ... ok
+test_real_lvgl_notebook_lifecycle_and_input (test_inspiration_ui.InspirationUiTests.test_real_lvgl_notebook_lifecycle_and_input) ... ok
+test_personal_summary_data_and_channels (test_keep_ai.KeepAITests.test_personal_summary_data_and_channels) ... ok
+test_storage_handoff_and_failure_cleanup (test_keep_ai_worker.KeepWorkerTests.test_storage_handoff_and_failure_cleanup) ... ok
+test_tilt_preview_and_lifecycle (test_keep_machine.KeepMachineTests.test_tilt_preview_and_lifecycle) ... ok
+test_gesture_trajectories (test_keep_tilt.KeepTiltTests.test_gesture_trajectories) ... ok
+test_probe_and_solder_check (test_lsm6dsr_driver.Lsm6dsrDriverTests.test_probe_and_solder_check) ... ok
+test_stop_recovery_under_i2c_failures (test_rx8130_driver.Rx8130DriverTests.test_stop_recovery_under_i2c_failures) ... ok
+test_orb_physics_and_playability (test_tilt_game.TiltGameTests.test_orb_physics_and_playability) ... ok
+test_null_counter_reproduction_and_serialized_stress (test_tls_buffers.TLSBufferTests.test_null_counter_reproduction_and_serialized_stress) ... ok
+test_chinese (test_todo_label.TodoLabelTests.test_chinese) ... ok
+test_english (test_todo_label.TodoLabelTests.test_english) ... ok
+test_numbers (test_todo_label.TodoLabelTests.test_numbers) ... ok
+test_roundtrip (test_todo_label.TodoLabelTests.test_roundtrip) ... ok
+test_tokens (test_todo_label.TodoLabelTests.test_tokens) ... ok
+test_http_and_allocation_failures (test_voice_ai_faults.VoiceAIFaultTests.test_http_and_allocation_failures) ... ok
+test_aispeech_strict (test_voice_asr.VoiceASRTests.test_aispeech_strict) ... ok
+test_aispeech_with_qwen_fallback (test_voice_asr.VoiceASRTests.test_aispeech_with_qwen_fallback) ... ok
+test_existing_qwen_primary (test_voice_asr.VoiceASRTests.test_existing_qwen_primary) ... ok
+test_external_stack_lifecycle (test_voice_worker.VoiceWorkerTests.test_external_stack_lifecycle) ... ok
+
+----------------------------------------------------------------------
+Ran 55 tests in 46.132s
+
+OK
+PASS settings entry, pause/resume, double-click cancellation, foreign navigation, repeated teardown and offline retry
+12 generated courses survived for 3 minutes each; 1559 jumps at varied timings.
+Dino physics: input, jump, collision, pause, restart, fixed-step and stall tests passed.
+PASS: existing static, normal/fast flow, clear and initialization behavior
+PASS: game priority, zero-wait locks, release/retry, driver failures and tick wrap
+PASS tilt select, IMU switch, orb play and home
+PASS click/jump/pause/resume/retry/home through real LVGL input
+PASS boot record in HI, pause/game-over commits outside LVGL, reboot restore
+PASS 300 repeated entries and Guider clean/fade/delete cycles; timer/group counts stable
+PASS failed LED submission/release retained until cleanup succeeds
+PASS encoder release plus motion does not access a freed group
+PASS LVGL display/input/group teardown
+PASS LVGL live allocation plateau: 3521 bytes / 71 blocks, peak 8977 bytes
+PASS 700 voice destinations/returns, disconnect recovery and recycled page identity
+PASS inbox overflow/staleness/concurrent producer, PSRAM workspace, crash recovery, callback deferral, default off, persisted switch, wake overlay, final-only focus, mic release before dispatch, Boss handoff, manual recorder, offline/recovery, navigation cancel and save retry
+PASS bounded personal data, counts, escaping, original idea fallback, empty/error inputs
+PASS response schema, Chinese display length and failure preserves previous result
+PASS isolated summary/notebook reply channels and fresh save/delete snapshots
+PASS 1200 Keep jobs + 400 allocation-fault jobs, burst refresh coalescing, internal storage/PSRAM network, cache/offline, zero retained allocations
+PASS immediate tilt, held repeats, immediate reversal, level wrapping and unchanged focus
+PASS missing IMU, shocks, sleep/resume and RTC wither updates during preview
+PASS single refresh after 450ms, no double-click refresh, cancelled pending click on exit
+PASS inactive page isolation, click exit, re-entry reset and 300 clean/delete cycles
+PASS first-frame switching and 100 immediate direction reversals without centering
+PASS held tilt repeats every 600ms, duplicate frames do not repeat, reversal bypasses timer
+PASS resting dead zone, varying pitch/gravity, threshold hysteresis and re-tilt
+PASS invalid sample rejection, immediate recovery and timer wrap
+PASS
+PASS normal sync keeps other control bits
+PASS previously stopped clock resumes
+PASS initial read failure leaves chip untouched
+PASS calendar failure still resumes
+PASS partial STOP failure still resumes
+PASS STOP failure skips calendar
+PASS resume retry succeeds but sync fails
+PASS both resume writes fail
+PASS calendar error survives resume retry
+PASS partial STOP failure with resume retry
+8 generated tilt courses survived for 45s each; 223 gates cleared.
+Tilt physics: steer, bounds, collision, pause, restart and pilots passed.
+PASS old dynamic RX NULL window reproduced in installed TLS source
+PASS 100000 RX + 100000 TX counter checks with stable records/shared lock
+PASS 3200 HTTP/AI lifecycle jobs + 700 allocation-fault jobs; zero retained allocations/clients; peak allocations=33
+PASS 3000 manual voice lifecycle attempts, 2500 PSRAM task exits, ASR/AI fallback and zero retained PCM allocations

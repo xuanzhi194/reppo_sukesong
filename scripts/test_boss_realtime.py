@@ -18,6 +18,10 @@ import certifi
 p = argparse.ArgumentParser()
 p.add_argument('wav', type=Path)
 p.add_argument('--use-firmware-key', action='store_true')
+p.add_argument('--threshold', type=float, default=0.2)
+p.add_argument('--silence-ms', type=int, default=1100)
+p.add_argument('--language', choices=['zh','auto'], default='zh')
+p.add_argument('--show-partials', action='store_true')
 a = p.parse_args()
 key = os.environ.get('DASHSCOPE_API_KEY', '')
 if not key and a.use_firmware_key:
@@ -29,14 +33,14 @@ if not key:
     raise SystemExit('Set DASHSCOPE_API_KEY or explicitly opt in to the existing firmware key')
 with wave.open(str(a.wav)) as f:
     assert (f.getframerate(), f.getnchannels(), f.getsampwidth()) == (16000, 1, 2)
-    pcm = f.readframes(f.getnframes()) + bytes(32000)
+    pcm = f.readframes(f.getnframes()) + bytes(48000)
 try:
     ws = websocket.create_connection('wss://dashscope.aliyuncs.com/api-ws/v1/realtime?model=qwen3-asr-flash-realtime',
                                      header={'Authorization': 'Bearer ' + key}, timeout=15, sslopt={'ca_certs': certifi.where(), 'cert_reqs': ssl.CERT_REQUIRED})
     ws.send(json.dumps({'event_id': 'config', 'type': 'session.update', 'session': {
         'input_audio_format': 'pcm', 'sample_rate': 16000,
-        'input_audio_transcription': {'language': 'zh'},
-        'turn_detection': {'type': 'server_vad', 'threshold': 0.0, 'silence_duration_ms': 600}}}))
+        'input_audio_transcription': {'language': 'zh'} if a.language == 'zh' else {},
+        'turn_detection': {'type': 'server_vad', 'threshold': a.threshold, 'silence_duration_ms': a.silence_ms}}}))
     while True:
         event = json.loads(ws.recv())
         if event['type'] == 'error':
@@ -58,6 +62,8 @@ try:
         event = json.loads(ws.recv())
         if event['type'] == 'conversation.item.input_audio_transcription.text':
             partials += 1
+            if a.show_partials:
+                print('PARTIAL', event.get('text', '') + event.get('stash', ''), flush=True)
         elif event['type'] == 'conversation.item.input_audio_transcription.completed':
             finals.append(event.get('transcript', ''))
         elif event['type'] == 'error':

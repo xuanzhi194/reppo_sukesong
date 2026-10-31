@@ -25,7 +25,34 @@
 #include <string.h>
 
 #define CHUNK 1600
+/* Drain up to 300ms already queued; do not wait to fill a larger packet. */
+#define SEND_PCM_BYTES (CHUNK * 2u * 3u)
+#define SEND_BASE64_BYTES (4u * ((SEND_PCM_BYTES + 2u) / 3u) + 1u)
+#define SEND_JSON_BYTES (SEND_BASE64_BYTES + 200u)
 #define RX_CAP 16384
+#define STREAM_STACK_BYTES 8192u
+#define WEBSOCKET_STACK_BYTES 8192u
+/* Larger than malloc's 16KiB internal-preference threshold: the stock WS
+ * component allocates both buffers with malloc(), so these prefer PSRAM.
+ * Even a 300ms PCM16/base64 event (~12.7KiB) fits in ONE WebSocket frame. */
+#define WEBSOCKET_BUFFER_BYTES (20u * 1024u)
+#if defined(ESP_PLATFORM)
+/* hey-reppo4 panic: ssl_check_ctr_renegotiate observed in_ctr == NULL
+ * while the other task recycled the dynamic RX buffer. Both protections are
+ * intentional: stable PSRAM TLS records and a shared RX/TX client lock. */
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER || CONFIG_ESP_WS_CLIENT_SEPARATE_TX_LOCK
+#error "Realtime ASR requires fixed TLS buffers and serialized TLS read/write"
+#endif
+#if !CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC
+#error "Realtime ASR TLS buffers must use PSRAM"
+#endif
+#if !CONFIG_SPIRAM_USE_MALLOC
+#error "ASR WebSocket buffers require PSRAM-backed malloc"
+#endif
+_Static_assert(WEBSOCKET_BUFFER_BYTES > CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL,
+               "WS buffers must exceed the internal malloc threshold");
+#endif
+_Static_assert(WEBSOCKET_BUFFER_BYTES >= SEND_JSON_BYTES, "Audio JSON must fit one WS frame");
 #define THINK_TIMEOUT_US 20000000LL
 #define SHOW_TIME_US 4000000LL
 #define LONG_SHOW_TIME_US 6000000LL
@@ -40,6 +67,7 @@ static QueueHandle_t s_ai_queue;
 typedef struct { uint32_t generation, utterance; char text[BOSS_SOURCE_CAP]; } ai_job_t;
 typedef struct {
     uint32_t generation;
+    boss_asr_callback_t callback;
     atomic_bool connected, ready, failed, finished, mic_ready;
     StreamBufferHandle_t audio;
     /* Keep the RTOS lock/control internal; only the PCM storage is external. */
@@ -47,7 +75,7 @@ typedef struct {
     uint8_t *audio_storage;
     char *rx;
     size_t used;
-    bool assembling;
+    bool assembling, saw_transcript;
     char item[128], ignored_item[128];
     bool ignored_without_id;
 } session_t;
@@ -165,18 +193,32 @@ static const char *str(cJSON *json, const char *key)
 static void transcript(session_t *ctx, cJSON *json, bool final)
 {
     ai_job_t job = {.generation = ctx->generation};
-    char combined[BOSS_SOURCE_CAP * 2];
     if (final) boss_text_copy(job.text, sizeof(job.text), str(json, "transcript"));
     else {
-        snprintf(combined, sizeof(combined), "%s%s", str(json, "text"), str(json, "stash"));
-        boss_text_copy(job.text, sizeof(job.text), combined);
+        const char *text = str(json, "text");
+        boss_text_copy(job.text, sizeof(job.text), text);
+        if (strlen(text) < sizeof(job.text)) {
+            size_t used = strlen(job.text);
+            boss_text_copy(job.text + used, sizeof(job.text) - used, str(json, "stash"));
+        }
     }
     if (!job.text[0]) return;
+    if (!ctx->saw_transcript) {
+        ctx->saw_transcript = true;
+        ESP_LOGI(TAG, "first_asr_transcript mode=%s final=%d bytes=%u ws_stack_free=%u",
+                 ctx->callback ? "assistant" : "boss", final, (unsigned)strlen(job.text),
+                 (unsigned)uxTaskGetStackHighWaterMark(NULL));
+    }
     const char *item = str(json, "item_id");
     char reply[BOSS_REPLY_CAP] = "", effect[80] = "";
-    bool matched = final && boss_rules_translate(job.text, reply, sizeof(reply), effect, sizeof(effect));
+    bool matched = !ctx->callback && final && boss_rules_translate(job.text, reply, sizeof(reply), effect, sizeof(effect));
     portENTER_CRITICAL(&s_lock);
     if (ctx->generation != s_generation || !atomic_load(&s_run) || atomic_load(&ctx->failed)) { portEXIT_CRITICAL(&s_lock); return; }
+    if (ctx->callback) {
+        portEXIT_CRITICAL(&s_lock);
+        ctx->callback(job.text, final);
+        return;
+    }
     int64_t now = esp_timer_get_time();
     advance_turn(now);
     if (s_view.turn != BOSS_TURN_LISTEN) {
@@ -387,10 +429,10 @@ static void network_worker(void *arg)
     esp_websocket_client_handle_t ws = NULL;
     char auth[512] = {0};
     log_memory("stream_start");
-    if (!atomic_load(&s_run)) { free(ctx); atomic_store(&s_busy, false); vTaskDelete(NULL); return; }
+    if (!atomic_load(&s_run)) { free(ctx); atomic_store(&s_busy, false); vTaskDeleteWithCaps(NULL); return; }
     log_network();
-    char *base64 = audio_alloc(4300, "base64"), *event = audio_alloc(4500, "send_json");
-    int16_t *pcm = audio_alloc(CHUNK * 2, "send_pcm");
+    char *base64 = audio_alloc(SEND_BASE64_BYTES, "base64"), *event = audio_alloc(SEND_JSON_BYTES, "send_json");
+    int16_t *pcm = audio_alloc(SEND_PCM_BYTES, "send_pcm");
     bool started = false;
     ctx->rx = audio_alloc(RX_CAP, "receive_json");
     if (!base64 || !event || !pcm || !ctx->rx || !audio_buffer_init(ctx)) {
@@ -413,10 +455,11 @@ static void network_worker(void *arg)
         .uri = "wss://dashscope.aliyuncs.com/api-ws/v1/realtime?model=qwen3-asr-flash-realtime",
         .headers = auth, .crt_bundle_attach = esp_crt_bundle_attach,
         .disable_auto_reconnect = true, .network_timeout_ms = 4000,
-        .task_stack = 8192, .buffer_size = 2048,
+        .task_stack = WEBSOCKET_STACK_BYTES, .buffer_size = WEBSOCKET_BUFFER_BYTES,
     };
     ws = esp_websocket_client_init(&cfg);
     if (!ws) { fail(ctx, "连接初始化失败"); goto done; }
+    log_memory("websocket_buffers_ready");
     if (esp_websocket_register_events(ws, WEBSOCKET_EVENT_ANY, websocket_event, ctx) != ESP_OK) {
         fail(ctx, "连接回调注册失败"); goto done;
     }
@@ -431,7 +474,11 @@ static void network_worker(void *arg)
         vTaskDelay(pdMS_TO_TICKS(20));
     if (!atomic_load(&s_run) || atomic_load(&ctx->failed)) goto done;
     if (!atomic_load(&ctx->connected)) { fail(ctx, "连接超时 · 单击重试"); goto done; }
-    if (!send_text(ws, "{\"event_id\":\"config\",\"type\":\"session.update\",\"session\":{\"input_audio_format\":\"pcm\",\"sample_rate\":16000,\"input_audio_transcription\":{\"language\":\"zh\"},\"turn_detection\":{\"type\":\"server_vad\",\"threshold\":0.2,\"silence_duration_ms\":1100}}}")) {
+    /* Wake words are short: use the recommended sensitivity for the assistant,
+     * while preserving Boss's slower, less sensitive presentation setting. */
+    snprintf(event, SEND_JSON_BYTES, "{\"event_id\":\"config\",\"type\":\"session.update\",\"session\":{\"input_audio_format\":\"pcm\",\"sample_rate\":16000,\"input_audio_transcription\":{\"language\":\"zh\"},\"turn_detection\":{\"type\":\"server_vad\",\"threshold\":%s,\"silence_duration_ms\":%u}}}",
+             ctx->callback ? "0.0" : "0.2", ctx->callback ? 900u : 1100u);
+    if (!send_text(ws, event)) {
         fail(ctx, "配置发送失败"); goto done;
     }
     deadline = esp_timer_get_time() + 8000000;
@@ -439,18 +486,29 @@ static void network_worker(void *arg)
         vTaskDelay(pdMS_TO_TICKS(20));
     if (!atomic_load(&s_run) || atomic_load(&ctx->failed)) goto done;
     if (!atomic_load(&ctx->ready)) { fail(ctx, "实时识别未就绪 · 单击重试"); goto done; }
-    unsigned seq = 0;
+    unsigned seq = 0, uploaded_bytes = 0, upload_peak_ms = 0;
+    int64_t upload_report_at = esp_timer_get_time();
     while (atomic_load(&s_run) && !atomic_load(&ctx->failed)) {
-        size_t n = xStreamBufferReceive(ctx->audio, pcm, CHUNK * 2, pdMS_TO_TICKS(200));
+        size_t n = xStreamBufferReceive(ctx->audio, pcm, SEND_PCM_BYTES, pdMS_TO_TICKS(200));
         if (!n) continue;
         if (!atomic_load(&s_run)) break;
         size_t written = 0;
-        if (mbedtls_base64_encode((unsigned char *)base64, 4300, &written, (unsigned char *)pcm, n)) { fail(ctx, "音频编码失败"); break; }
+        if (mbedtls_base64_encode((unsigned char *)base64, SEND_BASE64_BYTES, &written, (unsigned char *)pcm, n)) { fail(ctx, "音频编码失败"); break; }
         base64[written] = 0;
-        snprintf(event, 4500, "{\"event_id\":\"a%u\",\"type\":\"input_audio_buffer.append\",\"audio\":\"%s\"}", ++seq, base64);
+        snprintf(event, SEND_JSON_BYTES, "{\"event_id\":\"a%u\",\"type\":\"input_audio_buffer.append\",\"audio\":\"%s\"}", ++seq, base64);
         int64_t send_started = esp_timer_get_time();
         if (!send_text(ws, event)) { fail(ctx, "音频发送失败 · 单击重试"); break; }
-        unsigned elapsed_ms = (unsigned)((esp_timer_get_time() - send_started) / 1000);
+        int64_t send_finished = esp_timer_get_time();
+        unsigned elapsed_ms = (unsigned)((send_finished - send_started) / 1000);
+        uploaded_bytes += (unsigned)n;
+        if (elapsed_ms > upload_peak_ms) upload_peak_ms = elapsed_ms;
+        if (send_finished - upload_report_at >= 5000000) {
+            ESP_LOGI(TAG, "audio_upload pcm_ms=%u wall_ms=%u queued_ms=%u peak_send_ms=%u",
+                     uploaded_bytes / BOSS_PCM_BYTES_PER_MS,
+                     (unsigned)((send_finished - upload_report_at) / 1000),
+                     (unsigned)(xStreamBufferBytesAvailable(ctx->audio) / BOSS_PCM_BYTES_PER_MS), upload_peak_ms);
+            uploaded_bytes = upload_peak_ms = 0; upload_report_at = send_finished;
+        }
         if (elapsed_ms >= 250)
             ESP_LOGW(TAG, "slow audio send: ms=%u queued_ms=%u", elapsed_ms,
                      (unsigned)(xStreamBufferBytesAvailable(ctx->audio) / BOSS_PCM_BYTES_PER_MS));
@@ -473,14 +531,14 @@ done:
     audio_buffer_free(ctx);
     log_memory("stream_released");
     free(ctx); atomic_store(&s_run, false); atomic_store(&s_busy, false);
-    vTaskDelete(NULL);
+    vTaskDeleteWithCaps(NULL);
 }
-bool boss_service_start(void)
+static bool start_service(boss_asr_callback_t callback)
 {
     if (atomic_load(&s_busy)) return false;
     if (!is_wifi_connected()) { status(BOSS_ERROR, "请先连接 WiFi · 单击重试"); return false; }
-    ESP_LOGI(TAG, "firmware=boss-pace6 built=%s %s", __DATE__, __TIME__);
-    if (!s_ai_queue) {
+    ESP_LOGI(TAG, "firmware=hey-reppo8 mode=%s built=%s %s", callback ? "assistant" : "boss", __DATE__, __TIME__);
+    if (!callback && !s_ai_queue) {
         s_ai_queue = xQueueCreate(1, sizeof(ai_job_t));
         if (!s_ai_queue) { status(BOSS_ERROR, "翻译队列内存不足"); return false; }
         /* This worker only does HTTP/text processing, never Flash/NVS writes.
@@ -495,6 +553,7 @@ bool boss_service_start(void)
     session_t *ctx = heap_caps_calloc(1, sizeof(*ctx), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (!ctx) { status(BOSS_ERROR, "识别内存不足"); return false; }
     portENTER_CRITICAL(&s_lock);
+    ctx->callback = callback;
     ctx->generation = ++s_generation; ++s_utterance; s_turn_until = 0;
     uint32_t revision = s_view.revision + 1;
     memset(&s_view, 0, sizeof(s_view)); s_view.revision = revision;
@@ -502,9 +561,23 @@ bool boss_service_start(void)
     portEXIT_CRITICAL(&s_lock);
     atomic_store(&s_run, true); atomic_store(&s_busy, true);
     status(BOSS_CONNECTING, "正在连接实时语音…");
-    if (xTaskCreatePinnedToCore(network_worker, "boss_stream", 8192, ctx, 4, NULL, 0) != pdPASS) {
+    /* This worker only streams audio and manages the transport. Keep its full
+     * stack in PSRAM; never add Flash/NVS writes here. The mic/DMA and the
+     * WebSocket receive task (including TLS callbacks) stay in internal RAM.
+     * WithCaps tasks MUST use vTaskDeleteWithCaps on every exit path. */
+    ESP_LOGI(TAG, "tls_buffers=fixed_psram websocket_io=serialized");
+    ESP_LOGI(TAG, "stream_stack=PSRAM bytes=%u websocket_stack=%u io_buffer=%u",
+             STREAM_STACK_BYTES, WEBSOCKET_STACK_BYTES, WEBSOCKET_BUFFER_BYTES);
+    if (xTaskCreatePinnedToCoreWithCaps(network_worker, "boss_stream", STREAM_STACK_BYTES, ctx, 4, NULL, 0,
+                                      MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT) != pdPASS) {
         free(ctx); atomic_store(&s_run, false); atomic_store(&s_busy, false);
         status(BOSS_ERROR, "识别任务内存不足"); return false;
     }
     return true;
+}
+
+bool boss_service_start(void) { return start_service(NULL); }
+bool boss_service_start_asr(boss_asr_callback_t callback)
+{
+    return callback && start_service(callback);
 }

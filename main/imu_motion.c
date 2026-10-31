@@ -11,6 +11,7 @@
 #include "custom.h"
 #include "voice_todo.h"
 #include "boss_ui.h"
+#include "hey_reppo.h"
 #include "boss_service.h"
 #include "game_machine.h"
 #include "buzzer.h"
@@ -162,7 +163,7 @@ static void consider_voice_knock(const lsm6dsr_data_t *d, float gmag)
         voice_knock_tick_off();
     }
     if (amag <= VOICE_KNOCK_G || buzzer_timeout_task_running ||
-        focus_timer_is_running() || voice_todo_is_open() || boss_ui_is_open() || boss_service_busy() ||
+        focus_timer_is_running() || voice_todo_is_open() || boss_ui_is_open() || (boss_service_busy() && !hey_reppo_owns_audio()) ||
         game_machine_is_open() || now < s_knock_cool) {
         return;
     }

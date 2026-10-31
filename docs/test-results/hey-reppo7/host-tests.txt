@@ -1,0 +1,13 @@
+test_wake_and_commands (test_hey_reppo_intent.HeyIntentTests.test_wake_and_commands) ... PASS 50000 deterministic ASR-text fuzz cases, truncated UTF-8 and output guards
+PASS wake prefix, Chinese/Arabic minutes, partial correction, single command, cancellation, timeout/wrap, rejection and bounds
+ok
+test_screen_lifecycle (test_hey_reppo_ui.HeyUITests.test_screen_lifecycle) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 11.815s
+
+OK
+PASS 20 generated-loader settings entries with recreate flag set; no missing/duplicate button
+PASS LVGL live allocation plateau: 3521 bytes / 71 blocks, peak 9001 bytes
+PASS 700 voice destinations/returns, disconnect recovery and recycled page identity
+PASS inbox overflow/staleness/concurrent producer, PSRAM workspace, crash recovery, callback deferral, default off, persisted switch, wake overlay, final-only focus, mic release before dispatch, Boss handoff, manual recorder, offline/recovery, navigation cancel and save retry

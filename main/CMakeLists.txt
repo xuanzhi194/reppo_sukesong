@@ -36,6 +36,8 @@ idf_component_register(
                                "imu_motion.c"
                                "keep_ai.c"
                                "keep_tilt.c"
+                               "hey_reppo.c"
+                               "hey_reppo_intent.c"
                                "boss_ui.c"
                                "boss_service.c"
                                "boss_rules.c"

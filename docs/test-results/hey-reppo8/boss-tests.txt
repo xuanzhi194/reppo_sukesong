@@ -1,0 +1,17 @@
+test_prime_upload_and_teardown (test_boss_capture.BossCaptureTests.test_prime_upload_and_teardown) ... PASS mic init failure, priming without upload, ready gating, PCM clipping, read failure, disconnect, cancellation, three 3s stalls with ordered recovery and bounded sustained outage
+ok
+test_external_ring_allocation_and_failure_cleanup (test_boss_memory.BossMemoryTests.test_external_ring_allocation_and_failure_cleanup) ... PASS 512-byte internal budget, six-second external ring, 100 retries and allocation/init failure cleanup
+ok
+test_external_stack_and_all_exit_paths (test_boss_network.BossNetworkTests.test_external_stack_and_all_exit_paths) ... PASS 60 production-worker sends with 250ms simulated WS delay: bounded 250ms backlog, no PCM skipped
+PASS 12000 stream lifecycles + each allocation failure: PSRAM stack, internal mic/WS stack, early stop, startup/allocation/mic/WS/config/audio faults, full cleanup
+ok
+test_stream_frames_and_session_isolation (test_boss_protocol.BossProtocolTests.test_stream_frames_and_session_isolation) ... PASS chunked/fragmented events, text+stash, local match, AI handoff, protected turns, read holds, AI timeout/failure, stale session/utterance and bounded overflow
+ok
+test_demo_phrases_and_utf8 (test_boss_rules.BossRulesTests.test_demo_phrases_and_utf8) ... ok
+test_screen_lifecycle (test_boss_ui.BossUITests.test_screen_lifecycle) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 9.317s
+
+OK
+PASS settings entry, pause/resume, double-click cancellation, foreign navigation, repeated teardown and offline retry

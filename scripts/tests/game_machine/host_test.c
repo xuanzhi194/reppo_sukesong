@@ -383,7 +383,7 @@ int main(int argc, char **argv)
     assert(game_score_storage_best() == best && flash_commits == score_commits + 2);
     puts("PASS boot record in HI, pause/game-over commits outside LVGL, reboot restore");
 
-    for (int i = 0; i < 60; ++i) {
+    for (int i = 0; i < 300; ++i) {
         enter_game();
         assert(s_game.model.best >= best);
         send_key(LV_KEY_ENTER);
@@ -411,7 +411,7 @@ int main(int argc, char **argv)
             assert(flash_commits == old_commits); /* No new record, no writes. */
         }
     }
-    puts("PASS 60 repeated entries and Guider clean/fade/delete cycles; timer/group counts stable");
+    puts("PASS 300 repeated entries and Guider clean/fade/delete cycles; timer/group counts stable");
 
     enter_game();
     fail_led_frame = true;

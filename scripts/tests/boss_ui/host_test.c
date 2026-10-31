@@ -92,7 +92,7 @@ int main(void) {
     unsigned before=starts;click();advance(100);click();advance(250);assert(!s_open&&!busy&&starts==before&&stops==2);
     /* Deleted settings pointers must not remain valid after auto-delete. */
     assert(!s_settings&&!s_button);
-    for(int i=0;i<20;i++) {enter();lv_obj_t *other=lv_obj_create(NULL);lv_scr_load(other);advance(30);assert(!s_open&&!busy);lv_obj_del(s_screen);}
+    for(int i=0;i<500;i++) {enter();lv_obj_t *other=lv_obj_create(NULL);lv_scr_load(other);advance(30);assert(!s_open&&!busy);lv_obj_del(s_screen);}
     online=false;enter();assert(fake.state==BOSS_ERROR);click();advance(460);assert(fake.state==BOSS_ERROR);click();advance(100);click();advance(250);assert(!s_open);
     puts("PASS settings entry, pause/resume, double-click cancellation, foreign navigation, repeated teardown and offline retry");
     return 0;

@@ -24,3 +24,7 @@ bool boss_service_start(void);
 void boss_service_stop(void);
 bool boss_service_busy(void);
 void boss_service_snapshot(boss_snapshot_t *out);
+
+/* Shared microphone/transport; callback runs on the WebSocket task, never LVGL. */
+typedef void (*boss_asr_callback_t)(const char *text, bool final);
+bool boss_service_start_asr(boss_asr_callback_t callback);

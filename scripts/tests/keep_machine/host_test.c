@@ -218,7 +218,7 @@ int main(void)
     assert(activity == old_activity);
     assert(manual_refreshes == 1); /* Double click never starts an AI refresh. */
     puts("PASS single refresh after 450ms, no double-click refresh, cancelled pending click on exit");
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < 300; ++i) {
         enter(); visible(3, false);
         gesture(-0.5f); visible(2, false);
         /* Guider can clean children before deleting the screen. */
@@ -229,6 +229,6 @@ int main(void)
     }
     assert(all_focus_time == 600);
     assert(manual_refreshes == 1);
-    puts("PASS inactive page isolation, click exit, re-entry reset and 20 clean/delete cycles");
+    puts("PASS inactive page isolation, click exit, re-entry reset and 300 clean/delete cycles");
     return 0;
 }

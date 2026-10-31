@@ -28,6 +28,7 @@
 #include "brightness_bridge.h"
 #include "sleep_bridge.h"
 #include "focus_bridge.h"
+#include "hey_reppo.h"
 #include "keep_machine.h"
 #include "book_machine.h"
 #include "game_score_storage.h"
@@ -85,6 +86,7 @@ void app_init_storage_and_data(void)
      * does not flash 100% then drop to the saved setting. */
     brightness_bridge_init();
     sleep_bridge_init();
+    hey_reppo_init();
     ui_locale_init();
     focus_time_init();
     keep_machine_init();
