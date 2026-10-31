@@ -17,6 +17,7 @@ static const char *TAG = "zts6672";
 
 static i2s_chan_handle_t s_rx;
 static uint32_t          s_rate;
+static uint32_t          s_dma_frames;
 static zts6672_slot_t    s_slot = ZTS6672_SLOT_UNKNOWN;
 static int32_t           s_frames[MIC_CHUNK_FRAMES * 2];
 
@@ -145,21 +146,21 @@ static esp_err_t discard_ms(uint32_t ms)
     return ESP_OK;
 }
 
-esp_err_t zts6672_init(uint32_t sample_rate_hz)
+static esp_err_t mic_init(uint32_t sample_rate_hz, uint32_t dma_frames)
 {
     if (sample_rate_hz == 0) sample_rate_hz = ZTS6672_DEFAULT_SAMPLE_RATE;
     if (sample_rate_hz < ZTS6672_SAMPLE_RATE_MIN || sample_rate_hz > ZTS6672_SAMPLE_RATE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
     if (s_rx) {
-        if (sample_rate_hz == s_rate) return ESP_OK;
+        if (sample_rate_hz == s_rate && dma_frames == s_dma_frames) return ESP_OK;
         esp_err_t err = zts6672_deinit();
         if (err != ESP_OK) return err;
     }
 
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
     chan_cfg.dma_desc_num  = 4;
-    chan_cfg.dma_frame_num = MIC_CHUNK_FRAMES;
+    chan_cfg.dma_frame_num = dma_frames;
     esp_err_t err = i2s_new_channel(&chan_cfg, NULL, &s_rx);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "i2s_new_channel: %s", esp_err_to_name(err));
@@ -193,6 +194,7 @@ esp_err_t zts6672_init(uint32_t sample_rate_hz)
     }
 
     s_rate = sample_rate_hz;
+    s_dma_frames = dma_frames;
     s_dc_r = expf(-2.0f * (float)M_PI * ZTS6672_HPF_CUTOFF_HZ / (float)sample_rate_hz);
     dc_block_reset();
     err = discard_ms(MIC_WARMUP_MS);
@@ -201,9 +203,22 @@ esp_err_t zts6672_init(uint32_t sample_rate_hz)
         zts6672_deinit();
         return err;
     }
-    ESP_LOGI(TAG, "ready: %lu Hz, BCLK=%d WS=%d SD=%d", (unsigned long)s_rate,
+    ESP_LOGI(TAG, "ready: %lu Hz dma=4x%lu frames (%lu bytes), BCLK=%d WS=%d SD=%d", (unsigned long)s_rate,
+             (unsigned long)s_dma_frames, (unsigned long)(4 * s_dma_frames * 2 * sizeof(int32_t)),
              ZTS6672_I2S_SCK_GPIO, ZTS6672_I2S_WS_GPIO, ZTS6672_I2S_SD_GPIO);
     return ESP_OK;
+}
+
+esp_err_t zts6672_init(uint32_t sample_rate_hz)
+{
+    return mic_init(sample_rate_hz, MIC_CHUNK_FRAMES);
+}
+
+esp_err_t zts6672_init_streaming(uint32_t sample_rate_hz)
+{
+    /* 4 x 128 stereo 32-bit frames = 4KiB, 32ms at 16kHz.
+     * The high-priority capture task drains this continuously into PSRAM. */
+    return mic_init(sample_rate_hz, 128);
 }
 
 esp_err_t zts6672_deinit(void)
@@ -213,6 +228,7 @@ esp_err_t zts6672_deinit(void)
     esp_err_t err = i2s_del_channel(s_rx);
     s_rx = NULL;
     s_rate = 0;
+    s_dma_frames = 0;
     return err;
 }
 

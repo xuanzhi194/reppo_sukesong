@@ -5,6 +5,8 @@
  * 麦克风只在这一次录音里打开。思必驰凭证由后端保存，通义沿用原配置。
  */
 #include "voice_todo.h"
+#include "boss_ui.h"
+#include "boss_service.h"
 #include "voice_asr.h"
 #include "ui_locale.h"
 #include "inspiration_ui.h"
@@ -130,10 +132,12 @@ void voice_todo_request_enter(void)
 
 void voice_todo_start_mode(bool inspiration)
 {
-    if (s_job_running) return;
+    if (s_job_running || boss_ui_is_open() || boss_service_busy()) return;
     s_inspiration = inspiration;
     s_capture_req = true;
 }
+
+bool voice_todo_audio_busy(void) { return s_job_running || s_capture_req; }
 
 bool voice_todo_is_open(void)
 {
@@ -1934,11 +1938,11 @@ void voice_todo_poll(void)
     if (s_job_running) idle_sleep_note_activity();
     if (s_enter_req) {
         s_enter_req = false;
-        if (!s_open && !s_wificfg_return && !inspiration_ui_is_open() && !focus_timer_is_running()) {
+        if (!s_open && !s_wificfg_return && !inspiration_ui_is_open() && !boss_ui_is_open() && !boss_service_busy() && !focus_timer_is_running()) {
             inspiration_ui_open_hub();
         }
     }
-    if (s_capture_req && lv_disp_get_default()->scr_to_load == NULL) {
+    if (s_capture_req && !boss_ui_is_open() && !boss_service_busy() && lv_disp_get_default()->scr_to_load == NULL) {
         s_capture_req = false;
         voice_show();
     }
@@ -1982,4 +1986,11 @@ void voice_todo_poll(void)
             voice_show_idle();
         }
     }
+}
+
+/* Shared bearer header; callers must never log it. */
+bool voice_ai_auth_header(char *out, size_t capacity)
+{
+    int n = snprintf(out, capacity, "Authorization: Bearer %s\r\n", DASHSCOPE_KEY);
+    return n > 0 && (size_t)n < capacity;
 }

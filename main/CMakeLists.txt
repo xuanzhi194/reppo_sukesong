@@ -17,6 +17,7 @@ set(priv_requires
                     ui_custom 
                     spiffs
                     nvs_flash
+                    esp_websocket_client
                     esp_http_client
                     esp-tls
                     lwip
@@ -35,6 +36,9 @@ idf_component_register(
                                "imu_motion.c"
                                "keep_ai.c"
                                "keep_tilt.c"
+                               "boss_ui.c"
+                               "boss_service.c"
+                               "boss_rules.c"
                                "voice_todo.c"
                                "voice_asr.c"
                                "inspiration_storage.c"

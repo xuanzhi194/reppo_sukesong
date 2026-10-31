@@ -1,8 +1,10 @@
 # Name,   Type, SubType,  Offset,   Size,  Flags
 # 16MB Flash — 无 OTA 单应用布局
-#   factory  ~10.94 MB (0xAF0000)  主固件；当前 bin ~9.62 MB，留 ~1.31 MB 余量
-#   storage   4 MB  SPIFFS — todo / ebook 等（由 factory 划出 2 MB）
-#   badge     1 MB  FAT    — 小程序蓝牙下发的单张吧唧图
+# Flash 分区不是运行时 RAM/PSRAM，缩减 storage/badge 无法修复语音内存不足。
+#   factory  10.9375 MiB (0xAF0000)；实际固件余量以构建报告为准。
+#   storage   4 MiB SPIFFS — todo / 灵感 / ebook 等用户数据。
+#   badge     1 MiB FAT — 小程序蓝牙下发的单张吧唧图。
+# 保留已烧录设备的起始地址/容量；改变文件系统布局须先备份并迁移数据。
 nvs,      data, nvs,      0x9000,   0x6000
 phy_init, data, phy,      0xf000,   0x1000
 factory,  app,  factory,  0x10000,  0xAF0000

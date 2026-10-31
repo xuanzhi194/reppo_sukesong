@@ -10,6 +10,8 @@
 #include "lsm6dsr.h"
 #include "custom.h"
 #include "voice_todo.h"
+#include "boss_ui.h"
+#include "boss_service.h"
 #include "game_machine.h"
 #include "buzzer.h"
 #include "app_globals.h"
@@ -160,7 +162,7 @@ static void consider_voice_knock(const lsm6dsr_data_t *d, float gmag)
         voice_knock_tick_off();
     }
     if (amag <= VOICE_KNOCK_G || buzzer_timeout_task_running ||
-        focus_timer_is_running() || voice_todo_is_open() ||
+        focus_timer_is_running() || voice_todo_is_open() || boss_ui_is_open() || boss_service_busy() ||
         game_machine_is_open() || now < s_knock_cool) {
         return;
     }

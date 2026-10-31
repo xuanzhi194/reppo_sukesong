@@ -11,3 +11,6 @@ CONFIG_LV_FS_POSIX_CACHE_SIZE=0
 
 # IRAM 优化（FREERTOS/RINGBUF/HEAP/SPI_FLASH_ROM → Flash）会导致 LVGL 从 Flash
 # 读取大图时触发 "Cache disabled but cached memory region accessed"，已关闭。
+
+# Continuous ASR must be able to upload while transcript fragments arrive.
+CONFIG_ESP_WS_CLIENT_SEPARATE_TX_LOCK=y

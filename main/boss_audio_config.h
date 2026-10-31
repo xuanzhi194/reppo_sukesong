@@ -1,0 +1,7 @@
+#pragma once
+/* 16 kHz mono PCM16: 32 bytes/ms. This storage is allocated only in PSRAM. */
+#define BOSS_PCM_BYTES_PER_MS 32u
+#define BOSS_AUDIO_BUFFER_MS 6000u
+#define BOSS_AUDIO_BUFFER_BYTES (BOSS_PCM_BYTES_PER_MS * BOSS_AUDIO_BUFFER_MS)
+#define BOSS_AUDIO_WARN_BYTES (BOSS_PCM_BYTES_PER_MS * 1000u)
+#define BOSS_AUDIO_RESUME_BYTES (BOSS_PCM_BYTES_PER_MS * 200u)

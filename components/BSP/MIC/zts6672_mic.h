@@ -59,6 +59,8 @@ typedef struct {
 } zts6672_stats_t;
 
 esp_err_t zts6672_init(uint32_t sample_rate_hz);
+/** Continuous high-priority capture: 4KiB DMA profile; legacy init retains 8KiB. */
+esp_err_t zts6672_init_streaming(uint32_t sample_rate_hz);
 esp_err_t zts6672_deinit(void);
 bool      zts6672_is_ready(void);
 uint32_t  zts6672_get_sample_rate(void);
